@@ -1,0 +1,32 @@
+[
+  {
+    "id": 60103,
+    "name": "Warszawa Centralna",
+    "lat": 52.2333742,
+    "lon": 21.0711489
+  },
+  {
+    "id": 80416,
+    "name": "Kraków Główny",
+    "lat": 50.0469432,
+    "lon": 19.9971534
+  },
+  {
+    "id": 60103,
+    "name": "Wrocław Główny",
+    "lat": 51.1263106,
+    "lon": 16.9781963
+  },
+  {
+    "id": 50500,
+    "name": "Lublin Główny",
+    "lat": 51.250559,
+    "lon": 22.5701022
+  },
+  {
+    "id": 33605,
+    "name": "Warszawa Wschodnia",
+    "lat": 52.2333742,
+    "lon": 21.0711489
+  }
+]
