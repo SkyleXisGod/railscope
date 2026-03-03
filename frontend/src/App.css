@@ -1,42 +1,142 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #111;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* TOPBAR */
+
+.topbar {
+  height: 55px;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(10px);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0 20px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.topbar-center {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.topbar-slot {
+  height: 100%;
+  width: 140px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-left: 1px solid #333;
 }
 
-.card {
-  padding: 2em;
+.topbar-slot:last-child {
+  border-right: 1px solid #333;
 }
 
-.read-the-docs {
-  color: #888;
+/* LAYOUT */
+
+.container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* CONTENT */
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* MAP */
+
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* TOPBAR */
+
+.topbar button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.hamburger {
+  font-size: 22px;
+}
+
+.sidebar {
+  width: 220px;
+  background: #181818;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 10px;
+
+  transition: 
+    width 0.28s ease,
+    padding 0.28s ease,
+    opacity 0.2s ease;
+
+  overflow: hidden;
+}
+
+.sidebar.closed {
+  width: 0;
+  padding: 10px 0;
+}
+
+.topbar-nav-item {
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  background: transparent;
+  color: white;
+
+  cursor: pointer;
+
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
+}
+
+.topbar-nav-item:last-child {
+  border-right: 1px solid #333;
+}
+
+.topbar-nav-item:hover {
+  color: #00ffd5;
+  font-weight: 600;
+  background: rgba(0, 255, 213, 0.06);
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 10px;
+
+  background: #222;
+  border: none;
+  color: white;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar button:hover {
+  background: #333;
 }

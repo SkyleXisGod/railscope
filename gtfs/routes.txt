@@ -1,0 +1,10 @@
+agency_id,route_id,route_short_name,route_long_name,route_type,route_color,route_text_color,route_sort_order
+0,EC,EC,EuroCity,2,9D740F,FFFFFF,11
+0,EIC,EIC,Express InterCity,2,898989,FFFFFF,3
+0,EIP,EIP,Express InterCity Premium,2,002664,FFFFFF,1
+0,IC,IC,InterCity,2,F25E18,FFFFFF,5
+0,ICN,ICN,Retro Nieśpieszny,2,556B2F,FFFFFF,14
+0,IC_BUS,ZKA IC,InterCity - Zastępcza Komunikacja Autobusowa,3,DE4E4E,FFFFFF,6
+0,MP,MP,Międzynarodowy Pospieszny,2,4F4F4F,FFFFFF,13
+0,TLK,TLK,Twoje Linie Kolejowe,2,8505A3,FFFFFF,7
+0,TLK_BUS,ZKA TLK,Twoje Linie Kolejowe - Zastępcza Komunikacja Autobusowa,3,DE4E4E,FFFFFF,8

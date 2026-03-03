@@ -1,106 +1,126 @@
 import express from "express";
 import cors from "cors";
-import axios from "axios";
 import dotenv from "dotenv";
 import fs from "fs";
+import csv from "csv-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+
+app.use(express.static(path.join(__dirname, "../frontend")));
+app.use("/assets", express.static(path.join(__dirname, "../frontend/assets")));
 
 dotenv.config();
 
-const app = express();
 app.use(cors());
 app.use(express.json());
 
 const PORT = 8080;
-const CACHE_FILE = "./data/stationsCache.json";
+const GTFS_PATH = "../gtfs/stops.txt";
+const CACHE_FILE = "./data/cacheStations.json";
+
+let stations = [];
 
 /*
 =====================================
-CACHE HELPERS
+GTFS LOADER
 =====================================
 */
+
+function loadGtfs() {
+  return new Promise((resolve, reject) => {
+    const tempStations = [];
+
+    fs.createReadStream(GTFS_PATH)
+      .pipe(csv())
+      .on("data", (row) => {
+        if (!row.stop_lat || !row.stop_lon) return;
+
+        tempStations.push({
+          id: row.stop_id,
+          name: row.stop_name,
+          lat: parseFloat(row.stop_lat),
+          lon: parseFloat(row.stop_lon)
+        });
+      })
+      .on("end", () => {
+        stations = tempStations;
+        console.log("Załadowano GTFS stacji:", stations.length);
+        resolve();
+      })
+      .on("error", reject);
+  });
+}
+
+/*
+=====================================
+CACHE FILE HELPERS
+=====================================
+*/
+
+function saveCache() {
+  fs.writeFileSync(
+    CACHE_FILE,
+    JSON.stringify(stations, null, 2)
+  );
+
+  console.log("Cache zapisany:", CACHE_FILE);
+}
+
 function loadCache() {
   if (!fs.existsSync(CACHE_FILE)) return [];
-  return JSON.parse(fs.readFileSync(CACHE_FILE, "utf8"));
-}
 
-function saveCache(data) {
-  fs.writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+  return JSON.parse(
+    fs.readFileSync(CACHE_FILE, "utf8")
+  );
 }
 
 /*
 =====================================
-OSM GEOCODER (DWORCE KOLEJOWE)
+API
 =====================================
 */
-async function geocodeStation(name) {
+
+app.get("/api/stations", (req, res) => {
   try {
-    const res = await axios.get(
-      "https://nominatim.openstreetmap.org/search",
-      {
-        params: { q: `${name} PKP railway station`, format: "json", limit: 1 },
-        headers: { "User-Agent": "railscope-school-project" }
-      }
-    );
-    if (!res.data.length) return null;
-    return { lat: parseFloat(res.data[0].lat), lon: parseFloat(res.data[0].lon) };
+    res.json(loadCache());
   } catch {
-    return null;
+    res.status(500).json({ error: "Cache read error" });
   }
-}
+});
 
-/*
-=====================================
-CACHE GENERATOR (POC – NAJPIERW 10 POCIĄGÓW)
-=====================================
-*/
-app.get("/api/generate-cache", async (req, res) => {
+app.get("/api/generate-cache", (req, res) => {
   try {
-    const opsRes = await axios.get(`${process.env.BASE_URL}/operations`, {
-      headers: { "X-API-Key": process.env.API_KEY },
-      params: { carriersInclude: "IC", pageSize: 10 } // <-- tylko 10 dla testu
+    saveCache();
+    res.json({
+      status: "Cache generated",
+      count: stations.length
     });
-
-    const trains = opsRes.data.data.routes || [];
-    const stationsMap = new Map();
-
-    for (const train of trains) {
-      for (const st of train.stations) {
-        if (!stationsMap.has(st.stationId)) {
-          stationsMap.set(st.stationId, st.stationName || `Station ${st.stationId}`);
-        }
-      }
-    }
-
-    const result = [];
-    for (const [id, name] of stationsMap.entries()) {
-      const coords = await geocodeStation(name);
-      if (!coords) continue;
-      result.push({ id, name, ...coords });
-      console.log(`Geocoded: ${name} -> ${result.length} stations so far..`);
-    }
-
-    saveCache(result);
-    res.json({ status: "Cache generated", count: result.length });
-
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
 /*
 =====================================
-API STATIONS (FRONTEND USE)
+STARTUP
 =====================================
 */
-app.get("/api/stations", (req, res) => {
-  try {
-    const data = loadCache();
-    res.json(data);
-  } catch {
-    res.status(500).json({ error: "Błąd odczytu cache" });
-  }
-});
+
+async function startServer() {
+  await loadGtfs();
+  saveCache();
+
+  app.listen(PORT, () => {
+    console.log("Backend działa na http://localhost:" + PORT);
+  });
+}
+
+startServer();
 
 app.listen(PORT, () => {
   console.log("Backend działa na http://localhost:" + PORT);
