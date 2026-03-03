@@ -2,16 +2,33 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaf
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-/* 🔥 Map resize helper (bardzo ważne dla Leaflet + React layout animations) */
-function MapResizer({ sidebarOpen }) {
+function MapSetup({ sidebarOpen }) {
   const map = useMap();
 
   useEffect(() => {
+
+    const polandBounds = [
+      [49.0, 14.0],
+      [55.0, 24.5]
+    ];
+
+    // Opóźnienie = poczekaj na animację sidebar
     const timer = setTimeout(() => {
+
+      map.setMaxBounds(polandBounds);
+      map.setMinZoom(6);
+      map.setMaxZoom(12);
+
+      map.fitBounds(polandBounds, {
+        padding: [40, 40]
+      });
+
       map.invalidateSize();
-    }, 350); // dopasowane do animacji sidebar
+
+    }, 350);
 
     return () => clearTimeout(timer);
+
   }, [sidebarOpen, map]);
 
   return null;
@@ -32,17 +49,19 @@ export default function MapView({ sidebarOpen }) {
       center={[52, 19]}
       zoom={6}
       className="map-container"
+      maxBounds={[
+        [49.0, 14.0],
+        [55.0, 24.5]
+      ]}
+      maxBoundsViscosity={1.0}
     >
 
-      {/* Tile warstwa */}
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* 🔥 Resize map when sidebar animates */}
-      <MapResizer sidebarOpen={sidebarOpen} />
+      <MapSetup sidebarOpen={sidebarOpen} />
 
-      {/* Markery */}
       {stations.map(s => (
         <CircleMarker
           key={s.id}
