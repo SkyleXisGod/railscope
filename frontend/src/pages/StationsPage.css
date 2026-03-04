@@ -1,0 +1,228 @@
+.stations-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #0f0f0f;
+    color: white;
+    padding: 0 40px;
+    overflow: hidden;
+}
+
+.stations-header {
+    padding: 40px 0 20px 0;
+}
+
+.station-search-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 14px 20px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: white;
+}
+
+.stations-list-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 40px;
+}
+
+.station-item {
+    background: #161616;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+
+.station-item.active {
+    border-color: #00ffd5;
+}
+
+.station-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    cursor: pointer;
+}
+
+.station-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.station-coords {
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.station-details {
+    padding: 20px 24px;
+    border-top: 1px solid #222;
+    background: #121212;
+}
+
+.timetable-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.timetable-table th {
+    text-align: left;
+    color: #555;
+    padding-bottom: 10px;
+    font-size: 0.8rem;
+}
+
+.timetable-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+    font-size: 0.9rem;
+}
+
+.time {
+    color: #00ffd5;
+    font-weight: bold;
+}
+
+.map-btn {
+    background: none;
+    border: 1px solid #00ffd5;
+    color: #00ffd5;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+.map-btn:hover {
+    background: #00ffd5;
+    color: black;
+}
+
+.station-details {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 0 0 8px 8px;
+  border-top: 1px solid #333;
+}
+
+.timetable-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.timetable-table th {
+  text-align: left;
+  color: #888;
+  padding: 10px;
+  border-bottom: 2px solid #333;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.timetable-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #252525;
+}
+
+.time-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main-time {
+  color: #00ffcc; 
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.delay-tag {
+  color: #ff4d4d; 
+  font-weight: bold;
+  font-size: 0.8rem;
+  background: rgba(255, 77, 77, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.status-badge.Kursuje {
+  background: rgba(0, 255, 100, 0.1);
+  color: #00ff64;
+}
+
+.status-badge.Planowy {
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+}
+
+.train-category {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.cat-IC, .cat-TLK {
+  color: #ff8c00; 
+}
+
+.cat-EIP {
+  color: #bf00ff;
+  text-shadow: 0 0 5px rgba(191, 0, 255, 0.3);
+}
+
+.cat-EIC {
+  color: #ff4d4d;
+}
+
+.train-info-cell {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-num {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: #eee;
+}
+
+::-webkit-scrollbar {
+  width: 8px;              
+  height: 8px;            
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;    
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252525;    
+  border-radius: 10px;
+  border: 2px solid #0a0a0a; 
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffcc;     
+  box-shadow: 0 0 5px #00ffcc;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #252525 #0a0a0a;
+}

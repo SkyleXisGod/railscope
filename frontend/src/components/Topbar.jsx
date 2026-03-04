@@ -1,10 +1,17 @@
-export default function Topbar({ onToggleSidebar }) {
+import { useNavigate } from "react-router-dom";
 
-  const menuItems = ["Mapa", "Pociągi", "Stacje", "Statystyki"];
+export default function Topbar({ onToggleSidebar }) {
+  const navigate = useNavigate();
+
+  const menuItems = [
+    { label: "Mapa", path: "/" },
+    { label: "Pociągi", path: "/pociagi" }, 
+    { label: "Stacje", path: "/stacje" },
+    { label: "Statystyki", path: "/statystyki" }
+  ];
 
   return (
     <div className="topbar">
-
       <div className="topbar-left">
         <button
           className="hamburger"
@@ -13,27 +20,33 @@ export default function Topbar({ onToggleSidebar }) {
           ☰
         </button>
 
-        <span className="logo">RailScope</span>
+        <span className="brand-title" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
+          Railscope
+        </span>
       </div>
 
       <div className="topbar-center">
-        {menuItems.map((item, index) => (
-            <div
-            key={item}
-            className={`topbar-slot ${index !== 0 ? "with-border" : ""}`}
+        {menuItems.map((item) => (
+          <div key={item.label} className="topbar-slot">
+            <button 
+              className="topbar-nav-item"
+              onClick={() => navigate(item.path)}
             >
-            <button className="topbar-nav-item">
-                {item}
+              {item.label}
             </button>
-            </div>
+          </div>
         ))}
-        </div>
-
-      <div className="topbar-right">
-        <button>konto</button>
-        <button>ustawienia</button>
       </div>
 
+      <div className="topbar-right">
+        <button className="icon-btn user-btn">
+          <div className="user-avatar"></div>
+        </button>
+
+        <button className="icon-btn gear-btn">
+          ⚙
+        </button>
+      </div>
     </div>
   );
 }
