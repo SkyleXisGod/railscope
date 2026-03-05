@@ -11,3 +11,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <App />
   </BrowserRouter>
 );
+
+// Kacper Zagłoba i Mateusz Kuśmierski 4P

@@ -92,3 +92,5 @@ app.get("/api/stations", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`🚀 Serwer na http://localhost:${PORT}`));
+
+// Kacper Zagłoba i Mateusz Kuśmierski 4P

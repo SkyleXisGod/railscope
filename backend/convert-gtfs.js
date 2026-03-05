@@ -41,3 +41,5 @@ function convertGtfsToCache() {
 }
 
 convertGtfsToCache();
+
+// Kacper Zagłoba i Mateusz Kuśmierski 4P
