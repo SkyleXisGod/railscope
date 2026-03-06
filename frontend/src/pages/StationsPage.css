@@ -227,4 +227,27 @@
   scrollbar-color: #252525 #0a0a0a;
 }
 
+.expand-list-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #00ffcc; /* Twój kolor przewodni */
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+    margin-top: 5px;
+}
+
+.expand-list-btn:hover {
+    background: rgba(0, 255, 204, 0.1);
+}
+
+.delay {
+    color: #ff4d4d;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
 /* Kacper Zagłoba i Mateusz Kuśmierski 4P */
