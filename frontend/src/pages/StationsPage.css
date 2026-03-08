@@ -367,3 +367,36 @@ input:checked+.slider:before {
   margin-top: -10px; 
   margin-bottom: 25px;
 }
+
+::-webkit-scrollbar {
+  width: 10px;             
+  height: 10px;             
+}
+
+::-webkit-scrollbar-track {
+  background: #0f0f0f;      
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;    
+  border-radius: 10px;      
+  border: 2px solid #0f0f0f; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffd5;       
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #0f0f0f;
+}
+
+.stations-list-wrapper::-webkit-scrollbar-thumb {
+  background: #222;
+}
+
+.stations-list-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #00ffd5;
+  box-shadow: 0 0 10px #00ffd5; 
+}

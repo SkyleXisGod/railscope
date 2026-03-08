@@ -207,7 +207,7 @@ export default function StationsPage() {
                           <tr key={i} className={t.isPast ? 'row-past' : ''}>
                             <td className="time-cell">
                               <span className="main-time">{t.displayTime}</span>
-                              {t.delay > 0 && <span className="delay-tag">+{t.delay}</span>}
+                              {t.delay > 0 && <span className="delay-tag">+{t.delay} min</span>}
                             </td>
                             <td>
                                <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
