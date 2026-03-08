@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import MapView from "./components/MapView";
 import StationsPage from "./pages/StationsPage";
 import PageWrapper from "./components/PageWrapper"; 
+import TrainsPage from "./pages/TrainsPage";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,7 +24,7 @@ function App() {
       sidebar={
         <>
           <button onClick={() => go("/")}>Mapa</button>
-          <button>Pociągi</button>
+          <button onClick={() => go("/pociagi")}>Pociągi</button> {/* Poprawione */}
           <button onClick={() => go("/stacje")}>Stacje</button>
           <button>Gierki</button>
           <button>FAQ</button>
@@ -41,6 +42,16 @@ function App() {
               </PageWrapper>
             } 
           />
+          
+          <Route 
+            path="/pociagi" 
+            element={
+              <PageWrapper>
+                <TrainsPage />
+              </PageWrapper>
+            } 
+          />
+
           <Route 
             path="/stacje" 
             element={

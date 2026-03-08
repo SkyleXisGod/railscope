@@ -5,7 +5,7 @@ export default function Topbar({ onToggleSidebar }) {
 
   const menuItems = [
     { label: "Mapa", path: "/" },
-    { label: "Pociągi", path: "/pociagi" }, 
+    { label: "Pociągi", path: "/pociagi" },
     { label: "Stacje", path: "/stacje" },
     { label: "Statystyki", path: "/statystyki" }
   ];

@@ -6,11 +6,12 @@ import "./StationsPage.css";
 export default function StationsPage() {
   const [stations, setStations] = useState([]);
   const [search, setSearch] = useState("");
+  const [sortAlphabetical, setSortAlphabetical] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  
   const [timetable, setTimetable] = useState([]);
   const [loading, setLoading] = useState(false);
-  
-  const [showAll, setShowAll] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(10);
   const [showPast, setShowPast] = useState(false);
 
   const navigate = useNavigate();
@@ -30,7 +31,8 @@ export default function StationsPage() {
     setExpandedId(stationId);
     setLoading(true);
     setTimetable([]);
-    setShowAll(false);
+    setVisibleLimit(10);
+    setShowPast(false);
 
     try {
       const res = await axios.get(`http://localhost:8080/api/timetable/${stationId}`);
@@ -50,7 +52,8 @@ export default function StationsPage() {
 
       rawTrains.forEach(train => {
         const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
-        const groupKey = train.trainOrderId; 
+        // Bezpieczne grupowanie: Numer pociągu + Kategoria (zapobiega mieszaniu się IC z REG)
+        const groupKey = train.cleanNumber ? `${train.cleanNumber}_${train.trainCategory}` : train.trainOrderId; 
         
         const pArr = getT(sInfo.plannedArrival);
         const pDep = getT(sInfo.plannedDeparture);
@@ -58,9 +61,8 @@ export default function StationsPage() {
         if (!trainGroups[groupKey]) {
           trainGroups[groupKey] = {
             id: train.trainOrderId,
-            number: train.trainNumber,
+            number: train.displayNumber,
             category: train.trainCategory,
-            categoryFull: train.trainCategoryFull || "REG",
             trainName: train.trainName,
             relation: train.relation,
             pArr, 
@@ -73,9 +75,9 @@ export default function StationsPage() {
           const g = trainGroups[groupKey];
           if (!g.pArr) g.pArr = pArr;
           if (!g.pDep) g.pDep = pDep;
-          if (g.number !== train.trainNumber && !g.number.includes('/')) {
-            g.number = `${g.number}/${train.trainNumber}`;
-          }
+          if (!g.actualArr) g.actualArr = getT(sInfo.actualArrival);
+          if (!g.actualDep) g.actualDep = getT(sInfo.actualDeparture);
+          if (!g.trainName && train.trainName) g.trainName = train.trainName;
         }
       });
 
@@ -97,8 +99,9 @@ export default function StationsPage() {
           displayTime = g.pDep || g.pArr || "??:??";
         }
 
-        const sortTime = g.pArr || g.pDep || "99:99";
-        const isPast = calcMin(g.pDep || g.pArr) < currentTotalMinutes - 2;
+        const sortTime = g.pDep || g.pArr || "99:99";
+        const departureTimeInMins = calcMin(sortTime) + totalDelay;
+        const isPast = departureTimeInMins < currentTotalMinutes - 2;
 
         return {
           ...g,
@@ -118,28 +121,43 @@ export default function StationsPage() {
     }
   };
 
-  const filteredStations = stations.filter(s =>
+  let processedStations = stations.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+  if (sortAlphabetical) {
+    processedStations = processedStations.sort((a, b) => a.name.localeCompare(b.name));
+  }
 
-  const filteredByTime = showPast ? timetable : timetable.filter(t => !t.isPast);
-  const visibleTrains = showAll ? filteredByTime : filteredByTime.slice(0, 10);
+  const currentTrains = timetable.filter(t => !t.isPast);
+  const pastTrains = timetable.filter(t => t.isPast);
+  const displayPool = showPast ? [...pastTrains, ...currentTrains] : currentTrains;
+  const visibleTrains = displayPool.slice(0, visibleLimit);
+  const hasMore = visibleLimit < displayPool.length;
 
   return (
     <div className="stations-container">
       <div className="stations-header">
-        <h1 style={{ fontFamily: "'Dancing Script', cursive", fontSize: '3.5rem' }}>RailScope</h1>
-        <p style={{ marginTop: '-15px', marginBottom: '20px', color: '#ccc' }}>Tablice Stacyjne</p>
-        <input
-          className="station-search-input"
-          placeholder="Szukaj stacji..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        <h1 className="stations-title">RailScope</h1>
+        <p className="stations-subtitle">Tablice Stacyjne (00:00 - 24:00)</p>
+        
+        <div className="search-controls">
+          <input
+            className="station-search-input"
+            placeholder="Wyszukaj stację (np. Warszawa Centralna)..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button 
+            className={`sort-btn ${sortAlphabetical ? 'active' : ''}`}
+            onClick={() => setSortAlphabetical(!sortAlphabetical)}
+          >
+            {sortAlphabetical ? "A-Z (Włączone)" : "Sortuj A-Z"}
+          </button>
+        </div>
       </div>
 
       <div className="stations-list-wrapper">
-        {filteredStations.map((s) => (
+        {processedStations.map((s) => (
           <div key={s.id} className={`station-item ${expandedId === s.id ? 'active' : ''}`}>
             <div className="station-row" onClick={() => toggleStation(s.id)}>
               <div className="station-info">
@@ -159,61 +177,59 @@ export default function StationsPage() {
                 <div className="station-controls">
                    <button 
                     className={`control-btn ${showPast ? 'active' : ''}`}
-                    onClick={() => setShowPast(!showPast)}
+                    onClick={() => { setShowPast(!showPast); setVisibleLimit(10); }}
                    >
-                     {showPast ? "Ukryj historię" : "Pokaż historię"}
+                     {showPast ? "Ukryj odjechane pociągi" : "Pokaż historię z całego dnia"}
                    </button>
                 </div>
 
                 {loading ? (
                   <div className="loader-inline">Trwa łączenie danych rozkładowych...</div>
                 ) : visibleTrains.length > 0 ? (
-                  <table className="timetable-table">
-                    <thead>
-                      <tr>
-                        <th>Przyjazd-Odjazd</th>
-                        <th>Pociąg</th>
-                        <th>Relacja</th>
-                        <th>Status</th>
-                        <th>Peron</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleTrains.map((t, i) => (
-                        <tr key={i} className={t.isPast ? 'row-past' : ''}>
-                          <td className="time-cell">
-                            <div className="time-wrapper">
-                              <span className="main-time">{t.displayTime}</span>
-                              <span className="delay-container">
-                                {t.delay > 0 ? (
-                                  <span className="delay-tag">+{t.delay} min</span>
-                                ) : (
-                                  <span className="delay-placeholder"></span> 
-                                )}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="train-info-cell">
-                            <span className={`train-name cat-${t.category}`}>
-                                <span className="cat-badge">{t.category}</span>
-                                {t.trainName && <strong className="name-highlight"> "{t.trainName}"</strong>}
-                                <small className="num-muted"> {t.number}</small>
-                            </span>
-                          </td>
-                          <td className="relation-cell" style={{fontSize: '0.85rem', color: '#ccc'}}>
-                            {t.relation}
-                          </td>
-                          <td>
-                            <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
-                              {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
-                            </span>
-                          </td>
-                          <td className="platform-num">{t.platform}</td>
+                  <>
+                    <table className="timetable-table">
+                      <thead>
+                        <tr>
+                          <th>Czas</th>
+                          <th>Pociąg</th>
+                          <th>Relacja</th>
+                          <th>Status</th>
+                          <th>Peron</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : <p className="no-data">Brak pociągów.</p>}
+                      </thead>
+                      <tbody>
+                        {visibleTrains.map((t, i) => (
+                          <tr key={i} className={t.isPast ? 'row-past' : ''}>
+                            <td className="time-cell">
+                              <div className="time-wrapper">
+                                <span className="main-time">{t.displayTime}</span>
+                                {t.delay > 0 && <span className="delay-tag">+{t.delay}</span>}
+                              </div>
+                            </td>
+                            <td className="train-info-cell">
+                               <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
+                               {t.trainName && <strong className="train-proper-name">"{t.trainName}"</strong>}
+                               <span className="train-number-muted">{t.number}</span>
+                            </td>
+                            <td className="relation-cell">{t.relation}</td>
+                            <td>
+                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
+                                {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
+                              </span>
+                            </td>
+                            <td className="platform-num">{t.platform}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    
+                    {hasMore && (
+                      <button className="expand-list-btn" onClick={() => setVisibleLimit(prev => prev + 10)}>
+                        Pokaż 10 kolejnych pociągów ▼
+                      </button>
+                    )}
+                  </>
+                ) : <p className="no-data">Brak pociągów dla tej stacji.</p>}
               </div>
             )}
           </div>
