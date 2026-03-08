@@ -13,6 +13,9 @@ export default function StationsPage() {
   const [loading, setLoading] = useState(false);
   const [visibleLimit, setVisibleLimit] = useState(10);
   const [showPast, setShowPast] = useState(false);
+  
+  // FUNKCJA EKSPERYMENTALNA: REGIO
+  const [showRegio, setShowRegio] = useState(false);
 
   const navigate = useNavigate();
 
@@ -43,16 +46,13 @@ export default function StationsPage() {
 
       const getT = (iso) => {
         if (!iso) return null;
-        if (iso.includes("T")) return iso.split("T")[1].substring(0, 5);
-        if (iso.length >= 5) return iso.substring(0, 5); 
-        return null;
+        return iso.includes("T") ? iso.split("T")[1].substring(0, 5) : iso.substring(0, 5);
       };
 
       const trainGroups = {};
 
       rawTrains.forEach(train => {
         const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
-        // Bezpieczne grupowanie: Numer pociągu + Kategoria (zapobiega mieszaniu się IC z REG)
         const groupKey = train.cleanNumber ? `${train.cleanNumber}_${train.trainCategory}` : train.trainOrderId; 
         
         const pArr = getT(sInfo.plannedArrival);
@@ -65,8 +65,7 @@ export default function StationsPage() {
             category: train.trainCategory,
             trainName: train.trainName,
             relation: train.relation,
-            pArr, 
-            pDep,
+            pArr, pDep,
             actualArr: getT(sInfo.actualArrival),
             actualDep: getT(sInfo.actualDeparture),
             platform: sInfo.platform || "-",
@@ -83,7 +82,7 @@ export default function StationsPage() {
 
       const finalTimetable = Object.values(trainGroups).map(g => {
         const calcMin = (timeStr) => {
-          if (!timeStr) return 0;
+          if (!timeStr || timeStr === "??:??") return 0;
           const [h, m] = timeStr.split(':').map(Number);
           return h * 60 + m;
         };
@@ -92,12 +91,9 @@ export default function StationsPage() {
         const delayDep = g.actualDep && g.pDep ? Math.max(0, calcMin(g.actualDep) - calcMin(g.pDep)) : 0;
         const totalDelay = Math.max(delayArr, delayDep);
 
-        let displayTime = "";
-        if (g.pArr && g.pDep && g.pArr !== g.pDep) {
-          displayTime = `${g.pArr} ➔ ${g.pDep}`;
-        } else {
-          displayTime = g.pDep || g.pArr || "??:??";
-        }
+        let displayTime = (g.pArr && g.pDep && g.pArr !== g.pDep) 
+          ? `${g.pArr} ➔ ${g.pDep}` 
+          : (g.pDep || g.pArr || "??:??");
 
         const sortTime = g.pDep || g.pArr || "99:99";
         const departureTimeInMins = calcMin(sortTime) + totalDelay;
@@ -121,6 +117,7 @@ export default function StationsPage() {
     }
   };
 
+  // Filtrowanie stacji
   let processedStations = stations.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -128,8 +125,14 @@ export default function StationsPage() {
     processedStations = processedStations.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  const currentTrains = timetable.filter(t => !t.isPast);
-  const pastTrains = timetable.filter(t => t.isPast);
+  // Filtrowanie pociągów (IC vs REGIO)
+  const filteredTimetable = timetable.filter(t => {
+    if (!showRegio && t.category === "REG") return false;
+    return true;
+  });
+
+  const currentTrains = filteredTimetable.filter(t => !t.isPast);
+  const pastTrains = filteredTimetable.filter(t => t.isPast);
   const displayPool = showPast ? [...pastTrains, ...currentTrains] : currentTrains;
   const visibleTrains = displayPool.slice(0, visibleLimit);
   const hasMore = visibleLimit < displayPool.length;
@@ -138,12 +141,30 @@ export default function StationsPage() {
     <div className="stations-container">
       <div className="stations-header">
         <h1 className="stations-title">RailScope</h1>
-        <p className="stations-subtitle">Tablice Stacyjne (00:00 - 24:00)</p>
+        
+        <div className="header-top-row">
+          <p className="stations-subtitle">Tablice Stacyjne (Live)</p>
+          
+          <div className="experimental-zone">
+            <span className="exp-label">Eksperymentalne: REGIO</span>
+            <label className="switch">
+              <input type="checkbox" checked={showRegio} onChange={() => setShowRegio(!showRegio)} />
+              <span className="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        {showRegio && (
+          <div className="experimental-warning">
+            ⚠️ <strong>Funkcja eksperymentalna:</strong> Baza danych przystanków lokalnych jest niepełna. 
+            Niektóre relacje pociągów regionalnych mogą wyświetlać "???" zamiast stacji docelowej.
+          </div>
+        )}
         
         <div className="search-controls">
           <input
             className="station-search-input"
-            placeholder="Wyszukaj stację (np. Warszawa Centralna)..."
+            placeholder="Wyszukaj stację..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -160,76 +181,50 @@ export default function StationsPage() {
         {processedStations.map((s) => (
           <div key={s.id} className={`station-item ${expandedId === s.id ? 'active' : ''}`}>
             <div className="station-row" onClick={() => toggleStation(s.id)}>
-              <div className="station-info">
-                <span className="station-name">{s.name}</span>
-              </div>
+              <span className="station-name">{s.name}</span>
               <div className="station-actions">
-                <button className="map-btn" onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/?station=${s.id}`);
-                }}>📍 Mapa</button>
+                <button className="map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?station=${s.id}`); }}>📍 Mapa</button>
                 <span className="arrow">{expandedId === s.id ? '▲' : '▼'}</span>
               </div>
             </div>
 
             {expandedId === s.id && (
               <div className="station-details">
-                <div className="station-controls">
-                   <button 
-                    className={`control-btn ${showPast ? 'active' : ''}`}
-                    onClick={() => { setShowPast(!showPast); setVisibleLimit(10); }}
-                   >
-                     {showPast ? "Ukryj odjechane pociągi" : "Pokaż historię z całego dnia"}
+                <div className="details-controls">
+                   <button className="control-btn" onClick={() => { setShowPast(!showPast); setVisibleLimit(10); }}>
+                      {showPast ? "Ukryj odjechane" : "Pokaż historię z całego dnia"}
                    </button>
                 </div>
 
-                {loading ? (
-                  <div className="loader-inline">Trwa łączenie danych rozkładowych...</div>
-                ) : visibleTrains.length > 0 ? (
+                {loading ? <div className="loader">Ładowanie danych...</div> : visibleTrains.length > 0 ? (
                   <>
                     <table className="timetable-table">
                       <thead>
-                        <tr>
-                          <th>Czas</th>
-                          <th>Pociąg</th>
-                          <th>Relacja</th>
-                          <th>Status</th>
-                          <th>Peron</th>
-                        </tr>
+                        <tr><th>Czas</th><th>Pociąg</th><th>Relacja</th><th>Status</th><th>Peron</th></tr>
                       </thead>
                       <tbody>
                         {visibleTrains.map((t, i) => (
                           <tr key={i} className={t.isPast ? 'row-past' : ''}>
                             <td className="time-cell">
-                              <div className="time-wrapper">
-                                <span className="main-time">{t.displayTime}</span>
-                                {t.delay > 0 && <span className="delay-tag">+{t.delay}</span>}
-                              </div>
+                              <span className="main-time">{t.displayTime}</span>
+                              {t.delay > 0 && <span className="delay-tag">+{t.delay}</span>}
                             </td>
-                            <td className="train-info-cell">
+                            <td>
                                <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
-                               {t.trainName && <strong className="train-proper-name">"{t.trainName}"</strong>}
-                               <span className="train-number-muted">{t.number}</span>
+                               {t.trainName && <strong> "{t.trainName}"</strong>} <small>{t.number}</small>
                             </td>
                             <td className="relation-cell">{t.relation}</td>
-                            <td>
-                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
+                            <td><span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
                                 {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
-                              </span>
-                            </td>
-                            <td className="platform-num">{t.platform}</td>
+                            </span></td>
+                            <td>{t.platform}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    
-                    {hasMore && (
-                      <button className="expand-list-btn" onClick={() => setVisibleLimit(prev => prev + 10)}>
-                        Pokaż 10 kolejnych pociągów ▼
-                      </button>
-                    )}
+                    {hasMore && <button className="expand-list-btn" onClick={() => setVisibleLimit(p => p + 10)}>Pokaż więcej ▼</button>}
                   </>
-                ) : <p className="no-data">Brak pociągów dla tej stacji.</p>}
+                ) : <p className="no-data">Brak pociągów spełniających kryteria.</p>}
               </div>
             )}
           </div>

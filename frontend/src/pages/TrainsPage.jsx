@@ -8,16 +8,18 @@ export default function TrainsPage() {
   const [trains, setTrains] = useState([]);
   const [expandedTrain, setExpandedTrain] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Pobieramy dane dopiero jak użytkownik wpisze min. 2 znaki lub wybierze kategorię
-    if (search.length < 2 && categoryFilter === "") {
+    // Nie szukaj, jeśli pola są puste (oszczędza to zasoby)
+    if (search.trim().length < 2 && categoryFilter === "") {
         setTrains([]);
         return;
     }
 
     const fetchTrains = async () => {
         setLoading(true);
+        setError(null);
         try {
             const res = await axios.get("http://localhost:8080/api/trains/search", {
                 params: { q: search, category: categoryFilter }
@@ -25,13 +27,14 @@ export default function TrainsPage() {
             setTrains(res.data);
         } catch (err) {
             console.error("Błąd wyszukiwania pociągów:", err);
+            setError("Wystąpił problem z połączeniem z serwerem.");
         } finally {
             setLoading(false);
         }
     };
 
-    // Debouncing - opóźnia wysłanie zapytania, dopóki użytkownik nie przestanie pisać
-    const delay = setTimeout(fetchTrains, 400);
+    // Opóźnienie wpisywania (debounce) - 300ms
+    const delay = setTimeout(fetchTrains, 300);
     return () => clearTimeout(delay);
   }, [search, categoryFilter]);
 
@@ -39,12 +42,12 @@ export default function TrainsPage() {
     <div className="trains-container">
       <div className="trains-header">
         <h1 className="trains-title">Katalog Pociągów</h1>
-        <p className="trains-subtitle">Wyszukaj po numerze, nazwie, stacji lub przewoźniku</p>
+        <p className="trains-subtitle">Wyszukaj po numerze, nazwie lub relacji</p>
         
         <div className="search-controls">
           <input
             className="train-search-input"
-            placeholder="Np. 1806, RYBAK, Kraków Główny..."
+            placeholder="Np. 1806, RYBAK, Kraków..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -54,18 +57,20 @@ export default function TrainsPage() {
             onChange={e => setCategoryFilter(e.target.value)}
           >
             <option value="">Wszystkie Kategorie</option>
-            <option value="IC">IC - InterCity</option>
+            <option value="IC">IC / EIC - InterCity</option>
             <option value="TLK">TLK - Twoje Linie Kolejowe</option>
             <option value="EIP">EIP - Pendolino</option>
-            <option value="REG">REG - Polregio / Lokalne</option>
+            <option value="REG">REG - Regionalne / Osobowe</option>
+            <option value="BUS">BUS - Komunikacja Zastępcza</option>
           </select>
         </div>
       </div>
 
       <div className="trains-list">
-        {loading ? (
-            <div className="loader">Wyszukiwanie pociągów...</div>
-        ) : trains.length > 0 ? (
+        {loading && <div className="loader">Pobieranie danych...</div>}
+        {error && <div className="error-message">{error}</div>}
+        
+        {!loading && !error && trains.length > 0 && (
             trains.map((t, idx) => (
                 <div key={idx} className={`train-card ${expandedTrain === t.trainOrderId ? 'active' : ''}`}>
                     <div className="train-card-header" onClick={() => setExpandedTrain(expandedTrain === t.trainOrderId ? null : t.trainOrderId)}>
@@ -74,15 +79,13 @@ export default function TrainsPage() {
                             <span className="train-number">{t.number}</span>
                             {t.name && <span className="train-name">"{t.name}"</span>}
                         </div>
-                        <div className="train-relation-section">
-                            {t.relation}
-                        </div>
+                        <div className="train-relation-section">{t.relation}</div>
                         <span className="arrow">{expandedTrain === t.trainOrderId ? '▲' : '▼'}</span>
                     </div>
 
                     {expandedTrain === t.trainOrderId && (
                         <div className="train-route-details">
-                            <h4>Rozkład Jazdy Pociągu:</h4>
+                            <h4>Trasa pociągu:</h4>
                             <table className="route-table">
                                 <thead>
                                     <tr>
@@ -105,11 +108,13 @@ export default function TrainsPage() {
                     )}
                 </div>
             ))
-        ) : (
+        )}
+
+        {!loading && !error && trains.length === 0 && (
             <div className="no-data">
                 {search.length < 2 && categoryFilter === "" 
-                    ? "Wpisz coś, aby rozpocząć wyszukiwanie." 
-                    : "Nie znaleziono pociągów spełniających te kryteria."}
+                    ? "Zacznij pisać lub wybierz kategorię." 
+                    : "Brak wyników dla tych kryteriów."}
             </div>
         )}
       </div>

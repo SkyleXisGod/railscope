@@ -23,11 +23,10 @@ const SCHEDULES_CACHE = path.join(DATA_DIR, "cacheSchedules.json");
 let stations = [];
 let trainInfoMap = new Map(); 
 let trainNumberMap = new Map(); 
-let allTrainsList = []; // Do wyszukiwarki pociągów
+let allTrainsList = []; 
 let categoryNames = {};
 let stationNamesDict = {};
 
-// Narzędzie do czyszczenia numerów (np. 08107 -> 8107)
 const cleanNum = (n) => n ? String(n).replace(/\D/g, '').replace(/^0+/, '') : "";
 
 const buildIndexes = () => {
@@ -61,7 +60,6 @@ const buildIndexes = () => {
                 const firstId = s.stations?.[0]?.stationId;
                 const lastId = s.stations?.[s.stations.length - 1]?.stationId;
                 
-                // Formowanie ładnej relacji (stacja początkowa -> końcowa)
                 const routeStops = s.stations?.map(st => ({
                     id: st.stationId,
                     name: stationNamesDict[String(st.stationId)] || `Stacja ${st.stationId}`,
@@ -69,15 +67,17 @@ const buildIndexes = () => {
                     dep: st.departureTime || st.arrivalDepartureTime || "-"
                 })) || [];
 
+                const rel = (firstId && lastId) 
+                    ? `${stationNamesDict[String(firstId)] || '???'} ➔ ${stationNamesDict[String(lastId)] || '???'}`
+                    : "Relacja nieznana";
+
                 const info = {
                     trainOrderId: s.trainOrderId,
                     name: s.name || "",
                     number: s.nationalNumber || s.trainNumber || "",
                     categorySymbol: s.commercialCategorySymbol || "REG",
-                    relation: (firstId && lastId) 
-                        ? `${stationNamesDict[String(firstId)] || '???'} ➔ ${stationNamesDict[String(lastId)] || '???'}`
-                        : "Relacja nieznana",
-                    route: routeStops // Przystanki do wyświetlenia w /trains
+                    relation: rel,
+                    route: routeStops
                 };
 
                 trainInfoMap.set(String(s.trainOrderId), info);
@@ -90,7 +90,7 @@ const buildIndexes = () => {
                     }
                 }
             });
-            console.log(`🚀 Indeks gotowy. Pociągów w bazie: ${allTrainsList.length}`);
+            console.log(`🚀 Indeks gotowy. Pociągów: ${allTrainsList.length}`);
         } catch (e) { console.error("Błąd rozkładów:", e); }
     }
 };
@@ -119,21 +119,13 @@ const downloadInitialData = async () => {
             fs.writeFileSync(SCHEDULES_CACHE, JSON.stringify(res.data, null, 2));
         }
         buildIndexes();
-    } catch (err) { 
-        console.error("Błąd pobierania:", err.message);
-        buildIndexes(); 
-    }
+    } catch (err) { buildIndexes(); }
 };
 
 downloadInitialData();
 
-// --- ENDPOINTY ---
+app.get("/api/stations", (req, res) => res.json(stations));
 
-app.get("/api/stations", (req, res) => {
-    res.json(stations);
-});
-
-// Endpoint stacyjny (to co miałeś, ale pancerne)
 app.get("/api/timetable/:id", async (req, res) => {
     const { id } = req.params;
     const today = new Date().toISOString().split('T')[0]; 
@@ -144,54 +136,55 @@ app.get("/api/timetable/:id", async (req, res) => {
         });
         
         const rawTrains = response.data.trains || [];
+        const icTypes = ["IC", "TLK", "EIP", "EIC", "EC", "EN"];
+        const regTypes = ["R", "RP", "RG", "RE", "AP", "Os", "OsP", "S1", "S2", "S3", "S10", "A", "KM", "WKD", "SKM"];
+
         const enriched = rawTrains.map(t => {
             const opCleanNum = cleanNum(t.trainNumber);
-            let staticInfo = trainInfoMap.get(String(t.trainOrderId));
-            if (!staticInfo || (!staticInfo.name && !staticInfo.categorySymbol)) {
-                staticInfo = trainNumberMap.get(opCleanNum) || {};
-            }
+            let staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(opCleanNum) || {};
 
-            let catCode = staticInfo.categorySymbol || t.trainCategory || "REG";
-            if (catCode === "BUS") catCode = "REG"; 
-            if (catCode === "REG" && opCleanNum.length <= 4 && opCleanNum.length > 0) catCode = "IC"; 
+            let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
+            let finalCat = "REG";
+
+            // Poprawione odróżnianie
+            if (icTypes.includes(catCode)) {
+                finalCat = catCode; // Zwraca EIP, TLK, EIC itd.
+            } else if (staticInfo.name && catCode !== "BUS") {
+                finalCat = "IC"; // Domyślna kategoria dla pociągów z nazwą
+            } else if (regTypes.some(r => catCode.startsWith(r)) || catCode.includes("REG") || catCode === "BUS") {
+                finalCat = "REG";
+            }
 
             return {
                 ...t,
                 cleanNumber: opCleanNum,
                 trainName: staticInfo.name || "",
-                trainCategory: catCode,
-                trainCategoryFull: categoryNames[catCode] || catCode,
+                trainCategory: finalCat,
                 relation: staticInfo.relation || "Relacja nieznana",
-                displayNumber: staticInfo.number || t.trainNumber 
+                displayNumber: staticInfo.number || t.trainNumber,
+                route: staticInfo.route || []
             };
-        });
+        })
+        .filter(t => t.relation !== "Relacja nieznana")
+        .filter(t => [...icTypes, "REG"].includes(t.trainCategory)); 
+
         res.json(enriched);
     } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
 });
 
-// NOWY ENDPOINT: Globalna wyszukiwarka pociągów
 app.get("/api/trains/search", (req, res) => {
     const { q, category } = req.query;
     let results = allTrainsList;
-
-    if (category) {
-        results = results.filter(t => t.categorySymbol === category);
-    }
-
+    if (category) results = results.filter(t => t.categorySymbol === category);
     if (q) {
         const query = q.toLowerCase();
         results = results.filter(t => {
             const numMatch = cleanNum(t.number).includes(cleanNum(query));
             const nameMatch = t.name.toLowerCase().includes(query);
-            const relationMatch = t.relation.toLowerCase().includes(query);
-            return numMatch || nameMatch || relationMatch;
+            return numMatch || nameMatch;
         });
     }
-
-    // Zwracamy tylko unikalne (czasem PLK wypluwa dwa rekordy dla 1 pociągu)
     const uniqueResults = Array.from(new Map(results.map(item => [cleanNum(item.number) + item.name, item])).values());
-    
-    // Limit do 50, żeby nie "zabić" frontendu
     res.json(uniqueResults.slice(0, 50));
 });
 
