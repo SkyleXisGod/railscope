@@ -15,7 +15,6 @@ export default function StationsPage() {
 
   const navigate = useNavigate();
 
-  // Pobieranie listy stacji przy starcie
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
@@ -38,10 +37,8 @@ export default function StationsPage() {
       const rawTrains = res.data || [];
       
       const now = new Date();
-      const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                          now.getMinutes().toString().padStart(2, '0');
+      const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
-      // Funkcja wyciągania godziny - teraz odporna na błędy formatowania
       const getT = (iso) => {
         if (!iso) return null;
         if (iso.includes("T")) return iso.split("T")[1].substring(0, 5);
@@ -49,42 +46,75 @@ export default function StationsPage() {
         return null;
       };
 
-      const finalData = rawTrains.map(train => {
-        // Dopasowanie stacji z obsługą różnych typów danych (string/int)
-        const sInfo = train.stations?.find(s => String(s.stationId) == String(stationId)) || {};
+      // ... (importy bez zmian)
+
+      // Wewnątrz funkcji toggleStation, zamień pętlę rawTrains.forEach:
+
+      const trainGroups = {};
+
+      rawTrains.forEach(train => {
+        const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
+        const groupKey = train.trainOrderId; 
         
         const pArr = getT(sInfo.plannedArrival);
         const pDep = getT(sInfo.plannedDeparture);
-        const aArr = getT(sInfo.actualArrival);
-        const aDep = getT(sInfo.actualDeparture);
 
-        // Obliczanie opóźnienia w minutach
-        const calcDelay = (actual, planned) => {
-          if (!actual || !planned || actual === planned) return 0;
-          const [aH, aM] = actual.split(':').map(Number);
-          const [pH, pM] = planned.split(':').map(Number);
-          const diff = (aH * 60 + aM) - (pH * 60 + pM);
-          return diff > 0 ? diff : 0;
+        if (!trainGroups[groupKey]) {
+          trainGroups[groupKey] = {
+            id: train.trainOrderId,
+            number: train.trainNumber,
+            category: train.trainCategory,
+            categoryFull: train.trainCategoryFull || "REG",
+            trainName: train.trainName,
+            relation: train.relation,
+            pArr, 
+            pDep,
+            actualArr: getT(sInfo.actualArrival),
+            actualDep: getT(sInfo.actualDeparture),
+            platform: sInfo.platform || "-",
+          };
+        } else {
+          const g = trainGroups[groupKey];
+          if (!g.pArr) g.pArr = pArr;
+          if (!g.pDep) g.pDep = pDep;
+          if (g.number !== train.trainNumber && !g.number.includes('/')) {
+            g.number = `${g.number}/${train.trainNumber}`;
+          }
+        }
+      });
+
+      const finalTimetable = Object.values(trainGroups).map(g => {
+        const calcMin = (timeStr) => {
+          if (!timeStr) return 0;
+          const [h, m] = timeStr.split(':').map(Number);
+          return h * 60 + m;
         };
 
-        const delay = Math.max(calcDelay(aArr, pArr), calcDelay(aDep, pDep));
-        const dispTime = pDep || pArr || "??:??";
+        const delayArr = g.actualArr && g.pArr ? Math.max(0, calcMin(g.actualArr) - calcMin(g.pArr)) : 0;
+        const delayDep = g.actualDep && g.pDep ? Math.max(0, calcMin(g.actualDep) - calcMin(g.pDep)) : 0;
+        const totalDelay = Math.max(delayArr, delayDep);
+
+        let displayTime = "";
+        if (g.pArr && g.pDep && g.pArr !== g.pDep) {
+          displayTime = `${g.pArr} ➔ ${g.pDep}`;
+        } else {
+          displayTime = g.pDep || g.pArr || "??:??";
+        }
+
+        const sortTime = g.pArr || g.pDep || "99:99";
+        const isPast = calcMin(g.pDep || g.pArr) < currentTotalMinutes - 2;
 
         return {
-          id: train.trainOrderId || Math.random(),
-          fullName: train.trainName ? `${train.trainCategoryFull} "${train.trainName}"` : `${train.trainCategoryFull} ${train.trainNumber}`,
-          category: train.trainCategory,
-          displayTime: dispTime,
-          delay: delay,
-          status: delay > 0 ? "OPÓŹNIONY" : "PLANOWY",
-          platform: sInfo.platform || "-",
-          isPast: dispTime !== "??:??" && dispTime < currentTime
+          ...g,
+          displayTime,
+          sortTime,
+          delay: totalDelay,
+          isPast,
+          status: totalDelay > 0 ? "OPÓŹNIONY" : "OK"
         };
-      })
-      .filter(t => t.displayTime !== "??:??") // Ukrywamy pociągi bez poprawnej godziny
-      .sort((a, b) => a.displayTime.localeCompare(b.displayTime));
+      }).sort((a, b) => a.sortTime.localeCompare(b.sortTime));
 
-      setTimetable(finalData);
+      setTimetable(finalTimetable);
     } catch (err) {
       console.error("Błąd pobierania danych:", err);
     } finally {
@@ -96,28 +126,17 @@ export default function StationsPage() {
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const nowTime = new Date().getHours().toString().padStart(2, '0') + ":" + 
-                  new Date().getMinutes().toString().padStart(2, '0');
-
-  const filteredByTime = showPast ? timetable : timetable.filter(t => t.displayTime >= nowTime);
+  const filteredByTime = showPast ? timetable : timetable.filter(t => !t.isPast);
   const visibleTrains = showAll ? filteredByTime : filteredByTime.slice(0, 10);
 
   return (
     <div className="stations-container">
-      {/* Dynamiczny import czcionki odręcznej */}
-      <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');`}
-      </style>
-
       <div className="stations-header">
-        <h1 style={{ fontFamily: "'Dancing Script', cursive", fontSize: '3.5rem' }}>
-          RailScope
-        </h1>
+        <h1 style={{ fontFamily: "'Dancing Script', cursive", fontSize: '3.5rem' }}>RailScope</h1>
         <p style={{ marginTop: '-15px', marginBottom: '20px', color: '#ccc' }}>Tablice Stacyjne</p>
-        
         <input
           className="station-search-input"
-          placeholder="Szukaj stacji (np. Warszawa Centralna)..."
+          placeholder="Szukaj stacji..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -129,7 +148,6 @@ export default function StationsPage() {
             <div className="station-row" onClick={() => toggleStation(s.id)}>
               <div className="station-info">
                 <span className="station-name">{s.name}</span>
-                <span className="station-coords">{s.lat}, {s.lon}</span>
               </div>
               <div className="station-actions">
                 <button className="map-btn" onClick={(e) => {
@@ -154,48 +172,52 @@ export default function StationsPage() {
                 {loading ? (
                   <div className="loader-inline">Trwa łączenie danych rozkładowych...</div>
                 ) : visibleTrains.length > 0 ? (
-                  <>
-                    <table className="timetable-table">
-                      <thead>
-                        <tr>
-                          <th>Godzina</th>
-                          <th>Pociąg i kategoria</th>
-                          <th>Status</th>
-                          <th>Peron</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleTrains.map((t, i) => (
-                          <tr key={i} className={t.isPast ? 'row-past' : ''}>
-                            <td className="time-cell">
+                  <table className="timetable-table">
+                    <thead>
+                      <tr>
+                        <th>Przyjazd-Odjazd</th>
+                        <th>Pociąg</th>
+                        <th>Relacja</th>
+                        <th>Status</th>
+                        <th>Peron</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleTrains.map((t, i) => (
+                        <tr key={i} className={t.isPast ? 'row-past' : ''}>
+                          <td className="time-cell">
+                            <div className="time-wrapper">
                               <span className="main-time">{t.displayTime}</span>
-                              {t.delay > 0 && <span className="delay-tag">+{t.delay} min</span>}
-                            </td>
-                            <td className="train-info-cell">
-                              <span className={`train-name cat-${t.category}`}>
-                                {t.fullName}
+                              <span className="delay-container">
+                                {t.delay > 0 ? (
+                                  <span className="delay-tag">+{t.delay} min</span>
+                                ) : (
+                                  <span className="delay-placeholder"></span> 
+                                )}
                               </span>
-                            </td>
-                            <td>
-                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
-                                {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
-                              </span>
-                            </td>
-                            <td className="platform-num">{t.platform}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {filteredByTime.length > 10 && (
-                      <button className="expand-list-btn" onClick={() => setShowAll(!showAll)}>
-                        {showAll ? "▲ Zwiń" : `▼ Pokaż pozostałe (${filteredByTime.length - 10})`}
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <p className="no-data">Brak pociągów w najbliższym czasie.</p>
-                )}
+                            </div>
+                          </td>
+                          <td className="train-info-cell">
+                            <span className={`train-name cat-${t.category}`}>
+                                <span className="cat-badge">{t.category}</span>
+                                {t.trainName && <strong className="name-highlight"> "{t.trainName}"</strong>}
+                                <small className="num-muted"> {t.number}</small>
+                            </span>
+                          </td>
+                          <td className="relation-cell" style={{fontSize: '0.85rem', color: '#ccc'}}>
+                            {t.relation}
+                          </td>
+                          <td>
+                            <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
+                              {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
+                            </span>
+                          </td>
+                          <td className="platform-num">{t.platform}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : <p className="no-data">Brak pociągów.</p>}
               </div>
             )}
           </div>

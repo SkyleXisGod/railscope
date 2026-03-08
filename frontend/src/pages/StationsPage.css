@@ -250,4 +250,93 @@
     margin-left: 5px;
 }
 
+/* Kontener czasu - stała szerokość zapobiega skakaniu tabeli */
+.time-container {
+  display: flex;
+  align-items: center;
+  min-width: 160px;
+}
+
+.planned-time {
+  font-weight: 700;
+  color: #fff;
+  width: 90px; /* Stała szerokość godziny */
+  display: inline-block;
+}
+
+.delay-box {
+  width: 60px; /* Stałe miejsce na opóźnienie */
+  text-align: left;
+}
+
+.delay-text {
+  color: #ff3e3e;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+/* Stylistyka pociągów */
+.category-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  margin-right: 10px;
+  min-width: 35px;
+  text-align: center;
+}
+
+.cat-IC { background-color: #ff5e00; color: white; }
+.cat-TLK { background-color: #0052a5; color: white; }
+.cat-REG { background-color: #222; color: #aaa; }
+
+.train-proper-name {
+  color: #f1c40f; /* Złoty kolor dla nazw własnych jak RYBAK */
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.train-number-muted {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.time-cell {
+  min-width: 180px; /* Stała szerokość dla kolumny czasu */
+}
+
+.time-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main-time {
+  font-weight: bold;
+  min-width: 90px; /* Wyrównanie samych godzin ➔ godzin */
+  display: inline-block;
+}
+
+.delay-container {
+  min-width: 60px; /* Stałe miejsce na napis "+5 min" */
+  text-align: left;
+}
+
+.delay-tag {
+  color: #ff4d4d;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.cat-badge {
+  display: inline-block;
+  min-width: 35px; /* Wyrównanie plakietek IC/REG */
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #444;
+  margin-right: 8px;
+  font-weight: bold;
+}
 /* Kacper Zagłoba i Mateusz Kuśmierski 4P */

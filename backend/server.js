@@ -15,87 +15,92 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = 8080;
-
 const DATA_DIR = path.join(__dirname, "data");
 const STATIONS_CACHE = path.join(DATA_DIR, "cacheStations.json");
 const CATEGORIES_CACHE = path.join(DATA_DIR, "cacheCategories.json");
 const SCHEDULES_CACHE = path.join(DATA_DIR, "cacheSchedules.json");
 
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
-}
+let stations = [];
+let trainInfoMap = new Map(); 
+let trainNumberMap = new Map(); 
+let categoryNames = {};
+let stationNamesDict = {};
+
+// Pomocnik do czyszczenia numerów (usuwa zera z przodu i spacje)
+const cleanNum = (n) => n ? String(n).trim().replace(/^0+/, '') : "";
+
+const buildIndexes = () => {
+    console.log("🛠️ Budowanie indeksów RailScope...");
+    trainInfoMap.clear();
+    trainNumberMap.clear();
+    stationNamesDict = {};
+
+    if (fs.existsSync(STATIONS_CACHE)) {
+        try {
+            stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
+            stations.forEach(s => { stationNamesDict[String(s.id)] = s.name; });
+        } catch (e) { console.error("Błąd stacji:", e); }
+    }
+
+    if (fs.existsSync(CATEGORIES_CACHE)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(CATEGORIES_CACHE, "utf8"));
+            const list = data.commercialCategories || [];
+            list.forEach(c => { categoryNames[c.code] = c.name; });
+        } catch (e) { console.error("Błąd kategorii:", e); }
+    }
+
+    if (fs.existsSync(SCHEDULES_CACHE)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(SCHEDULES_CACHE, "utf8"));
+            const routes = data.routes || [];
+            
+            routes.forEach(s => {
+                const firstId = s.stations?.[0]?.stationId;
+                const lastId = s.stations?.[s.stations.length - 1]?.stationId;
+
+                const info = {
+                    name: s.name || "",
+                    number: s.nationalNumber || s.trainNumber || "",
+                    categorySymbol: s.commercialCategorySymbol || "REG",
+                    relation: (firstId && lastId) 
+                        ? `${stationNamesDict[String(firstId)] || '???'} — ${stationNamesDict[String(lastId)] || '???'}`
+                        : "Relacja nieznana"
+                };
+
+                // Indeksowanie po unikalnym ID zamówienia
+                trainInfoMap.set(String(s.trainOrderId), info);
+
+                // Indeksowanie po wyczyszczonym numerze (np. "8107")
+                const cN = cleanNum(info.number);
+                if (cN) {
+                    // Priorytet dla pociągów z nazwą (np. IC Rybak)
+                    if (!trainNumberMap.has(cN) || info.name) {
+                        trainNumberMap.set(cN, info);
+                    }
+                }
+            });
+            console.log(`🚀 Indeks gotowy. Pociągów: ${trainInfoMap.size}`);
+        } catch (e) { console.error("Błąd rozkładów:", e); }
+    }
+};
 
 const PLK_API_KEY = process.env.PLK_API_KEY || "bg1dOGfvZFyhQwsdLxUnX0InmHEEB7sx2962bwWtQd7OfZaP9H-fR5ShgUYyRYsGlqL4I3yczbTVY7BvOQnDCA";
 const BASE_URL = "https://pdp-api.plk-sa.pl/api/v1";
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
 
-let stations = [];
-let trainInfoMap = new Map();
-let categoryNames = {};
-
-// --- MAPY PAMIĘCI (INDEXING) ---
-const buildIndexes = () => {
-    console.log("🛠️ Indeksowanie danych w pamięci RAM...");
-
-    // 1. Indeksowanie Stacji
-    if (fs.existsSync(STATIONS_CACHE)) {
-        try {
-            stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
-            console.log(`✅ Zaindeksowano ${stations.length} stacji.`);
-        } catch (e) { console.error("Błąd stacji:", e.message); }
-    }
-
-    // 2. Indeksowanie Kategorii
-    if (fs.existsSync(CATEGORIES_CACHE)) {
-        try {
-            const catData = JSON.parse(fs.readFileSync(CATEGORIES_CACHE, "utf8"));
-            // Poprawka pod Twoją strukturę: szukamy w .commercialCategories
-            const list = catData.commercialCategories || (Array.isArray(catData) ? catData : []);
-            list.forEach(c => {
-                categoryNames[c.code] = c.name;
-            });
-            console.log("✅ Zaindeksowano słownik kategorii.");
-        } catch (e) { console.error("Błąd kategorii:", e.message); }
-    }
-
-    // 3. Indeksowanie Rozkładów (Schedules)
-    if (fs.existsSync(SCHEDULES_CACHE)) {
-        try {
-            const scheduleRaw = JSON.parse(fs.readFileSync(SCHEDULES_CACHE, "utf8"));
-            // Poprawka pod Twoją strukturę: dane są w polu .routes
-            const routes = scheduleRaw.routes || (Array.isArray(scheduleRaw) ? scheduleRaw : []);
-            
-            routes.forEach(s => {
-                trainInfoMap.set(String(s.trainOrderId), {
-                    name: s.name || "",
-                    number: s.nationalNumber || s.trainNumber || "",
-                    categorySymbol: s.commercialCategorySymbol || "REG"
-                });
-            });
-            console.log(`🚀 System gotowy. Zaindeksowano ${trainInfoMap.size} pociągów.`);
-        } catch (e) { console.error("Błąd rozkładów:", e.message); }
-    }
-};
-
-// --- FUNKCJA POBIERANIA DANYCH ---
 const downloadInitialData = async () => {
-    console.log("📡 Inicjalizacja bazy danych RailScope...");
-
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     try {
         if (!fs.existsSync(STATIONS_CACHE)) {
-            console.log("📥 Pobieranie stacji...");
             const res = await axios.get(`${BASE_URL}/dictionaries/stations`, { headers: plkHeaders });
             fs.writeFileSync(STATIONS_CACHE, JSON.stringify(res.data, null, 2));
         }
-
         if (!fs.existsSync(CATEGORIES_CACHE)) {
-            console.log("📥 Pobieranie kategorii...");
             const res = await axios.get(`${BASE_URL}/dictionaries/commercial-categories`, { headers: plkHeaders });
             fs.writeFileSync(CATEGORIES_CACHE, JSON.stringify(res.data, null, 2));
         }
-
         if (!fs.existsSync(SCHEDULES_CACHE)) {
-            console.log("📥 Pobieranie rozkładu (routes)...");
             const today = new Date().toISOString().split('T')[0];
             const res = await axios.get(`${BASE_URL}/schedules`, { 
                 headers: plkHeaders, 
@@ -103,18 +108,14 @@ const downloadInitialData = async () => {
             });
             fs.writeFileSync(SCHEDULES_CACHE, JSON.stringify(res.data, null, 2));
         }
-
         buildIndexes();
-    } catch (err) {
-        console.error("❌ Krytyczny błąd pobierania danych:", err.message);
-        // Próbuj indeksować to co już jest, jeśli pobieranie padło
-        buildIndexes();
+    } catch (err) { 
+        console.error("Błąd pobierania:", err.message);
+        buildIndexes(); 
     }
 };
 
 downloadInitialData();
-
-// --- ENDPOINTY ---
 
 app.get("/api/timetable/:id", async (req, res) => {
     const { id } = req.params;
@@ -124,53 +125,36 @@ app.get("/api/timetable/:id", async (req, res) => {
             headers: plkHeaders,
             params: { stations: id, operatingDate: today, withPlanned: true, pageSize: 1000 }
         });
-
+        
         const rawTrains = response.data.trains || [];
+        const enriched = rawTrains.map(t => {
+            const cN = cleanNum(t.trainNumber);
+            // Próba dopasowania: najpierw TrainOrderId, potem wyczyszczony numer
+            const staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(cN) || {};
 
-        const enrichedTrains = rawTrains.map(t => {
-            const staticInfo = trainInfoMap.get(String(t.trainOrderId)) || {};
-            const catCode = staticInfo.categorySymbol || "REG";
-            
-            const stationsWithCoords = t.stations?.map(s => {
-                const stationCoord = stations.find(st => String(st.id) === String(s.stationId));
-                return {
-                    ...s,
-                    lat: stationCoord?.lat,
-                    lon: stationCoord?.lon,
-                    name: stationCoord?.name
-                };
-            });
+            // Logika kategorii: jeśli w rozkładzie mamy IC/EIP itp., używamy tego. 
+            // Ignorujemy "BUS" z API operacyjnego, jeśli statyczne mówi co innego.
+            const catCode = staticInfo.categorySymbol || t.trainCategory || "REG";
 
             return {
                 ...t,
                 trainName: staticInfo.name || "",
-                trainNumber: staticInfo.number || t.trainNumber || "",
                 trainCategory: catCode,
                 trainCategoryFull: categoryNames[catCode] || catCode,
-                stations: stationsWithCoords
+                relation: staticInfo.relation || "Relacja nieznana",
+                // Zwracamy numer z rozkładu, jeśli go mamy
+                displayNumber: staticInfo.number || t.trainNumber 
             };
         });
+        res.json(enriched);
+    } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
+});
 
-        res.json(enrichedTrains);
-    } catch (err) { 
-        console.error("Błąd PLK:", err.message);
-        res.status(500).json({ error: "Błąd PLK" }); 
+app.get("/api/stations", (req, res) => {
+    if (stations.length === 0 && fs.existsSync(STATIONS_CACHE)) {
+        stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
     }
+    res.json(stations);
 });
 
-app.get("/api/stations", (req, res) => res.json(stations));
-
-// --- DIAGNOSTYKA (ZACHOWANA) ---
-app.get("/api/test/all/health", async (req, res) => {
-    try {
-        const response = await axios.get(`https://pdp-api.plk-sa.pl/api/diagnostics/health`);
-        res.json(response.data);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// [Reszta Twoich endpointów diagnostycznych 1-11...]
-// Kopiuj je tutaj, jeśli ich potrzebujesz, ale najważniejszy jest powyższy kod.
-
-app.listen(PORT, () => {
-    console.log(`🚀 RailScope Backend na http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Backend na http://localhost:${PORT}`));
