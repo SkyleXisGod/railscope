@@ -26,7 +26,6 @@ let trainNumberMap = new Map();
 let categoryNames = {};
 let stationNamesDict = {};
 
-// Pomocnik do czyszczenia numerów (usuwa zera z przodu i spacje)
 const cleanNum = (n) => n ? String(n).trim().replace(/^0+/, '') : "";
 
 const buildIndexes = () => {
@@ -68,13 +67,10 @@ const buildIndexes = () => {
                         : "Relacja nieznana"
                 };
 
-                // Indeksowanie po unikalnym ID zamówienia
                 trainInfoMap.set(String(s.trainOrderId), info);
 
-                // Indeksowanie po wyczyszczonym numerze (np. "8107")
                 const cN = cleanNum(info.number);
                 if (cN) {
-                    // Priorytet dla pociągów z nazwą (np. IC Rybak)
                     if (!trainNumberMap.has(cN) || info.name) {
                         trainNumberMap.set(cN, info);
                     }
@@ -129,11 +125,7 @@ app.get("/api/timetable/:id", async (req, res) => {
         const rawTrains = response.data.trains || [];
         const enriched = rawTrains.map(t => {
             const cN = cleanNum(t.trainNumber);
-            // Próba dopasowania: najpierw TrainOrderId, potem wyczyszczony numer
             const staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(cN) || {};
-
-            // Logika kategorii: jeśli w rozkładzie mamy IC/EIP itp., używamy tego. 
-            // Ignorujemy "BUS" z API operacyjnego, jeśli statyczne mówi co innego.
             const catCode = staticInfo.categorySymbol || t.trainCategory || "REG";
 
             return {
@@ -142,7 +134,6 @@ app.get("/api/timetable/:id", async (req, res) => {
                 trainCategory: catCode,
                 trainCategoryFull: categoryNames[catCode] || catCode,
                 relation: staticInfo.relation || "Relacja nieznana",
-                // Zwracamy numer z rozkładu, jeśli go mamy
                 displayNumber: staticInfo.number || t.trainNumber 
             };
         });

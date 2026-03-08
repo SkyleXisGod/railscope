@@ -46,10 +46,6 @@ export default function StationsPage() {
         return null;
       };
 
-      // ... (importy bez zmian)
-
-      // Wewnątrz funkcji toggleStation, zamień pętlę rawTrains.forEach:
-
       const trainGroups = {};
 
       rawTrains.forEach(train => {

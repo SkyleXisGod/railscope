@@ -233,7 +233,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: none;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: #00ffcc; /* Twój kolor przewodni */
+    color: #00ffcc;
     cursor: pointer;
     font-weight: bold;
     transition: background 0.3s;
@@ -250,7 +250,6 @@
     margin-left: 5px;
 }
 
-/* Kontener czasu - stała szerokość zapobiega skakaniu tabeli */
 .time-container {
   display: flex;
   align-items: center;
@@ -260,12 +259,12 @@
 .planned-time {
   font-weight: 700;
   color: #fff;
-  width: 90px; /* Stała szerokość godziny */
+  width: 90px;
   display: inline-block;
 }
 
 .delay-box {
-  width: 60px; /* Stałe miejsce na opóźnienie */
+  width: 60px; 
   text-align: left;
 }
 
@@ -275,7 +274,6 @@
   font-weight: bold;
 }
 
-/* Stylistyka pociągów */
 .category-tag {
   display: inline-block;
   padding: 2px 8px;
@@ -292,7 +290,7 @@
 .cat-REG { background-color: #222; color: #aaa; }
 
 .train-proper-name {
-  color: #f1c40f; /* Złoty kolor dla nazw własnych jak RYBAK */
+  color: #f1c40f; 
   font-weight: bold;
   margin-right: 8px;
 }
@@ -303,7 +301,7 @@
 }
 
 .time-cell {
-  min-width: 180px; /* Stała szerokość dla kolumny czasu */
+  min-width: 180px; 
 }
 
 .time-wrapper {
@@ -314,12 +312,12 @@
 
 .main-time {
   font-weight: bold;
-  min-width: 90px; /* Wyrównanie samych godzin ➔ godzin */
+  min-width: 90px; 
   display: inline-block;
 }
 
 .delay-container {
-  min-width: 60px; /* Stałe miejsce na napis "+5 min" */
+  min-width: 60px; 
   text-align: left;
 }
 
@@ -331,7 +329,7 @@
 
 .cat-badge {
   display: inline-block;
-  min-width: 35px; /* Wyrównanie plakietek IC/REG */
+  min-width: 35px; 
   text-align: center;
   padding: 2px 6px;
   border-radius: 4px;
