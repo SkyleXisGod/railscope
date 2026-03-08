@@ -10,12 +10,12 @@ export default function StationsPage() {
   const [timetable, setTimetable] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // NOWE STANY DO OBSŁUGI WIDOKU
   const [showAll, setShowAll] = useState(false);
   const [showPast, setShowPast] = useState(false);
 
   const navigate = useNavigate();
 
+  // Pobieranie listy stacji przy starcie
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
@@ -25,8 +25,6 @@ export default function StationsPage() {
   const toggleStation = async (stationId) => {
     if (expandedId === stationId) {
       setExpandedId(null);
-      setShowAll(false); // Reset przy zamknięciu
-      setShowPast(false);
       return;
     }
 
@@ -34,26 +32,33 @@ export default function StationsPage() {
     setLoading(true);
     setTimetable([]);
     setShowAll(false);
-    setShowPast(false);
 
     try {
       const res = await axios.get(`http://localhost:8080/api/timetable/${stationId}`);
-      const rawTrains = res.data.trains || res.data || [];
+      const rawTrains = res.data || [];
       
       const now = new Date();
       const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
                           now.getMinutes().toString().padStart(2, '0');
 
-      const grouped = rawTrains.reduce((acc, train) => {
-        const trainId = train.trainOrderId;
-        const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
-        const getT = (iso) => iso ? iso.split("T")[1].substring(0, 5) : null;
+      // Funkcja wyciągania godziny - teraz odporna na błędy formatowania
+      const getT = (iso) => {
+        if (!iso) return null;
+        if (iso.includes("T")) return iso.split("T")[1].substring(0, 5);
+        if (iso.length >= 5) return iso.substring(0, 5); 
+        return null;
+      };
+
+      const finalData = rawTrains.map(train => {
+        // Dopasowanie stacji z obsługą różnych typów danych (string/int)
+        const sInfo = train.stations?.find(s => String(s.stationId) == String(stationId)) || {};
         
-        const arr = getT(sInfo.actualArrival);
-        const dep = getT(sInfo.actualDeparture);
         const pArr = getT(sInfo.plannedArrival);
         const pDep = getT(sInfo.plannedDeparture);
+        const aArr = getT(sInfo.actualArrival);
+        const aDep = getT(sInfo.actualDeparture);
 
+        // Obliczanie opóźnienia w minutach
         const calcDelay = (actual, planned) => {
           if (!actual || !planned || actual === planned) return 0;
           const [aH, aM] = actual.split(':').map(Number);
@@ -62,31 +67,22 @@ export default function StationsPage() {
           return diff > 0 ? diff : 0;
         };
 
-        const delay = Math.max(calcDelay(arr, pArr), calcDelay(dep, pDep));
+        const delay = Math.max(calcDelay(aArr, pArr), calcDelay(aDep, pDep));
+        const dispTime = pDep || pArr || "??:??";
 
-        if (!acc[trainId]) {
-          acc[trainId] = {
-            id: trainId,
-            name: train.trainName ? `${train.trainCategory || ''} ${train.trainNumber || ''} "${train.trainName}"` : `${train.trainCategory || ''} ${train.trainNumber || ''}`,
-            category: train.trainCategory || "REG",
-            arrival: arr || pArr,
-            departure: dep || pDep,
-            delay: delay,
-            status: delay > 0 ? "OPÓŹNIONY" : "PLANOWY",
-            platform: sInfo.platform || sInfo.plannedSequenceNumber || "-",
-            isPast: (dep || arr || "00:00") < currentTime // Flaga czy pociąg odjechał
-          };
-        }
-        return acc;
-      }, {});
-
-      const finalData = Object.values(grouped)
-        .map(t => ({
-          ...t,
-          displayTime: t.departure || t.arrival || "??:??",
-          sortTime: t.departure || t.arrival || "00:00"
-        }))
-        .sort((a, b) => a.sortTime.localeCompare(b.sortTime));
+        return {
+          id: train.trainOrderId || Math.random(),
+          fullName: train.trainName ? `${train.trainCategoryFull} "${train.trainName}"` : `${train.trainCategoryFull} ${train.trainNumber}`,
+          category: train.trainCategory,
+          displayTime: dispTime,
+          delay: delay,
+          status: delay > 0 ? "OPÓŹNIONY" : "PLANOWY",
+          platform: sInfo.platform || "-",
+          isPast: dispTime !== "??:??" && dispTime < currentTime
+        };
+      })
+      .filter(t => t.displayTime !== "??:??") // Ukrywamy pociągi bez poprawnej godziny
+      .sort((a, b) => a.displayTime.localeCompare(b.displayTime));
 
       setTimetable(finalData);
     } catch (err) {
@@ -96,37 +92,39 @@ export default function StationsPage() {
     }
   };
 
-  // LOGIKA FILTROWANIA I WYŚWIETLANIA
-  const now = new Date();
-  const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                      now.getMinutes().toString().padStart(2, '0');
-
-  // 1. Najpierw filtrujemy czy pokazywać przeszłe
-  const filteredByTime = showPast 
-    ? timetable 
-    : timetable.filter(t => t.sortTime >= currentTime);
-
-  // 2. Potem ograniczamy ilość (10 zamiast 15 dla lepszej czytelności przycisku)
-  const visibleTrains = showAll ? filteredByTime : filteredByTime.slice(0, 10);
-
-  const filtered = stations.filter(s =>
+  const filteredStations = stations.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const nowTime = new Date().getHours().toString().padStart(2, '0') + ":" + 
+                  new Date().getMinutes().toString().padStart(2, '0');
+
+  const filteredByTime = showPast ? timetable : timetable.filter(t => t.displayTime >= nowTime);
+  const visibleTrains = showAll ? filteredByTime : filteredByTime.slice(0, 10);
+
   return (
     <div className="stations-container">
+      {/* Dynamiczny import czcionki odręcznej */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');`}
+      </style>
+
       <div className="stations-header">
-        <h1>Lista Stacji</h1>
+        <h1 style={{ fontFamily: "'Dancing Script', cursive", fontSize: '3.5rem' }}>
+          RailScope
+        </h1>
+        <p style={{ marginTop: '-15px', marginBottom: '20px', color: '#ccc' }}>Tablice Stacyjne</p>
+        
         <input
           className="station-search-input"
-          placeholder="Szukaj stacji..."
+          placeholder="Szukaj stacji (np. Warszawa Centralna)..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
       </div>
 
       <div className="stations-list-wrapper">
-        {filtered.map((s) => (
+        {filteredStations.map((s) => (
           <div key={s.id} className={`station-item ${expandedId === s.id ? 'active' : ''}`}>
             <div className="station-row" onClick={() => toggleStation(s.id)}>
               <div className="station-info">
@@ -144,43 +142,44 @@ export default function StationsPage() {
 
             {expandedId === s.id && (
               <div className="station-details">
-                <div className="station-controls" style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+                <div className="station-controls">
                    <button 
-                    className="control-btn"
+                    className={`control-btn ${showPast ? 'active' : ''}`}
                     onClick={() => setShowPast(!showPast)}
-                    style={{ background: showPast ? '#00ffcc' : '#333', color: showPast ? '#000' : '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                    >
-                     {showPast ? "Ukryj historię poprzednich" : "Pokaż historię poprzednich"}
+                     {showPast ? "Ukryj historię" : "Pokaż historię"}
                    </button>
                 </div>
 
                 {loading ? (
-                  <div className="loader-inline">Pobieranie danych...</div>
+                  <div className="loader-inline">Trwa łączenie danych rozkładowych...</div>
                 ) : visibleTrains.length > 0 ? (
                   <>
                     <table className="timetable-table">
                       <thead>
                         <tr>
                           <th>Godzina</th>
-                          <th>Pociąg</th>
+                          <th>Pociąg i kategoria</th>
                           <th>Status</th>
-                          <th>Numer postoju</th>
+                          <th>Peron</th>
                         </tr>
                       </thead>
                       <tbody>
                         {visibleTrains.map((t, i) => (
-                          <tr key={i} style={{ opacity: t.isPast ? 0.6 : 1 }}>
+                          <tr key={i} className={t.isPast ? 'row-past' : ''}>
                             <td className="time-cell">
                               <span className="main-time">{t.displayTime}</span>
-                              {t.delay > 0 && <span className="delay-tag" style={{color: 'red', marginLeft: '5px'}}>+{t.delay} min</span>}
+                              {t.delay > 0 && <span className="delay-tag">+{t.delay} min</span>}
                             </td>
                             <td className="train-info-cell">
-                              <span className={`train-name cat-${t.category.replace(/\s/g, '')}`}>
-                                {t.name.trim() || `Pociąg ${t.id}`}
+                              <span className={`train-name cat-${t.category}`}>
+                                {t.fullName}
                               </span>
                             </td>
                             <td>
-                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>{t.isPast ? 'ODJECHAŁ' : t.status}</span>
+                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
+                                {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
+                              </span>
                             </td>
                             <td className="platform-num">{t.platform}</td>
                           </tr>
@@ -189,17 +188,13 @@ export default function StationsPage() {
                     </table>
 
                     {filteredByTime.length > 10 && (
-                      <button 
-                        className="expand-list-btn" 
-                        onClick={() => setShowAll(!showAll)}
-                        style={{ width: '100%', padding: '10px', marginTop: '10px', background: 'rgba(255,255,255,0.1)', color: '#00ffcc', border: '1px solid #00ffcc', cursor: 'pointer', borderRadius: '4px' }}
-                      >
-                        {showAll ? "▲ Zwiń listę" : `▼ Pokaż pozostałe (${filteredByTime.length - 10})`}
+                      <button className="expand-list-btn" onClick={() => setShowAll(!showAll)}>
+                        {showAll ? "▲ Zwiń" : `▼ Pokaż pozostałe (${filteredByTime.length - 10})`}
                       </button>
                     )}
                   </>
                 ) : (
-                  <p className="no-data">Brak pociągów do wyświetlenia.</p>
+                  <p className="no-data">Brak pociągów w najbliższym czasie.</p>
                 )}
               </div>
             )}
