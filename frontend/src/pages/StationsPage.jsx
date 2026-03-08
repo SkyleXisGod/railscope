@@ -14,7 +14,6 @@ export default function StationsPage() {
   const [visibleLimit, setVisibleLimit] = useState(10);
   const [showPast, setShowPast] = useState(false);
   
-  // FUNKCJA EKSPERYMENTALNA: REGIO
   const [showRegio, setShowRegio] = useState(false);
 
   const navigate = useNavigate();
@@ -58,6 +57,9 @@ export default function StationsPage() {
         const pArr = getT(sInfo.plannedArrival);
         const pDep = getT(sInfo.plannedDeparture);
 
+        const routeStation = train.route?.find(rs => String(rs.id) === String(stationId));
+        const platformDisplay = routeStation?.platform || "-";
+
         if (!trainGroups[groupKey]) {
           trainGroups[groupKey] = {
             id: train.trainOrderId,
@@ -68,7 +70,7 @@ export default function StationsPage() {
             pArr, pDep,
             actualArr: getT(sInfo.actualArrival),
             actualDep: getT(sInfo.actualDeparture),
-            platform: sInfo.platform || "-",
+            platform: platformDisplay,
           };
         } else {
           const g = trainGroups[groupKey];
@@ -117,7 +119,6 @@ export default function StationsPage() {
     }
   };
 
-  // Filtrowanie stacji
   let processedStations = stations.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -125,7 +126,6 @@ export default function StationsPage() {
     processedStations = processedStations.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // Filtrowanie pociągów (IC vs REGIO)
   const filteredTimetable = timetable.filter(t => {
     if (!showRegio && t.category === "REG") return false;
     return true;
@@ -141,10 +141,8 @@ export default function StationsPage() {
     <div className="stations-container">
       <div className="stations-header">
         <h1 className="stations-title">RailScope</h1>
-        
         <div className="header-top-row">
           <p className="stations-subtitle">Tablice Stacyjne (Live)</p>
-          
           <div className="experimental-zone">
             <span className="exp-label">Eksperymentalne: REGIO</span>
             <label className="switch">
@@ -162,16 +160,8 @@ export default function StationsPage() {
         )}
         
         <div className="search-controls">
-          <input
-            className="station-search-input"
-            placeholder="Wyszukaj stację..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <button 
-            className={`sort-btn ${sortAlphabetical ? 'active' : ''}`}
-            onClick={() => setSortAlphabetical(!sortAlphabetical)}
-          >
+          <input className="station-search-input" placeholder="Wyszukaj stację..." value={search} onChange={e => setSearch(e.target.value)} />
+          <button className={`sort-btn ${sortAlphabetical ? 'active' : ''}`} onClick={() => setSortAlphabetical(!sortAlphabetical)}>
             {sortAlphabetical ? "A-Z (Włączone)" : "Sortuj A-Z"}
           </button>
         </div>
@@ -215,7 +205,7 @@ export default function StationsPage() {
                             </td>
                             <td className="relation-cell">{t.relation}</td>
                             <td><span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
-                                {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
+                                 {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
                             </span></td>
                             <td>{t.platform}</td>
                           </tr>

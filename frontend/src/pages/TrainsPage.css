@@ -134,6 +134,13 @@
     font-size: 0.75rem;
 }
 
+.timetable-table td:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  color: #aaa;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
 .cat-IC-badge { background-color: #f39c12; color: white; }
 .cat-TLK-badge { background-color: #2980b9; color: white; }
 .cat-EIP-badge { background-color: #8e44ad; color: white; }

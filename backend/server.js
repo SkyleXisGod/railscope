@@ -60,12 +60,21 @@ const buildIndexes = () => {
                 const firstId = s.stations?.[0]?.stationId;
                 const lastId = s.stations?.[s.stations.length - 1]?.stationId;
                 
-                const routeStops = s.stations?.map(st => ({
-                    id: st.stationId,
-                    name: stationNamesDict[String(st.stationId)] || `Stacja ${st.stationId}`,
-                    arr: st.arrivalTime || st.arrivalDepartureTime || "-",
-                    dep: st.departureTime || st.arrivalDepartureTime || "-"
-                })) || [];
+                const routeStops = s.stations?.map(st => {
+                    const plat = st.departurePlatform || st.arrivalPlatform || "";
+                    const track = st.departureTrack || st.arrivalTrack || "";
+                    const platformDisplay = (plat || track) 
+                        ? `${plat ? 'P'+plat : ''}${plat && track ? '/' : ''}${track ? 'T'+track : ''}`
+                        : "-";
+
+                    return {
+                        id: st.stationId,
+                        name: stationNamesDict[String(st.stationId)] || `Stacja ${st.stationId}`,
+                        arr: st.arrivalTime || st.arrivalDepartureTime || "-",
+                        dep: st.departureTime || st.arrivalDepartureTime || "-",
+                        platform: platformDisplay
+                    };
+                }) || [];
 
                 const rel = (firstId && lastId) 
                     ? `${stationNamesDict[String(firstId)] || '???'} ➔ ${stationNamesDict[String(lastId)] || '???'}`
@@ -146,17 +155,17 @@ app.get("/api/timetable/:id", async (req, res) => {
             let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
             let finalCat = "REG";
 
-            // Poprawione odróżnianie
             if (icTypes.includes(catCode)) {
-                finalCat = catCode; // Zwraca EIP, TLK, EIC itd.
+                finalCat = catCode;
             } else if (staticInfo.name && catCode !== "BUS") {
-                finalCat = "IC"; // Domyślna kategoria dla pociągów z nazwą
+                finalCat = "IC"; 
             } else if (regTypes.some(r => catCode.startsWith(r)) || catCode.includes("REG") || catCode === "BUS") {
                 finalCat = "REG";
             }
 
             return {
                 ...t,
+                stations: t.stations || [], 
                 cleanNumber: opCleanNum,
                 trainName: staticInfo.name || "",
                 trainCategory: finalCat,
