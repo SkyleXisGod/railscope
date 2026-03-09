@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Polyline } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import L from "leaflet";
@@ -6,7 +6,7 @@ import axios from "axios";
 
 const POLAND_BOUNDS = L.latLngBounds([49.0, 14.0], [55.0, 24.5]);
 
-function MapLogic({ sidebarOpen, station }) {
+function MapLogic({ sidebarOpen, station, routeCoords }) {
   const map = useMap();
 
   useEffect(() => {
@@ -28,6 +28,13 @@ function MapLogic({ sidebarOpen, station }) {
   }, [station, map]);
 
   useEffect(() => {
+    if (routeCoords && routeCoords.length > 0) {
+      const bounds = L.latLngBounds(routeCoords);
+      map.fitBounds(bounds, { padding: [50, 50], duration: 1.2 });
+    }
+  }, [routeCoords, map]);
+
+  useEffect(() => {
     const handleMoveEnd = () => {
       if (!map.getBounds().overlaps(POLAND_BOUNDS)) {
         map.panInsideBounds(POLAND_BOUNDS, { animate: true });
@@ -42,8 +49,12 @@ function MapLogic({ sidebarOpen, station }) {
 
 export default function MapView({ sidebarOpen }) {
   const [stations, setStations] = useState([]);
+  const [trackedTrain, setTrackedTrain] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  
   const stationId = searchParams.get("station");
+  const trainId = searchParams.get("trainId");
+
   const [pulseSize, setPulseSize] = useState(16);
   const markerRefs = useRef({});
 
@@ -52,6 +63,16 @@ export default function MapView({ sidebarOpen }) {
       .then(res => setStations(res.data))
       .catch(err => console.error(err));
   }, []);
+
+  useEffect(() => {
+    if (trainId) {
+      axios.get(`http://localhost:8080/api/trains/${trainId}`)
+        .then(res => setTrackedTrain(res.data))
+        .catch(err => console.error(err));
+    } else {
+      setTrackedTrain(null);
+    }
+  }, [trainId]);
 
   useEffect(() => {
     if (stationId && markerRefs.current[stationId]) {
@@ -82,6 +103,10 @@ export default function MapView({ sidebarOpen }) {
 
   const activeStation = stations.find(s => String(s.id) === String(stationId));
 
+  const routeCoords = trackedTrain?.route
+    ?.filter(stop => stop.lat && stop.lon)
+    .map(stop => [stop.lat, stop.lon]) || [];
+
   return (
     <MapContainer
       center={[52, 19]}
@@ -96,10 +121,28 @@ export default function MapView({ sidebarOpen }) {
         updateWhenZooming={false}
       />
 
-      <MapLogic sidebarOpen={sidebarOpen} station={activeStation} />
+      <MapLogic 
+        sidebarOpen={sidebarOpen} 
+        station={activeStation} 
+        routeCoords={routeCoords}
+      />
+
+      {/* RYSOWANIE LINII TRASY */}
+      {routeCoords.length > 0 && (
+        <Polyline 
+          positions={routeCoords} 
+          pathOptions={{ 
+            color: "#ff2b2b", 
+            weight: 3, 
+            opacity: 0.8 
+          }} 
+        />
+      )}
 
       {stations.map(s => {
         const isActive = String(s.id) === String(stationId);
+        const isOnTrackedRoute = trackedTrain?.route?.some(rs => String(rs.id) === String(s.id));
+        const isRed = isActive || isOnTrackedRoute;
 
         return (
           <CircleMarker
@@ -110,8 +153,8 @@ export default function MapView({ sidebarOpen }) {
             eventHandlers={{ click: () => handleMarkerClick(s.id) }}
             pathOptions={{
               color: "#000",
-              fillColor: isActive ? "#ff2b2b" : "#00ffd5",
-              fillOpacity: 1,
+              fillColor: isRed ? "#ff2b2b" : "#00ffd5", 
+              fillOpacity: 1, 
               weight: 1
             }}
           >

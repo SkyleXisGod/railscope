@@ -6,6 +6,15 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 
+let plkApiRequestsCount = 0;
+
+axios.interceptors.request.use(config => {
+    if (config.url && config.url.includes('plk-sa.pl')) {
+        plkApiRequestsCount++;
+    }
+    return config;
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -13,6 +22,13 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.get("/api/stats", (req, res) => {
+    res.json({
+        sessionRequests: plkApiRequestsCount,
+        message: "PLK API nie posiada własnego endpointu do sprawdzania limitów. Zwracamy liczbę zapytań wykonanych z Twojego backendu od jego ostatniego restartu."
+    });
+});
 
 const PORT = 8080;
 const DATA_DIR = path.join(__dirname, "data");
@@ -26,6 +42,7 @@ let trainNumberMap = new Map();
 let allTrainsList = []; 
 let categoryNames = {};
 let stationNamesDict = {};
+let stationCoordsDict = {}; // DODANE: Słownik pomocniczy na koordynaty
 
 const cleanNum = (n) => n ? String(n).replace(/\D/g, '').replace(/^0+/, '') : "";
 
@@ -35,11 +52,15 @@ const buildIndexes = () => {
     trainNumberMap.clear();
     allTrainsList = [];
     stationNamesDict = {};
+    stationCoordsDict = {}; // DODANE
 
     if (fs.existsSync(STATIONS_CACHE)) {
         try {
             stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
-            stations.forEach(s => { stationNamesDict[String(s.id)] = s.name; });
+            stations.forEach(s => { 
+                stationNamesDict[String(s.id)] = s.name; 
+                stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon }; // DODANE
+            });
         } catch (e) { console.error("Błąd stacji:", e); }
     }
 
@@ -67,9 +88,14 @@ const buildIndexes = () => {
                         ? `${plat ? 'P'+plat : ''}${plat && track ? '/' : ''}${track ? 'T'+track : ''}`
                         : "-";
 
+                    // DODANE: Pobieranie lat/lon ze słownika dla każdego przystanku
+                    const coords = stationCoordsDict[String(st.stationId)] || { lat: null, lon: null };
+
                     return {
                         id: st.stationId,
                         name: stationNamesDict[String(st.stationId)] || `Stacja ${st.stationId}`,
+                        lat: coords.lat, // DODANE
+                        lon: coords.lon, // DODANE
                         arr: st.arrivalTime || st.arrivalDepartureTime || "-",
                         dep: st.departureTime || st.arrivalDepartureTime || "-",
                         platform: platformDisplay
@@ -182,19 +208,92 @@ app.get("/api/timetable/:id", async (req, res) => {
 });
 
 app.get("/api/trains/search", (req, res) => {
-    const { q, category } = req.query;
-    let results = allTrainsList;
-    if (category) results = results.filter(t => t.categorySymbol === category);
-    if (q) {
-        const query = q.toLowerCase();
+    const { number, name, start, end, category, experimental } = req.query;
+    const isExp = experimental === 'true';
+
+    const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN"];
+    const regPrefixes = ["R", "S", "K", "A", "W", "KM", "SKM", "WKD", "AP", "Os", "OsP"];
+    
+    let results = allTrainsList.filter(t => {
+        const symbol = String(t.categorySymbol).toUpperCase();
+        const isPremium = premiumCats.includes(symbol);
+        const isReg = regPrefixes.some(p => symbol.startsWith(p)) || symbol.includes("REG");
+        const isBus = symbol.includes("BUS") || symbol === "ZKA";
+
+        if (!isExp && !isPremium) return false;
+        if (isExp && !isPremium && !isReg && !isBus) return false;
+
+        if (category) {
+                if (category === "IC") {
+                    if (symbol !== "IC") return false;
+                } else if (category === "EIC"){
+                    if (symbol !== "EIC") return false;
+                } else if (category === "REG") {
+                    if (!isReg) return false;
+                } else if (category === "BUS") {
+                    if (!isBus) return false;
+                } else {
+                    if (symbol !== category) return false;
+                }
+            }
+            return true;
+    });
+
+    if (number) {
+        const cNum = cleanNum(number);
+        results = results.filter(t => cleanNum(t.number).includes(cNum));
+    }
+    if (name) {
+        const cName = name.toLowerCase();
+        results = results.filter(t => (t.name || "").toLowerCase().includes(cName));
+    }
+
+    if (start || end) {
         results = results.filter(t => {
-            const numMatch = cleanNum(t.number).includes(cleanNum(query));
-            const nameMatch = t.name.toLowerCase().includes(query);
-            return numMatch || nameMatch;
+            if (!t.route || t.route.length === 0) return false;
+            const stopNames = t.route.map(r => r.name.toLowerCase());
+            const startIndex = start ? stopNames.findIndex(sn => sn.includes(start.toLowerCase())) : -1;
+            const endIndex = end ? stopNames.findIndex(sn => sn.includes(end.toLowerCase())) : -1;
+
+            if (start && end) return startIndex !== -1 && endIndex !== -1 && startIndex < endIndex;
+            if (start) return startIndex !== -1;
+            if (end) return endIndex !== -1;
+            return true;
         });
     }
-    const uniqueResults = Array.from(new Map(results.map(item => [cleanNum(item.number) + item.name, item])).values());
+
+    const uniqueResults = Array.from(new Map(results.map(item => [item.trainOrderId, item])).values());
+    
+    uniqueResults.sort((a, b) => {
+        const aSymbol = a.categorySymbol.toUpperCase();
+        const bSymbol = b.categorySymbol.toUpperCase();
+        
+        const aScore = premiumCats.includes(aSymbol) ? 0 : 1;
+        const bScore = premiumCats.includes(bSymbol) ? 0 : 1;
+        
+        if (aScore !== bScore) return aScore - bScore;
+        return a.number.localeCompare(b.number);
+    });
+
     res.json(uniqueResults.slice(0, 50));
 });
 
-app.listen(PORT, () => console.log(`🚀 Backend na http://localhost:${PORT}`));
+app.get("/api/trains/:id", (req, res) => {
+    const { id } = req.params;
+    const train = trainInfoMap.get(id);
+    
+    if (train) {
+        res.json(train);
+    } else {
+        res.status(404).json({ error: "Nie znaleziono pociągu" });
+    }
+});
+
+downloadInitialData().then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend gotowy na http://localhost:${PORT}`);
+        console.log(`Pociągów w pamięci: ${allTrainsList.length}`);
+    });
+}).catch(err => {
+    console.error("Błąd krytyczny podczas startu serwera:", err);
+});
