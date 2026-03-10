@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./StationsPage.css";
 
+const premiumCats = ["IC", "TLK", "EIP", "EIC", "EC", "EN", "NJ"];
+
 export default function StationsPage() {
   const [stations, setStations] = useState([]);
   const [search, setSearch] = useState("");
@@ -19,6 +21,7 @@ export default function StationsPage() {
 
   const navigate = useNavigate();
 
+  
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
@@ -167,7 +170,10 @@ export default function StationsPage() {
     processedStations = processedStations.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  const filteredTimetable = timetable.filter(t => !showRegio ? t.category !== "REG" : true);
+  const filteredTimetable = timetable.filter(t => {
+    const isPremium = premiumCats.includes(t.category);
+    return isPremium || showRegio;
+  });
   const currentTrains = filteredTimetable.filter(t => !t.isPast);
   const pastTrains = filteredTimetable.filter(t => t.isPast);
   const displayPool = showPast ? [...pastTrains, ...currentTrains] : currentTrains;
@@ -252,41 +258,62 @@ export default function StationsPage() {
 
                         return (
                           <tr key={`${t.id}-${idx}`} className={t.isPast ? 'row-past' : ''}>
+                            {/* 1. CZAS */}
                             <td className="time-cell">
                               <span className="main-time">{t.displayTime}</span>
                               {t.delay > 0 && <span className="delay-tag">+{t.delay} min</span>}
                             </td>
+
+                            {/* 2. POCIĄG */}
                             <td>
-                               <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
-                               {t.trainName && <strong> "{t.trainName}"</strong>} <small>{t.number}</small>
+                              <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
+                              {t.trainName && <strong> "{t.trainName}"</strong>} <small>{t.number}</small>
                             </td>
+
+                            {/* 3. RELACJA (To tutaj backend podstawi dane z regiostationsCache.json) */}
                             <td className="relation-cell">{t.relation}</td>
-                            <td><span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
-                                 {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
-                            </span></td>
-                            
-                            {/* PRZESUNIĘTE KOMÓRKI */}
+
+                            {/* 4. STATUS */}
+                            <td>
+                              <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
+                                {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
+                              </span>
+                            </td>
+
+                            {/* 5. PERON */}
                             <td className="platform-cell">{t.platform}</td>
+
+                            {/* 6. ŚLEDZENIE (Naprawiona logika i ikonki) */}
                             <td className="track-cell">
-                              {inTransit ? (
-                                <button 
-                                  className="map-btn" 
-                                  style={{ margin: 0, padding: '4px 8px' }} 
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    navigate(`/?trainId=${t.id}`); 
-                                  }}
-                                  title="Przejdź do mapy i śledź na żywo"
-                                >
-                                  📍
-                                </button>
+                              {premiumCats.includes(t.category) ? (
+                                inTransit ? (
+                                  <button 
+                                    className="map-btn" 
+                                    style={{ margin: 0, padding: '4px 8px' }} 
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      navigate(`/?trainId=${t.id}`); 
+                                    }}
+                                    title="Przejdź do mapy i śledź na żywo"
+                                  >
+                                    📍
+                                  </button>
+                                ) : (
+                                  <div 
+                                    className="blocked-track-icon" 
+                                    title="Nie można śledzić pociągu, który nie jest w trasie"
+                                    style={{ opacity: 0.5, cursor: "not-allowed", textAlign: "center" }}
+                                  >
+                                    🚫
+                                  </div>
+                                )
                               ) : (
                                 <div 
-                                  className="blocked-track-icon" 
-                                  title="Nie można śledzić pociągu, który nie jest aktualnie w trasie"
-                                  style={{ opacity: 0.5, cursor: "not-allowed", textAlign: "center" }}
+                                  className="regio-track-icon" 
+                                  title="Nie śledzimy pociągów regionalnych"
+                                  style={{ cursor: "help", textAlign: "center", fontSize: "1.2rem" }}
                                 >
-                                  🚫
+                                  ⚠️
                                 </div>
                               )}
                             </td>

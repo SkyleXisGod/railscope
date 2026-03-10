@@ -6,6 +6,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 
+const serverStartTime = Date.now();
+
 let plkApiRequestsCount = 0;
 
 axios.interceptors.request.use(config => {
@@ -23,7 +25,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/stats", (req, res) => {
+app.get("/api/statistics", (req, res) => {
     res.json({
         sessionRequests: plkApiRequestsCount,
         message: "PLK API nie posiada własnego endpointu do sprawdzania limitów. Zwracamy liczbę zapytań wykonanych z Twojego backendu od jego ostatniego restartu."
@@ -35,6 +37,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const STATIONS_CACHE = path.join(DATA_DIR, "cacheStations.json");
 const CATEGORIES_CACHE = path.join(DATA_DIR, "cacheCategories.json");
 const SCHEDULES_CACHE = path.join(DATA_DIR, "cacheSchedules.json");
+const FULL_STATIONS_CACHE = path.join(DATA_DIR, "regiocacheStations.json");
 
 let stations = [];
 let trainInfoMap = new Map(); 
@@ -53,15 +56,35 @@ const buildIndexes = () => {
     allTrainsList = [];
     stationNamesDict = {};
     stationCoordsDict = {};
+    stations = []; 
+
+    if (fs.existsSync(FULL_STATIONS_CACHE)) {
+        try {
+            const fullData = JSON.parse(fs.readFileSync(FULL_STATIONS_CACHE, "utf8"));
+            fullData.forEach(s => {
+                stationNamesDict[String(s.id)] = s.name;
+                stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon };
+            });
+            console.log(`📚 Słownik pełny załadowany: ${fullData.length} stacji regionalnych.`);
+        } catch (e) { console.error("Błąd wczytywania pełnej bazy:", e); }
+    }
 
     if (fs.existsSync(STATIONS_CACHE)) {
         try {
-            stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
-            stations.forEach(s => { 
-                stationNamesDict[String(s.id)] = s.name; 
+            const mainData = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
+            const stationsArray = Array.isArray(mainData) ? mainData : (mainData.results || []);
+            stationsArray.forEach(s => {
+                stationNamesDict[String(s.id)] = s.name;
                 stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon };
+                stations.push({
+                    id: s.id,
+                    name: s.name,
+                    lat: s.lat,
+                    lon: s.lon
+                });
             });
-        } catch (e) { console.error("Błąd stacji:", e); }
+            console.log(`📍 Stacje na mapę załadowane: ${stations.length}`);
+        } catch (e) { console.error("Błąd głównego cache:", e); }
     }
 
     if (fs.existsSync(CATEGORIES_CACHE)) {
@@ -124,7 +147,7 @@ const buildIndexes = () => {
                     }
                 }
             });
-            console.log(`🚀 Indeks gotowy. Pociągów: ${allTrainsList.length}`);
+            console.log(`🚀 Indeks rozkładów gotowy. Pociągów w bazie: ${allTrainsList.length}`);
         } catch (e) { console.error("Błąd rozkładów:", e); }
     }
 };
@@ -132,6 +155,35 @@ const buildIndexes = () => {
 const PLK_API_KEY = process.env.PLK_API_KEY || "bg1dOGfvZFyhQwsdLxUnX0InmHEEB7sx2962bwWtQd7OfZaP9H-fR5ShgUYyRYsGlqL4I3yczbTVY7BvOQnDCA";
 const BASE_URL = "https://pdp-api.plk-sa.pl/api/v1";
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
+
+const fetchSingleStation = async (stationId) => {
+    if (stationNamesDict[String(stationId)]) {
+        return stationNamesDict[String(stationId)];
+    }
+
+    try {
+        console.log(`🔍 Brak nazwy dla ID ${stationId}. Odpytuję API (Lazy Load)...`);
+        const res = await axios.get(`${BASE_URL}/dictionaries/stations`, {
+            headers: plkHeaders,
+            params: { 
+                pageSize: 5000 
+            }
+        });
+
+        const stations = res.data.stations || [];
+        const found = stations.find(s => String(s.id) === String(stationId));
+
+        if (found) {
+            stationNamesDict[String(found.id)] = found.name;
+            stationCoordsDict[String(found.id)] = { lat: found.lat, lon: found.lon };
+            return found.name;
+        }
+
+        return `Przystanek ${stationId}`;
+    } catch (e) {
+        return `Stacja ${stationId}`;
+    }
+};
 
 const downloadInitialData = async () => {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -152,11 +204,26 @@ const downloadInitialData = async () => {
             });
             fs.writeFileSync(SCHEDULES_CACHE, JSON.stringify(res.data, null, 2));
         }
-        buildIndexes();
-    } catch (err) { buildIndexes(); }
+
+        if (!fs.existsSync(FULL_STATIONS_CACHE)) {
+            await fetchFullStationDatabase(); 
+        } else {
+            buildIndexes();
+        }
+    } catch (err) { 
+        console.error("Błąd podczas startowego pobierania:", err.message);
+        buildIndexes(); 
+    }
 };
 
-downloadInitialData();
+// Start aplikacji
+downloadInitialData().then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend gotowy na http://localhost:${PORT}`);
+    });
+}).catch(err => {
+    console.error("Błąd krytyczny podczas startu serwera:", err);
+});
 
 app.get("/api/stations", (req, res) => res.json(stations));
 
@@ -171,27 +238,24 @@ app.get("/api/timetable/:id", async (req, res) => {
         
         const rawTrains = response.data.trains || [];
         const icTypes = ["IC", "TLK", "EIP", "EIC", "EC", "EN", "NJ"];
-        
-        const regPrefixes = [
-                            "R", "RP", "RG", "RE", "AP", "Os", "OsP", "S", "K", "W", "KM", "WKD", "SKM", "A", "Z", "AZ","KW", "KD", "Ł", "KA"
-                            ];
+        const regPrefixes = ["R", "RP", "RG", "RE", "AP", "Os", "OsP", "S", "K", "W", "KM", "WKD", "SKM", "A", "Z", "AZ", "KW", "KD", "Ł", "KA"];
 
         const enriched = rawTrains.map(t => {
-        const opCleanNum = cleanNum(t.trainNumber);
-        let staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(opCleanNum) || {};
+            const opCleanNum = cleanNum(t.trainNumber);
+            let staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(opCleanNum) || {};
 
-        let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
-        let finalCat = "REG"; 
+            let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
+            let finalCat = "REG"; 
 
-        if (icTypes.includes(catCode)) {
-            finalCat = catCode;
-        } 
-        else if (regPrefixes.some(p => catCode.startsWith(p)) || catCode.includes("REG") || catCode === "BUS") {
-            finalCat = "REG";
-        }
-        else if (staticInfo.name && !catCode.includes("BUS")) {
-            finalCat = "IC";
-        }
+            if (icTypes.includes(catCode)) {
+                finalCat = catCode;
+            } 
+            else if (regPrefixes.some(p => catCode.startsWith(p)) || catCode.includes("REG") || catCode.includes("BUS") || catCode === "ZKA") {
+                finalCat = "REG";
+            }
+            else if (["KSL", "KM", "KD", "PR"].includes(t.carrierCode)) { 
+                finalCat = "REG";
+            }
 
             return {
                 ...t,
@@ -202,11 +266,9 @@ app.get("/api/timetable/:id", async (req, res) => {
                 relation: staticInfo.relation || "Relacja nieznana",
                 displayNumber: staticInfo.number || t.trainNumber,
                 route: staticInfo.route || []
-                
             };
         })
         .filter(t => t.relation !== "Relacja nieznana")
-        .filter(t => [...icTypes, "REG"].includes(t.trainCategory)); 
 
         res.json(enriched);
     } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
@@ -214,45 +276,43 @@ app.get("/api/timetable/:id", async (req, res) => {
 
 app.get("/api/trains/search", (req, res) => {
     const { number, name, start, end, category, experimental } = req.query;
-    const isExp = experimental === 'true';
 
-    const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN"];
-    const regPrefixes = ["R", "S", "K", "A", "W", "KM", "SKM", "WKD", "AP", "Os", "OsP"];
+    const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"];
+    const regPrefixes = ["R", "RP", "RG", "RE", "AP", "Os", "OsP", "S", "K", "W", "KM", "WKD", "SKM", "A", "Z", "AZ", "KW", "KD", "Ł", "KA"];
     
-    let results = allTrainsList.filter(t => {
-        const symbol = String(t.categorySymbol).toUpperCase();
-        const isPremium = premiumCats.includes(symbol);
-        const isReg = regPrefixes.some(p => symbol.startsWith(p)) || symbol.includes("REG");
-        const isBus = symbol.includes("BUS") || symbol === "ZKA";
+    let results = [...allTrainsList];
 
-        if (!isExp && !isPremium) return false;
-        if (isExp && !isPremium && !isReg && !isBus) return false;
-
-        if (category) {
-                if (category === "IC") {
-                    if (symbol !== "IC") return false;
-                } else if (category === "EIC"){
-                    if (symbol !== "EIC") return false;
-                } else if (category === "REG") {
-                    if (!isReg) return false;
-                } else if (category === "BUS") {
-                    if (!isBus) return false;
-                } else {
-                    if (symbol !== category) return false;
-                }
-            }
-            return true;
-    });
-
+    // --- FILTROWANIE NUMERU ---
     if (number) {
         const cNum = cleanNum(number);
         results = results.filter(t => cleanNum(t.number).includes(cNum));
     }
+
+    // --- FILTROWANIE NAZWY ---
     if (name) {
         const cName = name.toLowerCase();
         results = results.filter(t => (t.name || "").toLowerCase().includes(cName));
     }
 
+    // --- FILTROWANIE KATEGORII (To dodajemy!) ---
+    if (category) {
+        if (category === "REG") {
+            // Szukamy wszystkiego, co nie jest Premium LUB pasuje do prefiksów regionalnych
+            results = results.filter(t => 
+                !premiumCats.includes(t.categorySymbol) || 
+                regPrefixes.some(p => t.categorySymbol.startsWith(p))
+            );
+        } else if (category === "BUS") {
+            results = results.filter(t => 
+                t.categorySymbol.includes("BUS") || t.categorySymbol === "ZKA"
+            );
+        } else {
+            // Filtrowanie konkretne (IC, TLK, EIP itp.)
+            results = results.filter(t => t.categorySymbol === category);
+        }
+    }
+
+    // --- FILTROWANIE TRASY (START/END) ---
     if (start || end) {
         results = results.filter(t => {
             if (!t.route || t.route.length === 0) return false;
@@ -267,18 +327,9 @@ app.get("/api/trains/search", (req, res) => {
         });
     }
 
+    // --- UNIKALNOŚĆ I SORTOWANIE ---
     const uniqueResults = Array.from(new Map(results.map(item => [item.trainOrderId, item])).values());
-    
-    uniqueResults.sort((a, b) => {
-        const aSymbol = a.categorySymbol.toUpperCase();
-        const bSymbol = b.categorySymbol.toUpperCase();
-        
-        const aScore = premiumCats.includes(aSymbol) ? 0 : 1;
-        const bScore = premiumCats.includes(bSymbol) ? 0 : 1;
-        
-        if (aScore !== bScore) return aScore - bScore;
-        return a.number.localeCompare(b.number);
-    });
+    uniqueResults.sort((a, b) => a.number.localeCompare(b.number));
 
     res.json(uniqueResults.slice(0, 50));
 });
@@ -294,11 +345,41 @@ app.get("/api/trains/:id", (req, res) => {
     }
 });
 
-downloadInitialData().then(() => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Backend gotowy na http://localhost:${PORT}`);
-        console.log(`Pociągów w pamięci: ${allTrainsList.length}`);
-    });
-}).catch(err => {
-    console.error("Błąd krytyczny podczas startu serwera:", err);
+app.get("/api/stats", (req, res) => {
+    try {
+        const trains = Array.from(trainInfoMap.values());
+        const totalTrains = trains.length;
+        
+        const categories = {
+            IC: trains.filter(t => ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"].includes(t.categorySymbol)).length,
+            REG: trains.filter(t => !["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"].includes(t.categorySymbol)).length
+        };
+
+        const uptimeMs = Date.now() - serverStartTime;
+        const days = Math.floor(uptimeMs / (24 * 60 * 60 * 1000));
+        const hours = Math.floor((uptimeMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const minutes = Math.floor((uptimeMs % (60 * 60 * 1000)) / (60 * 1000));
+
+        res.json({
+            system: {
+                uptime: `${days}d ${hours}h ${minutes}m`,
+                apiRequests: plkApiRequestsCount || 0,
+                totalStations: Object.keys(stationNamesDict).length, 
+                activeTrains: totalTrains
+            },
+            traffic: {
+                punctuality: "Dane live", 
+                averageDelay: "Zależne od stacji",
+                biggestDelay: {
+                    name: "Wybierz stację",
+                    number: "-",
+                    value: 0
+                }
+            },
+            distribution: categories
+        });
+    } catch (error) {
+        console.error("KRYTYCZNY BŁĄD BACKENDU:", error);
+        res.status(500).json({ error: "Błąd serwera", details: error.message });
+    }
 });

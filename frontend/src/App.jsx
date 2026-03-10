@@ -6,6 +6,7 @@ import MapView from "./components/MapView";
 import StationsPage from "./pages/StationsPage";
 import PageWrapper from "./components/PageWrapper"; 
 import TrainsPage from "./pages/TrainsPage";
+import StatsPage from "./pages/StatsPage";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,16 +23,14 @@ function App() {
       sidebarOpen={sidebarOpen}
       onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       sidebar={
-        <>
-          <button onClick={() => go("/")}>Mapa</button>
-          <button onClick={() => go("/pociagi")}>Pociągi</button> {/* Poprawione */}
-          <button onClick={() => go("/stacje")}>Stacje</button>
-          <button>Gierki</button>
-          <button>FAQ</button>
-        </>
+        <div className="sidebar-menu">
+          <button className="sidebar-nav-item" onClick={() => go("/")}>📍 Mapa</button>
+          <button className="sidebar-nav-item" onClick={() => go("/pociagi")}>🚆 Pociągi</button>
+          <button className="sidebar-nav-item" onClick={() => go("/stacje")}>🚉 Stacje</button>
+          <button className="sidebar-nav-item" onClick={() => go("/statystyki")}>📊 Statystyki</button>
+        </div>
       }
     >
-      {/* mode="wait" zapewnia, że stara strona zniknie przed pojawieniem się nowej */}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route 
@@ -57,6 +56,15 @@ function App() {
             element={
               <PageWrapper>
                 <StationsPage />
+              </PageWrapper>
+            } 
+          />
+
+          <Route 
+            path="/statystyki" 
+            element={
+              <PageWrapper>
+                <StatsPage />
               </PageWrapper>
             } 
           />

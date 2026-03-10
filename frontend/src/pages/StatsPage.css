@@ -1,0 +1,112 @@
+.stats-container {
+    height: 100vh;
+    padding: 40px;
+    background: #0f0f0f;
+    color: white;
+    overflow-y: auto;
+}
+
+.stats-header {
+    margin-bottom: 40px;
+}
+
+.stats-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 3.5rem;
+    margin: 0;
+}
+
+.stats-subtitle {
+    color: #888;
+    font-size: 1.1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+}
+
+.stats-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 25px;
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    border-color: #444;
+}
+
+.stats-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #aaa;
+}
+
+.big-value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.neon-green { color: #00ffd5; text-shadow: 0 0 15px rgba(0, 255, 213, 0.3); }
+.neon-orange { color: #f39c12; text-shadow: 0 0 15px rgba(243, 156, 18, 0.3); }
+
+.wide { grid-column: span 2; }
+
+.delay-record {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.delay-minutes {
+    font-size: 3rem;
+    color: #ff2b2b;
+    font-weight: 900;
+}
+
+.delay-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.delay-info strong { font-size: 1.4rem; }
+
+.category-split {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.cat-item {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.tech-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tech-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+}
+
+.tech-row span { color: #666; }
+
+@media (max-width: 768px) {
+    .wide { grid-column: span 1; }
+    .stats-container { padding: 20px; }
+}
