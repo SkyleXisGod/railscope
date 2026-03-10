@@ -172,7 +172,6 @@ app.get("/api/timetable/:id", async (req, res) => {
         const rawTrains = response.data.trains || [];
         const icTypes = ["IC", "TLK", "EIP", "EIC", "EC", "EN", "NJ"];
         
-        // POPRAWKA 1: Dodajemy "K" (dla Janosika) i inne brakujące do listy regio
         const regPrefixes = [
                             "R", "RP", "RG", "RE", "AP", "Os", "OsP", "S", "K", "W", "KM", "WKD", "SKM", "A", "Z", "AZ","KW", "KD", "Ł", "KA"
                             ];

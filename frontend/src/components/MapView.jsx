@@ -21,7 +21,6 @@ function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
     return () => clearTimeout(timer);
   }, [sidebarOpen, map]);
 
-  // FIX: Mapa centruje się tylko raz, gdy zmienia się ID pociągu lub stacji
   useEffect(() => {
     if (station && station.id !== prevStationId.current) {
       map.flyTo([station.lat, station.lon], 15, { duration: 1.2 });
@@ -50,7 +49,6 @@ function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
   return null;
 }
 
-// NOWA IKONA: Profesjonalna kropka trackera
 const trainDotIcon = L.divIcon({
   className: 'custom-train-dot',
   html: `
@@ -100,7 +98,6 @@ export default function MapView({ sidebarOpen }) {
     }
   }, [trainId]);
 
-  // Logika LIVE (bez zmian w obliczeniach, tylko interwał)
   useEffect(() => {
     if (!trackedTrain || !trackedTrain.route || stations.length === 0) return;
 
@@ -180,7 +177,6 @@ export default function MapView({ sidebarOpen }) {
     return () => clearInterval(interval);
   }, [trackedTrain, stations]);
 
-  // Efekt pulsowania stacji
   useEffect(() => {
     if (!stationId) return;
     let growing = true;

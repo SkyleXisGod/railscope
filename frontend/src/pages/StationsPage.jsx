@@ -15,7 +15,6 @@ export default function StationsPage() {
   const [showPast, setShowPast] = useState(false);
   const [showRegio, setShowRegio] = useState(false);
 
-  // Ticker do płynnego odświeżania na żywo co 10 sekund bez przeładowywania API
   const [tick, setTick] = useState(0);
 
   const navigate = useNavigate();
@@ -26,7 +25,6 @@ export default function StationsPage() {
       .catch(err => console.error("Błąd ładowania stacji:", err));
   }, []);
 
-  // Odpalenie interwału odświeżającego UI dla obliczeń czasu trasy
   useEffect(() => {
     const interval = setInterval(() => {
       setTick(t => t + 1);
@@ -49,7 +47,6 @@ export default function StationsPage() {
     return depMins !== null ? depMins : calcMin(stop.arr);
   };
 
-  // Dynamiczne sprawdzanie, czy pociąg jest w tej sekundzie w trasie
   const isTrainInTransit = (route, delayMins = 0) => {
     if (!route || route.length < 2) return false;
     
@@ -61,14 +58,11 @@ export default function StationsPage() {
 
     if (startMins === null || endMins === null) return false;
 
-    // Uwzględniamy opóźnienia
     startMins += delayMins;
     endMins += delayMins;
 
-    // Logika przejazdu przez noc (jeśli koniec jest przed startem)
     if (endMins < startMins) endMins += 24 * 60;
     
-    // Jeśli pociąg wyjechał wczoraj wieczorem, a dziś jest wczesny ranek
     if (currentMins < startMins && startMins > 18 * 60 && currentMins < 6 * 60) {
       currentMins += 24 * 60;
     }
@@ -244,7 +238,6 @@ export default function StationsPage() {
                   <table className="timetable-table">
                     <thead>
                       <tr>
-                        {/* PERON PO LEWEJ OD ŚLEDZENIA ZGODNIE Z ŻYCZENIEM */}
                         <th>Czas</th>
                         <th>Pociąg</th>
                         <th>Relacja</th>
