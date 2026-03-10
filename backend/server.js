@@ -42,7 +42,7 @@ let trainNumberMap = new Map();
 let allTrainsList = []; 
 let categoryNames = {};
 let stationNamesDict = {};
-let stationCoordsDict = {}; // DODANE: Słownik pomocniczy na koordynaty
+let stationCoordsDict = {};
 
 const cleanNum = (n) => n ? String(n).replace(/\D/g, '').replace(/^0+/, '') : "";
 
@@ -52,14 +52,14 @@ const buildIndexes = () => {
     trainNumberMap.clear();
     allTrainsList = [];
     stationNamesDict = {};
-    stationCoordsDict = {}; // DODANE
+    stationCoordsDict = {};
 
     if (fs.existsSync(STATIONS_CACHE)) {
         try {
             stations = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
             stations.forEach(s => { 
                 stationNamesDict[String(s.id)] = s.name; 
-                stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon }; // DODANE
+                stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon };
             });
         } catch (e) { console.error("Błąd stacji:", e); }
     }
@@ -88,14 +88,13 @@ const buildIndexes = () => {
                         ? `${plat ? 'P'+plat : ''}${plat && track ? '/' : ''}${track ? 'T'+track : ''}`
                         : "-";
 
-                    // DODANE: Pobieranie lat/lon ze słownika dla każdego przystanku
                     const coords = stationCoordsDict[String(st.stationId)] || { lat: null, lon: null };
 
                     return {
                         id: st.stationId,
                         name: stationNamesDict[String(st.stationId)] || `Stacja ${st.stationId}`,
-                        lat: coords.lat, // DODANE
-                        lon: coords.lon, // DODANE
+                        lat: coords.lat,
+                        lon: coords.lon,
                         arr: st.arrivalTime || st.arrivalDepartureTime || "-",
                         dep: st.departureTime || st.arrivalDepartureTime || "-",
                         platform: platformDisplay
@@ -171,23 +170,29 @@ app.get("/api/timetable/:id", async (req, res) => {
         });
         
         const rawTrains = response.data.trains || [];
-        const icTypes = ["IC", "TLK", "EIP", "EIC", "EC", "EN"];
-        const regTypes = ["R", "RP", "RG", "RE", "AP", "Os", "OsP", "S1", "S2", "S3", "S10", "A", "KM", "WKD", "SKM"];
+        const icTypes = ["IC", "TLK", "EIP", "EIC", "EC", "EN", "NJ"];
+        
+        // POPRAWKA 1: Dodajemy "K" (dla Janosika) i inne brakujące do listy regio
+        const regPrefixes = [
+                            "R", "RP", "RG", "RE", "AP", "Os", "OsP", "S", "K", "W", "KM", "WKD", "SKM", "A", "Z", "AZ","KW", "KD", "Ł", "KA"
+                            ];
 
         const enriched = rawTrains.map(t => {
-            const opCleanNum = cleanNum(t.trainNumber);
-            let staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(opCleanNum) || {};
+        const opCleanNum = cleanNum(t.trainNumber);
+        let staticInfo = trainInfoMap.get(String(t.trainOrderId)) || trainNumberMap.get(opCleanNum) || {};
 
-            let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
-            let finalCat = "REG";
+        let catCode = (staticInfo.categorySymbol || t.trainCategory || "REG").toUpperCase();
+        let finalCat = "REG"; 
 
-            if (icTypes.includes(catCode)) {
-                finalCat = catCode;
-            } else if (staticInfo.name && catCode !== "BUS") {
-                finalCat = "IC"; 
-            } else if (regTypes.some(r => catCode.startsWith(r)) || catCode.includes("REG") || catCode === "BUS") {
-                finalCat = "REG";
-            }
+        if (icTypes.includes(catCode)) {
+            finalCat = catCode;
+        } 
+        else if (regPrefixes.some(p => catCode.startsWith(p)) || catCode.includes("REG") || catCode === "BUS") {
+            finalCat = "REG";
+        }
+        else if (staticInfo.name && !catCode.includes("BUS")) {
+            finalCat = "IC";
+        }
 
             return {
                 ...t,
@@ -198,6 +203,7 @@ app.get("/api/timetable/:id", async (req, res) => {
                 relation: staticInfo.relation || "Relacja nieznana",
                 displayNumber: staticInfo.number || t.trainNumber,
                 route: staticInfo.route || []
+                
             };
         })
         .filter(t => t.relation !== "Relacja nieznana")

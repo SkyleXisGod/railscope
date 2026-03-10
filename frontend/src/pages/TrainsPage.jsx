@@ -20,8 +20,6 @@ export default function TrainsPage() {
     const [categoryFilter, setCategoryFilter] = useState("");
     
     const [experimentalEnabled, setExperimentalEnabled] = useState(false);
-
-   const [trackedTrainId, setTrackedTrainId] = useState(null);
    
     useEffect(() => {
         if (!experimentalEnabled && (categoryFilter === "REG" || categoryFilter === "BUS")) {
@@ -61,11 +59,9 @@ export default function TrainsPage() {
         };
         const delay = setTimeout(fetchTrains, 400);
         return () => clearTimeout(delay);
-    }, [numSearch, nameSearch, startStation, endStation, categoryFilter]);
+    }, [numSearch, nameSearch, startStation, endStation, categoryFilter, experimentalEnabled]);
 
     const displayedTrains = trains;
-
-    const hasExperimentalInResults = displayedTrains.some(t => t.categorySymbol === "REG" || t.categorySymbol === "BUS");
 
     return (
         <div className="trains-container">
@@ -171,42 +167,52 @@ export default function TrainsPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {t.route && t.route.map((stop, sIdx) => {
-                                                const now = new Date();
-                                                const currentTime = now.getHours() * 60 + now.getMinutes();
-                                                
-                                                const getMinutes = (timeStr) => {
-                                                    if (!timeStr || timeStr === "-") return null;
-                                                    const [h, m] = timeStr.split(':').map(Number);
-                                                    return h * 60 + m;
-                                                };
+                                        {t.route && t.route.map((stop, sIdx) => {
+                                            const now = new Date();
+                                            const currentTime = now.getHours() * 60 + now.getMinutes();
+                                            
+                                            const getMinutes = (timeStr) => {
+                                                if (!timeStr || timeStr === "-") return null;
+                                                const [h, m] = timeStr.split(':').map(Number);
+                                                return h * 60 + m;
+                                            };
 
-                                                const stopDep = getMinutes(stop.dep);
-                                                const stopArr = getMinutes(stop.arr);
-                                                
-                                                const isCurrentStation = stopArr && stopDep ? (currentTime >= stopArr && currentTime <= stopDep) : false;
-                                                const isPast = stopDep ? currentTime > stopDep : false;
-                                                
-                                                const isSearchMatch = (startStation && stop.name.toLowerCase().includes(startStation.toLowerCase())) ||
-                                                                      (endStation && stop.name.toLowerCase().includes(endStation.toLowerCase()));
+                                            let stopArr = getMinutes(stop.arr);
+                                            let stopDep = getMinutes(stop.dep);
+                                            
+                                            if (sIdx !== 0 && sIdx !== t.route.length - 1) {
+                                                if (stopArr === null) stopArr = stopDep;
+                                                if (stopDep === null) stopDep = stopArr;
+                                            }
 
-                                                return (
-                                                    <tr key={sIdx} className={`route-row 
-                                                        ${isCurrentStation ? 'active' : ''} 
-                                                        ${isPast ? 'passed' : ''} 
-                                                        ${isSearchMatch ? 'search-highlight' : ''}`}>
-                                                        <td className="stop-name">
-                                                            {isPast && <span className="passed-check">✔️ </span>}
-                                                            {isCurrentStation && <span className="live-dot">● </span>}
-                                                            <span className={isCurrentStation ? "current-station-text" : ""}>
-                                                                {stop.name}
-                                                            </span>
-                                                        </td>
-                                                        <td className="stop-time">{stop.arr !== "-" ? stop.arr.substring(0,5) : "-"}</td>
-                                                        <td className="stop-time">{stop.dep !== "-" ? stop.dep.substring(0,5) : "-"}</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                            const timeToCompareForPast = (sIdx === t.route.length - 1) ? stopArr : stopDep;
+
+                                            const isCurrentStation = stopArr !== null && stopDep !== null 
+                                                ? (currentTime >= stopArr && currentTime <= stopDep) 
+                                                : false;
+                                                
+                                            const isPast = timeToCompareForPast !== null ? currentTime > timeToCompareForPast : false;
+                                            
+                                            const isSearchMatch = (startStation && stop.name.toLowerCase().includes(startStation.toLowerCase())) ||
+                                                                (endStation && stop.name.toLowerCase().includes(endStation.toLowerCase()));
+
+                                            return (
+                                                <tr key={sIdx} className={`route-row 
+                                                    ${isCurrentStation ? 'active' : ''} 
+                                                    ${isPast ? 'passed' : ''} 
+                                                    ${isSearchMatch ? 'search-highlight' : ''}`}>
+                                                    <td className="stop-name">
+                                                        {isPast && <span className="passed-check">✔️ </span>}
+                                                        {isCurrentStation && <span className="live-dot">● </span>}
+                                                        <span className={isCurrentStation ? "current-station-text" : ""}>
+                                                            {stop.name}
+                                                        </span>
+                                                    </td>
+                                                    <td className="stop-time">{stop.arr !== "-" ? stop.arr.substring(0,5) : "-"}</td>
+                                                    <td className="stop-time">{stop.dep !== "-" ? stop.dep.substring(0,5) : "-"}</td>
+                                                </tr>
+                                            );
+                                        })}
                                         </tbody>
                                     </table>
                                 </div>
