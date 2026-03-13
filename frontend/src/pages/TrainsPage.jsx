@@ -232,7 +232,7 @@ export default function TrainsPage() {
                         </div>
                     );
                 })}
-
+                
                 {!loading && !error && trains.length === 0 && (
                     <div className="no-data">
                         {numSearch.length < 2 && nameSearch.length < 2 && startStation.length < 2 && endStation.length < 2 && categoryFilter === "" 

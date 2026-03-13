@@ -30,6 +30,19 @@ export default function StatsPage() {
                     <p className="stats-subtitle">Podgląd kondycji polskiej sieci kolejowej w czasie rzeczywistym.</p>
                 </header>
                 <div className="stats-grid">
+                    {/* Pociągi w trasie */}
+                    <div className="stats-card highlight">
+                        <h3>Pociągi w bazie</h3>
+                        <div className="big-value">{stats.system.activeTrains}</div>
+                        <p>Aktywne połączenia dzisiaj</p>
+                    </div>
+
+                    {/* Punktualność - poprawiona klasa neon-green */}
+                    <div className="stats-card">
+                        <h3>Obsługiwane relacje</h3>
+                        <div className="big-value neon-green">{stats.traffic.destinations}</div>
+                        <p>Unikalne stacje docelowe</p>
+                    </div>
                     <div className="stats-card highlight">
                         <h3>Pociągi w trasie</h3>
                         <div className="big-value">{stats?.system?.activeTrains || 0}</div>
