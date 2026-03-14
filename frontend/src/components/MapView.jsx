@@ -1,10 +1,18 @@
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Polyline, Marker } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import "./MapPopup.css";
 import L from "leaflet";
 import axios from "axios";
 
 const POLAND_BOUNDS = L.latLngBounds([49.0, 14.0], [55.0, 24.5]);
+
+const calcMin = (timeStr) => {
+  if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return null;
+  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+};
 
 function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
   const map = useMap();
@@ -14,7 +22,6 @@ function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
   useEffect(() => {
     map.setMinZoom(6);
     map.setMaxZoom(18); 
-    
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 350);
@@ -51,16 +58,7 @@ function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
 
 const trainDotIcon = L.divIcon({
   className: 'custom-train-dot',
-  html: `
-    <div style="
-      width: 16px; 
-      height: 16px; 
-      background-color: #007bff; 
-      border: 3px solid white; 
-      border-radius: 50%; 
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      transform: translate(-2px, -2px);
-    "></div>`,
+  html: `<div style="width: 16px; height: 16px; background-color: #007bff; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5); transform: translate(-2px, -2px);"></div>`,
   iconSize: [16, 16],
   iconAnchor: [8, 8]
 });
@@ -76,27 +74,84 @@ export default function MapView({ sidebarOpen }) {
   const [pulseSize, setPulseSize] = useState(16);
   const [trainPos, setTrainPos] = useState(null);
 
-  const markerRefs = useRef({});
-
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
       .catch(err => console.error(err));
   }, []);
 
-  useEffect(() => {
-    if (trainId) {
-      axios.get(`http://localhost:8080/api/trains/${trainId}`)
-        .then(res => setTrackedTrain(res.data))
-        .catch(err => {
-            console.error(err);
-            setTrackedTrain(null);
-        });
-    } else {
-      setTrackedTrain(null);
-      setTrainPos(null);
-    }
-  }, [trainId]);
+useEffect(() => {
+  if (trainId) {
+    axios.get(`http://localhost:8080/api/trains/${trainId}`)
+      .then(async (res) => {
+        let trainData = res.data;
+        trainData.delay = 0;
+
+        if (trainData.route && trainData.route.length > 0) {
+          try {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+
+            const activeStation = trainData.route.find(s => {
+                const arrMin = calcMin(s.arr);
+                const depMin = calcMin(s.dep);
+                return (arrMin && arrMin > currentMins - 20); 
+            }) || trainData.route[trainData.route.length - 1]; 
+
+            console.log(`[MAPA] Sprawdzam opóźnienie na stacji: ${activeStation.name} (ID: ${activeStation.id})`);
+
+            const timetableRes = await axios.get(`http://localhost:8080/api/timetable/${activeStation.id}`);
+            const rawTrains = timetableRes.data || [];
+
+            const getT = (iso) => iso?.includes("T") ? iso.split("T")[1].substring(0, 5) : iso?.substring(0, 5);
+
+            const liveTrain = rawTrains.find(t => String(t.trainOrderId) === String(trainId));
+            
+            if (liveTrain) {
+              const sInfo = liveTrain.stations?.find(s => String(s.stationId) === String(activeStation.id)) || {};
+              
+              const pArr = getT(sInfo.plannedArrival);
+              const pDep = getT(sInfo.plannedDeparture);
+              const aArr = getT(sInfo.actualArrival);
+              const aDep = getT(sInfo.actualDeparture);
+
+              const delayArr = aArr && pArr ? Math.max(0, (calcMin(aArr) || 0) - (calcMin(pArr) || 0)) : 0;
+              const delayDep = aDep && pDep ? Math.max(0, (calcMin(aDep) || 0) - (calcMin(pDep) || 0)) : 0;
+              
+              trainData.delay = Math.max(delayArr, delayDep);
+            }
+          } catch (e) {
+            console.warn("Błąd pobierania delay live:", e);
+          }
+        }
+        
+        console.log(`[MAPA] Finalny Delay dla ${trainData.number}: ${trainData.delay} min`);
+        setTrackedTrain(trainData);
+      })
+      .catch(err => {
+        console.error(err);
+        setTrackedTrain(null);
+      });
+  }
+}, [trainId]);
+
+const getTrainStyle = (categorySymbol) => {
+  const categories = ["EIP", "EIC", "IC", "TLK"];
+  
+  const styleClass = categories.includes(categorySymbol) 
+    ? `cat-${categorySymbol}-badge` 
+    : "cat-REG-badge";
+
+  const emojis = {
+    "EIP": "🚄", "EIC": "🚆", "IC": "🚆", "TLK": "🚂", "BUS": "🚌", "ZKA": "🚌"
+  };
+
+  return {
+    accentClass: styleClass, 
+    label: categorySymbol || "REG",
+    emoji: emojis[categorySymbol] || "🚆"
+  };
+};
 
   useEffect(() => {
     if (!trackedTrain || !trackedTrain.route || stations.length === 0) return;
@@ -177,6 +232,7 @@ export default function MapView({ sidebarOpen }) {
     return () => clearInterval(interval);
   }, [trackedTrain, stations]);
 
+  // 4. Animacja pulsu stacji
   useEffect(() => {
     if (!stationId) return;
     let growing = true;
@@ -190,19 +246,15 @@ export default function MapView({ sidebarOpen }) {
     return () => clearInterval(interval);
   }, [stationId]);
 
-  const handleMarkerClick = (id) => {
-    setSearchParams({ station: id });
-  };
+  const handleMarkerClick = (id) => setSearchParams({ station: id });
 
   const activeStation = stations.find(s => String(s.id) === String(stationId));
-  const routeCoords = trackedTrain?.route
-    ?.filter(stop => stop.lat && stop.lon)
-    .map(stop => [stop.lat, stop.lon]) || [];
+  const routeCoords = trackedTrain?.route?.filter(stop => stop.lat && stop.lon).map(stop => [stop.lat, stop.lon]) || [];
 
   return (
     <MapContainer center={[52, 19]} zoom={6} className="map-container">
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
+      
       <MapLogic 
         sidebarOpen={sidebarOpen} 
         station={activeStation} 
@@ -214,13 +266,33 @@ export default function MapView({ sidebarOpen }) {
         <Polyline positions={routeCoords} pathOptions={{ color: "#ff2b2b", weight: 4, opacity: 0.6 }} />
       )}
 
-      {trainPos && (
+      {trainPos && trackedTrain && (
         <Marker position={trainPos} icon={trainDotIcon} zIndexOffset={9999}>
-          <Popup>
-            <div style={{ textAlign: 'center' }}>
-                <strong>{trackedTrain.category} {trackedTrain.number}</strong><br/>
-                {trackedTrain.trainName && <span style={{ color: '#007bff' }}>"{trackedTrain.trainName}"</span>}
-            </div>
+          <Popup className="train-next-gen-popup">
+            {(() => {
+              const style = getTrainStyle(trackedTrain.categorySymbol);
+              return (
+                <div className={`custom-popup ${style.class}`}>
+                  <div className={`popup-side-accent ${style.accentClass}`}></div>
+                    <div className="popup-content">
+                      <div className="popup-header">
+                        <span className="popup-emoji">{style.emoji}</span>
+                        <span className="popup-category">{style.label}</span>
+                        <span className="popup-number">{trackedTrain.number}</span>
+                      </div>
+                    {trackedTrain.name && (
+                      <div className="popup-train-name">"{trackedTrain.name}"</div>
+                    )}
+                    <div className="popup-relation">{trackedTrain.relation}</div>
+                    <div className={`popup-delay ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}>
+                      {trackedTrain.delay > 0 
+                        ? `Opóźnienie: +${trackedTrain.delay} min` 
+                        : "O czasie"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </Popup>
         </Marker>
       )}
@@ -242,11 +314,7 @@ export default function MapView({ sidebarOpen }) {
             }}
           >
             {isActive && (
-              <CircleMarker 
-                center={[s.lat, s.lon]} 
-                radius={pulseSize} 
-                pathOptions={{ color: "#ff2b2b", fillOpacity: 0.2 }} 
-              />
+              <CircleMarker center={[s.lat, s.lon]} radius={pulseSize} pathOptions={{ color: "#ff2b2b", fillOpacity: 0.2 }} />
             )}
             <Popup><strong>{s.name}</strong></Popup>
           </CircleMarker>
