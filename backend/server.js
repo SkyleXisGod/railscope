@@ -58,17 +58,6 @@ const buildIndexes = () => {
     stationCoordsDict = {};
     stations = []; 
 
-    if (fs.existsSync(FULL_STATIONS_CACHE)) {
-        try {
-            const fullData = JSON.parse(fs.readFileSync(FULL_STATIONS_CACHE, "utf8"));
-            fullData.forEach(s => {
-                stationNamesDict[String(s.id)] = s.name;
-                stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon };
-            });
-            console.log(`📚 Słownik pełny załadowany: ${fullData.length} stacji regionalnych.`);
-        } catch (e) { console.error("Błąd wczytywania pełnej bazy:", e); }
-    }
-
     if (fs.existsSync(STATIONS_CACHE)) {
         try {
             const mainData = JSON.parse(fs.readFileSync(STATIONS_CACHE, "utf8"));
@@ -80,11 +69,34 @@ const buildIndexes = () => {
                     id: s.id,
                     name: s.name,
                     lat: s.lat,
-                    lon: s.lon
+                    lon: s.lon,
+                    isRegional: false 
                 });
             });
-            console.log(`📍 Stacje na mapę załadowane: ${stations.length}`);
+            console.log(`📍 Stacje GŁÓWNE załadowane: ${stations.length}`);
         } catch (e) { console.error("Błąd głównego cache:", e); }
+    }
+
+    if (fs.existsSync(FULL_STATIONS_CACHE)) {
+        try {
+            let regCount = 0;
+            const fullData = JSON.parse(fs.readFileSync(FULL_STATIONS_CACHE, "utf8"));
+            fullData.forEach(s => {
+                if (!stationNamesDict[String(s.id)]) {
+                    stationNamesDict[String(s.id)] = s.name;
+                    stationCoordsDict[String(s.id)] = { lat: s.lat, lon: s.lon };
+                    stations.push({
+                        id: s.id,
+                        name: s.name,
+                        lat: s.lat,
+                        lon: s.lon,
+                        isRegional: true 
+                    });
+                    regCount++;
+                }
+            });
+            console.log(`📚 Stacje REGIONALNE (nowe) załadowane: ${regCount}`);
+        } catch (e) { console.error("Błąd wczytywania pełnej bazy:", e); }
     }
 
     if (fs.existsSync(CATEGORIES_CACHE)) {
