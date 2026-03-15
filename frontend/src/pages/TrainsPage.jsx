@@ -29,29 +29,6 @@ export default function TrainsPage() {
         return h * 60 + m;
     };
 
-    const handleMouseEnter = (train) => {
-        if (premiumCats.includes(train.categorySymbol)) return;
-        setUnlockingId(train.trainOrderId);
-        const timer = setTimeout(() => {
-            setIsArmedId(train.trainOrderId);
-            setUnlockingId(null);
-        }, 3000);
-        setHoverTimeout(timer);
-    };
-
-    const handleMouseLeave = () => {
-        if (hoverTimeout) clearTimeout(hoverTimeout);
-        setUnlockingId(null);
-        setIsArmedId(null);
-    };
-
-    const handleRouteClick = (e, train) => {
-        e.stopPropagation();
-        if (premiumCats.includes(train.categorySymbol) || isArmedId === train.trainOrderId) {
-            navigate(`/?trainId=${train.trainOrderId}`);
-        }
-    };
-
     useEffect(() => {
         if (!experimentalEnabled && (categoryFilter === "REG" || categoryFilter === "BUS")) {
             setCategoryFilter("");
@@ -128,7 +105,6 @@ export default function TrainsPage() {
                             {experimentalEnabled && (
                                 <>
                                     <option value="REG">Regionalne (REG)</option>
-                                    <option value="BUS">ZKA (BUS)</option>
                                 </>
                             )}
                         </select>
@@ -166,20 +142,15 @@ export default function TrainsPage() {
                                 
                                 <div className="route-action-container">
                                     <button 
-                                        className={`track-map-btn ${!isPremium ? 'warning-btn' : ''} ${unlockingId === t.trainOrderId ? 'unlocking' : ''} ${isArmedId === t.trainOrderId ? 'armed' : ''}`}
-                                        onMouseEnter={() => handleMouseEnter(t)}
-                                        onMouseLeave={handleMouseLeave}
-                                        onClick={(e) => handleRouteClick(e, t)}
+                                        className="track-map-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/?trainId=${t.trainOrderId}`);
+                                        }}
                                     >
                                         <span className="btn-content">
-                                            {isArmedId === t.trainOrderId ? "🔓 Kliknij, aby wejść" : (
-                                                <>
-                                                    {!isPremium && <span className="lock-icon">🔒</span>}
-                                                    📍 Pokaż trasę
-                                                </>
-                                            )}
+                                            📍 POKAŻ TRASĘ
                                         </span>
-                                        {unlockingId === t.trainOrderId && <div className="progress-bar-fill"></div>}
                                     </button>
                                 </div>
                                 {hasRoute && <span className="arrow">{expandedTrain === t.trainOrderId ? '▲' : '▼'}</span>}

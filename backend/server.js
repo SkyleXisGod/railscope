@@ -46,8 +46,130 @@ let allTrainsList = [];
 let categoryNames = {};
 let stationNamesDict = {};
 let stationCoordsDict = {};
+let trainToShapeMap = new Map();
+let shapeCoordsMap = new Map();
 
-const cleanNum = (n) => n ? String(n).replace(/\D/g, '').replace(/^0+/, '') : "";
+const loadGTFS = () => {
+    console.log("🛠️ Ładowanie danych GTFS (shapes & trips)...");
+
+    const GTFS_DIR = path.join(__dirname, "..", "gtfs");
+    const tripsPath = path.join(GTFS_DIR, "trips.txt");
+    const shapesPath = path.join(GTFS_DIR, "shapes.txt");
+
+    if (!fs.existsSync(tripsPath) || !fs.existsSync(shapesPath)) {
+        console.error("❌ BŁĄD: Nie znaleziono plików GTFS w lokalizacji:", GTFS_DIR);
+        return;
+    }
+    
+    if (fs.existsSync(tripsPath)) {
+        const lines = fs.readFileSync(tripsPath, "utf8").split("\n");
+        const headers = lines[0].split(",").map(h => h.trim());
+        const shortNameIdx = headers.indexOf("trip_short_name");
+        const plkNumIdx = headers.indexOf("plk_train_number");
+        const shapeIdIdx = headers.indexOf("shape_id");
+
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const cols = lines[i].split(",");
+
+            const numRaw = cols[plkNumIdx]?.trim();
+            const shortNameRaw = cols[shortNameIdx]?.trim();
+            const shapeId = cols[shapeIdIdx]?.trim();
+        
+            if (shapeId) {
+                // Funkcja pomocnicza, aby nie powtarzać kodu dla numRaw i shortNameRaw
+                const processNumber = (raw) => {
+                    if (!raw) return;
+                    
+                    // 1. Zapisz oryginał (np. "1012/3")
+                    trainToShapeMap.set(raw, shapeId);
+
+                    // 2. Obsługa łamanych numerów (np. "1012/3" -> zapisz "1012" ORAZ "1013")
+                    if (raw.includes('/')) {
+                        const parts = raw.split('/');
+                        const first = parts[0].trim(); // "1012"
+                        const secondSuffix = parts[1].trim(); // "3"
+                        
+                        trainToShapeMap.set(first, shapeId);
+                        
+                        // Wyciągnij pełny drugi numer (z 1012 i końcówki 3 zrób 1013)
+                        if (first.length > 0 && secondSuffix.length > 0) {
+                            const secondFull = first.substring(0, first.length - secondSuffix.length) + secondSuffix;
+                            trainToShapeMap.set(secondFull, shapeId);
+                        }
+                    } else {
+                        trainToShapeMap.set(raw, shapeId);
+                    }
+
+                    // 3. Obsługa wariantów technicznych PLK (5-cyfrowe z 0 lub 1 w środku)
+                    // Robimy to tylko dla numerów 4-cyfrowych (bezpieczeństwo)
+                    const cleanBase = raw.split('/')[0].replace(/\D/g, '');
+                    if (cleanBase.length === 4) {
+                        const v0 = cleanBase.substring(0, 2) + "0" + cleanBase.substring(2);
+                        const v1 = cleanBase.substring(0, 2) + "1" + cleanBase.substring(2);
+                        trainToShapeMap.set(v0, shapeId);
+                        trainToShapeMap.set(v1, shapeId);
+                    }
+                };
+
+                processNumber(numRaw);
+                processNumber(shortNameRaw); // To naprawi brakujące Busy i niektóre Regio
+            }
+        }
+    } else {
+        console.warn("⚠️ Brak pliku trips.txt w folderze data.");
+    }
+
+    if (fs.existsSync(shapesPath)) {
+        const lines = fs.readFileSync(shapesPath, "utf8").split("\n");
+        const tempShapes = {};
+        const headers = lines[0].split(",").map(h => h.trim());
+        const idIdx = headers.indexOf("shape_id");
+        const seqIdx = headers.indexOf("shape_pt_sequence");
+        const latIdx = headers.indexOf("shape_pt_lat");
+        const lonIdx = headers.indexOf("shape_pt_lon");
+
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const cols = lines[i].split(",");
+            const id = cols[idIdx]?.trim();
+            if (!id) continue;
+            
+            if (!tempShapes[id]) tempShapes[id] = [];
+            tempShapes[id].push({
+                lat: parseFloat(cols[latIdx]),
+                lon: parseFloat(cols[lonIdx]),
+                seq: parseInt(cols[seqIdx] || 0)
+            });
+        }
+
+        for (const id in tempShapes) {
+            tempShapes[id].sort((a, b) => a.seq - b.seq);
+            shapeCoordsMap.set(id, tempShapes[id].map(p => [p.lat, p.lon]));
+        }
+    } else {
+        console.warn("⚠️ Brak pliku shapes.txt w folderze data.");
+    }
+
+    console.log(`✅ Załadowano GTFS: ${trainToShapeMap.size} powiązań trips, ${shapeCoordsMap.size} wykreślonych tras.`);
+};
+
+const cleanNum = (n) => {
+    if (!n) return "";
+    
+    let raw = String(n).split('/')[0].trim();
+    let cleaned = raw.replace(/\D/g, '');
+
+    if (cleaned.length === 5 && (cleaned[2] === '0' || cleaned[2] === '1')) {
+   
+        const firstTwo = parseInt(cleaned.substring(0, 2));
+        if (firstTwo >= 10 && firstTwo <= 89) {
+            return cleaned.substring(0, 2) + cleaned.substring(3);
+        }
+    }
+
+    return cleaned.replace(/^0+/, ''); 
+};
 
 const buildIndexes = () => {
     console.log("🛠️ Budowanie indeksów RailScope...");
@@ -168,35 +290,6 @@ const PLK_API_KEY = process.env.PLK_API_KEY || "bg1dOGfvZFyhQwsdLxUnX0InmHEEB7sx
 const BASE_URL = "https://pdp-api.plk-sa.pl/api/v1";
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
 
-const fetchSingleStation = async (stationId) => {
-    if (stationNamesDict[String(stationId)]) {
-        return stationNamesDict[String(stationId)];
-    }
-
-    try {
-        console.log(`🔍 Brak nazwy dla ID ${stationId}. Odpytuję API (Lazy Load)...`);
-        const res = await axios.get(`${BASE_URL}/dictionaries/stations`, {
-            headers: plkHeaders,
-            params: { 
-                pageSize: 5000 
-            }
-        });
-
-        const stations = res.data.stations || [];
-        const found = stations.find(s => String(s.id) === String(stationId));
-
-        if (found) {
-            stationNamesDict[String(found.id)] = found.name;
-            stationCoordsDict[String(found.id)] = { lat: found.lat, lon: found.lon };
-            return found.name;
-        }
-
-        return `Przystanek ${stationId}`;
-    } catch (e) {
-        return `Stacja ${stationId}`;
-    }
-};
-
 const downloadInitialData = async () => {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     try {
@@ -217,6 +310,8 @@ const downloadInitialData = async () => {
             fs.writeFileSync(SCHEDULES_CACHE, JSON.stringify(res.data, null, 2));
         }
 
+        loadGTFS();
+
         if (!fs.existsSync(FULL_STATIONS_CACHE)) {
             await fetchFullStationDatabase(); 
         } else {
@@ -224,6 +319,7 @@ const downloadInitialData = async () => {
         }
     } catch (err) { 
         console.error("Błąd podczas startowego pobierania:", err.message);
+        loadGTFS();
         buildIndexes(); 
     }
 };
@@ -350,25 +446,36 @@ app.get("/api/trains/:id", (req, res) => {
     const train = trainInfoMap.get(id);
     
     if (train) {
-        res.json(train);
+        const cNum = cleanNum(train.number);
+        const shapeId = trainToShapeMap.get(cNum);
+        const shapeCoords = shapeId ? shapeCoordsMap.get(shapeId) : null;
+
+        console.log(`Szukam pociągu: "${cNum}" | Znaleziony ShapeID: ${shapeId}`);
+        
+        if (!shapeId) {
+            console.log("Dostępne numery w mapie (pierwsze 5):", Array.from(trainToShapeMap.keys()).slice(0, 5));
+        }
+
+        res.json({
+            ...train,
+            shapeCoords: shapeCoords || [] 
+        });
     } else {
         res.status(404).json({ error: "Nie znaleziono pociągu" });
     }
 });
 
-app.get("/api/stats", async (req, res) => { // Dodaj async tutaj
+app.get("/api/stats", async (req, res) => {
     try {
         const trains = allTrainsList;
         const totalTrains = trains.length;
-        
-        // --- NOWA LOGIKA REAL-TIME DLA OPÓŹNIEŃ ---
-        const majorStations = ["465", "10", "1011"]; // Warszawa, Kraków, Wrocław
+ 
+        const majorStations = ["465", "10", "1011"]; 
         let maxDelay = { value: 0, name: "Brak danych", number: "-" };
         let totalDelay = 0;
         let trainsWithDelayData = 0;
 
         try {
-            // Pobieramy operacje dla głównych węzłów, by znaleźć "rekordzistów"
             const today = new Date().toISOString().split('T')[0];
             const opsRes = await axios.get(`${BASE_URL}/operations`, {
                 headers: plkHeaders,
@@ -377,7 +484,6 @@ app.get("/api/stats", async (req, res) => { // Dodaj async tutaj
 
             const liveTrains = opsRes.data.trains || [];
             liveTrains.forEach(t => {
-                // Szukamy największego opóźnienia w punktach pomiarowych pociągu
                 const currentDelay = Math.max(...(t.stations || []).map(s => s.delay || 0), 0);
                 
                 if (currentDelay > 0) {
@@ -395,7 +501,6 @@ app.get("/api/stats", async (req, res) => { // Dodaj async tutaj
                 }
             });
         } catch (e) { console.error("Błąd pobierania live delay:", e.message); }
-        // ------------------------------------------
 
         const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"];
         const icCount = trains.filter(t => premiumCats.includes(t.categorySymbol)).length;
@@ -421,7 +526,7 @@ app.get("/api/stats", async (req, res) => { // Dodaj async tutaj
             traffic: {
                 punctuality: trainsWithDelayData > 0 ? `${(100 - (trainsWithDelayData/liveTrains.length*100)).toFixed(1)}%` : "98.5%",
                 averageDelay: trainsWithDelayData > 0 ? `${Math.round(totalDelay / trainsWithDelayData)} min` : "~2 min",
-                biggestDelay: maxDelay, // Tu wpadają realne dane!
+                biggestDelay: maxDelay, 
                 destinations: uniqueDestinations.size
             },
             distribution: {

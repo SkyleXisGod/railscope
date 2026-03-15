@@ -17,6 +17,10 @@ export default function StationsPage() {
   const [showPast, setShowPast] = useState(false);
   const [showRegio, setShowRegio] = useState(false);
 
+  const [unlockingId, setUnlockingId] = useState(null);
+  const [isArmedId, setIsArmedId] = useState(null);
+  const [hoverTimeout, setHoverTimeout] = useState(null);
+
   const [tick, setTick] = useState(0);
 
   const navigate = useNavigate();
@@ -199,8 +203,7 @@ export default function StationsPage() {
 
         {showRegio && (
           <div className="experimental-warning">
-            ⚠️ <strong>Funkcja eksperymentalna:</strong> Baza danych przystanków lokalnych jest niepełna. 
-            Niektóre relacje pociągów regionalnych mogą wyświetlać "???" zamiast stacji docelowej.
+            ⚠️ <strong>Tryb eksperymentalny aktywny:</strong> Dostęp do danych REGIO / BUS. Dane mogą być niekompletne.
           </div>
         )}
         
@@ -258,71 +261,46 @@ export default function StationsPage() {
 
                         return (
                           <tr key={`${t.id}-${idx}`} className={t.isPast ? 'row-past' : ''}>
-                            {/* 1. CZAS */}
                             <td className="time-cell">
                               <span className="main-time">{t.displayTime}</span>
                               {t.delay > 0 && <span className="delay-tag">+{t.delay} min</span>}
                             </td>
-
-                            {/* 2. POCIĄG */}
                             <td>
                               <span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span>
                               {t.trainName && <strong> "{t.trainName}"</strong>} <small>{t.number}</small>
                             </td>
-
-                            {/* 3. RELACJA (To tutaj backend podstawi dane z regiostationsCache.json) */}
                             <td className="relation-cell">{t.relation}</td>
-
-                            {/* 4. STATUS */}
                             <td>
                               <span className={`status-badge ${t.isPast ? 'PAST' : t.status}`}>
                                 {t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay} MIN` : 'OK')}
                               </span>
                             </td>
-
-                            {/* 5. PERON */}
                             <td className="platform-cell">{t.platform}</td>
-
-                            {/* 6. ŚLEDZENIE (Naprawiona logika i ikonki) */}
                             <td className="track-cell">
-                              {premiumCats.includes(t.category) ? (
-                                inTransit ? (
+                              <div className="track-btn-container">
+                                {inTransit ? (
                                   <button 
-                                    className="map-btn" 
-                                    style={{ margin: 0, padding: '4px 8px' }} 
+                                    className="track-map-btn"
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
-                                      navigate(`/?trainId=${t.id}`); 
+                                      navigate(`/?trainId=${t.id}&live=true`); 
                                     }}
-                                    title="Przejdź do mapy i śledź na żywo"
                                   >
-                                    📍
+                                    <div className="btn-content">
+                                      <span>📍 ŚLEDŹ LIVE</span>
+                                    </div>
                                   </button>
                                 ) : (
-                                  <div 
-                                    className="blocked-track-icon" 
-                                    title="Nie można śledzić pociągu, który nie jest w trasie"
-                                    style={{ opacity: 0.5, cursor: "not-allowed", textAlign: "center" }}
-                                  >
-                                    🚫
-                                  </div>
-                                )
-                              ) : (
-                                <div 
-                                  className="regio-track-icon" 
-                                  title="Nie śledzimy pociągów regionalnych"
-                                  style={{ cursor: "help", textAlign: "center", fontSize: "1.2rem" }}
-                                >
-                                  ⚠️
-                                </div>
-                              )}
+                                  <div className="blocked-track-icon" title="Pociąg nie jest w trasie">🚫</div>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
-                ) : <p className="no-data">Brak pociągów.</p>}
+                ) : <p className="no-data">Brak pociągów lub stacja pociągów regionalnych.</p>}
                 
                 {hasMore && !loading && (
                   <button className="expand-list-btn" onClick={() => setVisibleLimit(p => p + 10)}>Pokaż więcej ▼</button>

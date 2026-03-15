@@ -434,7 +434,6 @@ input:checked + .slider:before {
     color: white;
 }
 
-/* Kontener przycisku i ostrzeżenia */
 .route-action-container {
     display: flex;
     flex-direction: column;
@@ -442,119 +441,45 @@ input:checked + .slider:before {
     min-width: 160px;
 }
 
-/* Przycisk trasy */
+.track-btn-container, .route-action-container {
+    width: 170px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .track-map-btn {
     position: relative;
-    overflow: hidden;
-    padding: 8px 15px;
-    border-radius: 4px;
+    width: 160px;
+    height: 35px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: #e0e0e0;
     cursor: pointer;
-    background: #00bcd4;
-    color: white;
-    border: none;
-    transition: all 0.2s;
-}
-
-.track-map-btn.warning-btn {
-    background: #444; /* Ciemniejszy dla REG/BUS */
-    border: 1px solid #666;
-}
-
-.track-map-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Ikona kłódki */
-.lock-icon {
-    margin-right: 6px;
-    filter: grayscale(1);
-}
-
-/* Pasek ładowania wewnątrz przycisku */
-.progress-bar-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: rgba(255, 152, 0, 0.4);
-    width: 0%;
-    animation: loadProgress 3s linear forwards;
-}
-
-@keyframes loadProgress {
-    from { width: 0%; }
-    to { width: 100%; }
-}
-
-.loading-text {
-    position: relative;
-    z-index: 2;
-    font-size: 11px;
-    font-weight: bold;
-}
-
-.mini-warning {
-    font-size: 9px;
-    color: #ff9800;
-    margin-top: 3px;
-    font-weight: bold;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
 }
 
-.train-card-header.no-route {
-    cursor: default;
-}
-
-.cat-OTHER-badge {
-    background-color: #4a4a4a;
-    color: #dfdfdf;
-}
-
-.track-map-btn {
-    position: relative;
-    overflow: hidden;
-    transition: background 0.3s ease, transform 0.2s ease;
-}
-
-.track-map-btn.unlocking {
-    cursor: wait;
-}
-
-.track-map-btn.armed {
-    background: #4caf50 !important;
-    border-color: #4caf50;
-    cursor: pointer;
-    transform: scale(1.05);
-}
-
-.progress-bar-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: rgba(255, 152, 0, 0.6);
-    width: 0%;
-    animation: loadProgress 3s linear forwards;
-    z-index: 1;
+.track-map-btn:hover {
+    background: #383838;
+    border-color: #666;
+    color: #ffffff;
 }
 
 .btn-content {
-    position: relative;
-    z-index: 2; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.hold-hint {
-    font-size: 9px;
-    color: #ff9800;
-    margin-top: 4px;
-    text-align: right;
-    font-weight: bold;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+.progress-bar-fill {
+    display: none;
 }
