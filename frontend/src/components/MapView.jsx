@@ -1,11 +1,12 @@
-import React, { useEffect, useState, memo, useRef } from "react";
+import React, { useEffect, useState, memo, useRef, useCallback } from "react"
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
 import L from "leaflet";
 import axios from "axios";
 import "./MapPopup.css";
+import "./MapCenterButton.css";
 
-const POLAND_BOUNDS = L.latLngBounds([49.0, 14.0], [55.0, 24.5]);
+const POLAND_BOUNDS = L.latLngBounds([46.0, 10.0], [58.0, 28.0]);
 
 const calcMin = (timeStr) => {
   if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
@@ -19,7 +20,6 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
     popupclose: (e) => {
       const params = new URLSearchParams(window.location.search);
       const currentIdInUrl = params.get("stationId");
-
       if (e.popup.options.className === "station-next-gen-popup" && currentIdInUrl) {
         onStationClick(currentIdInUrl);
       }
@@ -31,7 +31,6 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
       {stations.map(s => {
         const isSelected = stationId && String(s.id) === String(stationId);
         const isOnTrackedRoute = trackedTrain?.route?.some(rs => String(rs.id) === String(s.id));
-        
         if (s.isRegional && currentZoom < 10 && !isOnTrackedRoute && !isSelected) return null;
 
         return (
@@ -39,9 +38,7 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
             <CircleMarker
               center={[parseFloat(s.lat), parseFloat(s.lon)]}
               radius={isSelected ? 6 : (s.isRegional ? 3 : 4)}
-              eventHandlers={{ 
-                click: () => onStationClick(s.id) 
-              }}
+              eventHandlers={{ click: () => onStationClick(s.id) }}
               pathOptions={{
                 color: "#333",
                 fillColor: isSelected || isOnTrackedRoute ? "#ff2b2b" : (s.isRegional ? "#f1c40f" : "#00ffd5"),
@@ -57,7 +54,6 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                       <span className="popup-station-icon">🏢</span>
                       <span className="popup-station-name">{s.name}</span>
                     </div>
-                    
                     <div className="popup-coords-grid">
                       <div className="coord-box">
                         <span className="coord-label">LAT</span>
@@ -68,7 +64,6 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                         <span className="coord-value">{parseFloat(s.lon).toFixed(5)}</span>
                       </div>
                     </div>
-
                     <div className="popup-station-footer">
                       <span className="type-tag">{s.isRegional ? "REGIONALNA" : "DALEKOBIEŻNA"}</span>
                     </div>
@@ -76,17 +71,11 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                 </div>
               </Popup>
             </CircleMarker>
-
             {isSelected && (
               <CircleMarker
                 center={[parseFloat(s.lat), parseFloat(s.lon)]}
                 radius={12}
-                pathOptions={{ 
-                  color: '#ff2b2b', 
-                  weight: 2, 
-                  fillOpacity: 0, 
-                  dashArray: '5, 5' 
-                }}
+                pathOptions={{ color: '#ff2b2b', weight: 2, fillOpacity: 0, dashArray: '5, 5' }}
               />
             )}
           </React.Fragment>
@@ -96,9 +85,15 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
   );
 });
 
-function MapController({ selectedStation, trainLocation, sidebarOpen }) {
+function MapController({ selectedStation, trainLocation, sidebarOpen, isTracking, setIsTracking, isLive, firstStation }) {
   const map = useMap();
   const lastTargetId = useRef(null);
+
+  useMapEvents({
+    dragstart: () => {
+      if (isTracking) setIsTracking(false);
+    }
+  });
 
   useEffect(() => {
     map.setMinZoom(6);
@@ -108,15 +103,25 @@ function MapController({ selectedStation, trainLocation, sidebarOpen }) {
   }, [sidebarOpen, map]);
 
   useEffect(() => {
-    const target = trainLocation || selectedStation;
+    const target = isLive ? trainLocation : (selectedStation || firstStation);
+    
     if (target && target.lat && target.lon) {
-      const currentId = trainLocation ? 'train' : selectedStation.id;
-      if (lastTargetId.current !== currentId) {
-        map.setView([target.lat, target.lon], 12);
-        lastTargetId.current = currentId;
+      const targetEntityId = isLive ? 'active-train' : (selectedStation ? `station-${selectedStation.id}` : 'route-start');
+
+      if (lastTargetId.current !== targetEntityId) {
+        map.setView([target.lat, target.lon], 12, { animate: true });
+        lastTargetId.current = targetEntityId;
       }
+      if (isLive && isTracking && trainLocation) {
+        map.setView([trainLocation.lat, trainLocation.lon], 15, {
+          animate: true,
+          duration: 0.5
+        });
+      }
+    } else if (!target) {
+      lastTargetId.current = null;
     }
-  }, [selectedStation, trainLocation, map]);
+  }, [selectedStation, trainLocation?.lat, trainLocation?.lon, isTracking, map, isLive, firstStation]);
 
   return null;
 }
@@ -131,6 +136,7 @@ export default function MapView({ sidebarOpen }) {
   const stationId = searchParams.get("stationId");
   const trainId = searchParams.get("trainId");
   const isLive = searchParams.get("live") === "true";
+  
   const [stations, setStations] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
   const [trackedTrain, setTrackedTrain] = useState(null);
@@ -138,6 +144,8 @@ export default function MapView({ sidebarOpen }) {
   const [currentZoom, setCurrentZoom] = useState(6);
   const [computedTrainPos, setComputedTrainPos] = useState(null);
   const [tick, setTick] = useState(0);
+  
+  const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
@@ -178,11 +186,12 @@ export default function MapView({ sidebarOpen }) {
     } else {
       setTrackedTrain(null);
       setRouteCoords([]);
+      setIsTracking(false); 
     }
   }, [trainId]);
 
   useEffect(() => {
-    if (!trackedTrain || !trackedTrain.route || routeCoords.length === 0) {
+    if (!trackedTrain || !trackedTrain.route || routeCoords.length === 0 || !isLive) {
       setComputedTrainPos(null);
       return;
     }
@@ -218,7 +227,6 @@ export default function MapView({ sidebarOpen }) {
           let t1 = calcMin(r[i].dep) + d;
           let t2 = calcMin(r[i+1].arr) + d;
           if (t2 < t1) t2 += 1440;
-          
           let tCurr = currentTotalMin;
           if (tCurr < t1 - 120 && t2 > 1440) tCurr += 1440;
 
@@ -247,7 +255,6 @@ export default function MapView({ sidebarOpen }) {
               cLat = r[i].lat + (r[i+1].lat - r[i].lat) * progress;
               cLon = r[i].lon + (r[i+1].lon - r[i].lon) * progress;
             }
-
             newPos = { lat: cLat, lon: cLon, status: "moving", progress, nextStation: r[i+1] };
             break;
           }
@@ -255,20 +262,22 @@ export default function MapView({ sidebarOpen }) {
       }
     }
     setComputedTrainPos(newPos);
-  }, [trackedTrain, routeCoords, tick]);
+  }, [trackedTrain, routeCoords, tick, isLive]);
 
-  const handleStationClick = (id) => {
-    const newParams = new URLSearchParams(searchParams);
-    
-    if (stationId && String(stationId) === String(id)) {
-      newParams.delete("stationId");
-      setSelectedStation(null);
-    } else {
-      newParams.set("stationId", id);
-    }
-    
-    setSearchParams(newParams);
-  };
+  const handleStationClick = useCallback((id) => {
+    setSearchParams((prevParams) => {
+      const newParams = new URLSearchParams(prevParams);
+      const currentId = newParams.get("stationId");
+      
+      if (currentId && String(currentId) === String(id)) {
+        newParams.delete("stationId");
+        setSelectedStation(null); 
+      } else {
+        newParams.set("stationId", id);
+      }
+      return newParams;
+    });
+  }, [setSearchParams]); 
 
   const trainIcon = L.divIcon({
     className: 'custom-train-icon',
@@ -277,11 +286,24 @@ export default function MapView({ sidebarOpen }) {
     iconAnchor: [10, 10]
   });
 
+  const firstStationOnRoute = trackedTrain?.route?.[0];
+
   return (
     <div style={{ height: "100%", width: "100%", position: "relative" }}>
+      {trainId && isLive && (
+        <button 
+          className={`map-tracking-button ${isTracking ? 'active' : ''}`}
+          onClick={() => setIsTracking(!isTracking)}
+        >
+          <span className="tracking-dot"></span>
+          {isTracking ? "ŚLEDZENIE WŁĄCZONE" : "ŚLEDŹ POCIĄG"}
+        </button>
+      )}
+
       <MapContainer
         center={[52.23, 21.01]} 
         zoom={6} 
+        maxBoundsViscosity={0.8}
         maxBounds={POLAND_BOUNDS}
         preferCanvas={true} 
         style={{ height: "100%", width: "100%", background: "#0b0b0b" }}
@@ -291,7 +313,11 @@ export default function MapView({ sidebarOpen }) {
         <MapController 
           selectedStation={selectedStation} 
           trainLocation={computedTrainPos} 
-          sidebarOpen={sidebarOpen} 
+          sidebarOpen={sidebarOpen}
+          isTracking={isTracking}
+          setIsTracking={setIsTracking}
+          isLive={isLive}
+          firstStation={firstStationOnRoute}
         />
 
         {routeCoords.length > 0 && (
@@ -304,13 +330,9 @@ export default function MapView({ sidebarOpen }) {
         <Pane name="train-pane" style={{ zIndex: 650 }}>
           {computedTrainPos && trackedTrain && isLive && (
             <Marker position={[computedTrainPos.lat, computedTrainPos.lon]} icon={trainIcon} pane="train-pane">
-              <Popup 
-                className="train-next-gen-popup" 
-                offset={[0, -10]}
-              >
+              <Popup className="train-next-gen-popup" offset={[0, -10]}>
                 <div className={`popup-main-container popup-accent-${trackedTrain.categorySymbol}`}>
                   <div className="popup-top-bar"></div> 
-                  
                   <div className="popup-content-padding">
                     <div className="popup-row-header">
                       <div className="popup-train-identity">
@@ -321,39 +343,24 @@ export default function MapView({ sidebarOpen }) {
                         {computedTrainPos?.status === "stopped" ? "STOI" : `⚡ ${trackedTrain.speed || 85} km/h`}
                       </span>
                     </div>
-
                     {trackedTrain.name && trackedTrain.name.trim().length > 0 && (
-                      <div className="popup-train-name-row">
-                        "{trackedTrain.name}"
-                      </div>
+                      <div className="popup-train-name-row">"{trackedTrain.name}"</div>
                     )}
-
-                    <div className="popup-route-text">
-                      {trackedTrain.relation}
-                    </div>
-
+                    <div className="popup-route-text">{trackedTrain.relation}</div>
                     <div className="popup-status-row">
                       <span className={`status-dot ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}></span>
                       <div className={`status-text ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}>
-                        Opóźnienie: {trackedTrain.delay > 0 ? (
-                          <strong>+{trackedTrain.delay} min</strong>
-                        ) : (
-                          <strong>O czasie</strong>
-                        )}
+                        Opóźnienie: {trackedTrain.delay > 0 ? <strong>+{trackedTrain.delay} min</strong> : <strong>O czasie</strong>}
                       </div>
                     </div>
-
                     {computedTrainPos?.nextStation && (
                       <div className="popup-progress-section">
                         <div className="popup-progress-info">
-                          <span> Następna: <strong>{computedTrainPos.nextStation.name} </strong></span>
+                          <span> Następna: <strong>{computedTrainPos.nextStation.name} </strong></span><br></br>
                           <span> Postęp: <strong>{(computedTrainPos.progress * 100).toFixed(2)}% </strong></span>
                         </div>
                         <div className="popup-progress-track">
-                          <div 
-                            className="popup-progress-fill" 
-                            style={{ width: `${computedTrainPos.progress * 100}%` }}
-                          ></div>
+                          <div className="popup-progress-fill" style={{ width: `${computedTrainPos.progress * 100}%` }}></div>
                         </div>
                       </div>
                     )}
@@ -368,7 +375,7 @@ export default function MapView({ sidebarOpen }) {
           stations={stations}
           currentZoom={currentZoom}
           stationId={stationId}
-          trackedTrain={isLive ? trackedTrain : null} 
+          trackedTrain={trackedTrain} 
           onStationClick={handleStationClick}
         />
       </MapContainer>

@@ -195,7 +195,7 @@ font-size: 0.85rem;
 }
 
 .custom-train-icon {
-    transition: all 3s linear; 
+    transition: all 1s linear; 
 }
 
 .train-marker-wrapper {
@@ -358,8 +358,7 @@ font-size: 0.85rem;
     font-style: italic;
 }
 
-.station-next-gen-popup .leaflet-popup-content-wrapper,
-.station-next-gen-popup .leaflet-popup-tip {
+.station-next-gen-popup .leaflet-popup-content-wrapper, .station-next-gen-popup .leaflet-popup-tip {
   background: #121212 !important;
   color: #fff !important;
   border: 1px solid #333;
