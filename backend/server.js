@@ -49,8 +49,13 @@ let stationCoordsDict = {};
 let trainToShapeMap = new Map();
 let shapeCoordsMap = new Map();
 
+const cleanNum = (n) => {
+    if (!n) return "";
+    return String(n).split('/')[0].replace(/\D/g, '');
+};
+
 const loadGTFS = () => {
-    console.log("🛠️ Ładowanie danych GTFS (shapes & trips)...");
+    console.log("🛠️ Ładowanie danych GTFS...");
 
     const GTFS_DIR = path.join(__dirname, "..", "gtfs");
     const tripsPath = path.join(GTFS_DIR, "trips.txt");
@@ -59,65 +64,6 @@ const loadGTFS = () => {
     if (!fs.existsSync(tripsPath) || !fs.existsSync(shapesPath)) {
         console.error("❌ BŁĄD: Nie znaleziono plików GTFS w lokalizacji:", GTFS_DIR);
         return;
-    }
-    
-    if (fs.existsSync(tripsPath)) {
-        const lines = fs.readFileSync(tripsPath, "utf8").split("\n");
-        const headers = lines[0].split(",").map(h => h.trim());
-        const shortNameIdx = headers.indexOf("trip_short_name");
-        const plkNumIdx = headers.indexOf("plk_train_number");
-        const shapeIdIdx = headers.indexOf("shape_id");
-
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            const cols = lines[i].split(",");
-
-            const numRaw = cols[plkNumIdx]?.trim();
-            const shortNameRaw = cols[shortNameIdx]?.trim();
-            const shapeId = cols[shapeIdIdx]?.trim();
-        
-            if (shapeId) {
-                // Funkcja pomocnicza, aby nie powtarzać kodu dla numRaw i shortNameRaw
-                const processNumber = (raw) => {
-                    if (!raw) return;
-                    
-                    // 1. Zapisz oryginał (np. "1012/3")
-                    trainToShapeMap.set(raw, shapeId);
-
-                    // 2. Obsługa łamanych numerów (np. "1012/3" -> zapisz "1012" ORAZ "1013")
-                    if (raw.includes('/')) {
-                        const parts = raw.split('/');
-                        const first = parts[0].trim(); // "1012"
-                        const secondSuffix = parts[1].trim(); // "3"
-                        
-                        trainToShapeMap.set(first, shapeId);
-                        
-                        // Wyciągnij pełny drugi numer (z 1012 i końcówki 3 zrób 1013)
-                        if (first.length > 0 && secondSuffix.length > 0) {
-                            const secondFull = first.substring(0, first.length - secondSuffix.length) + secondSuffix;
-                            trainToShapeMap.set(secondFull, shapeId);
-                        }
-                    } else {
-                        trainToShapeMap.set(raw, shapeId);
-                    }
-
-                    // 3. Obsługa wariantów technicznych PLK (5-cyfrowe z 0 lub 1 w środku)
-                    // Robimy to tylko dla numerów 4-cyfrowych (bezpieczeństwo)
-                    const cleanBase = raw.split('/')[0].replace(/\D/g, '');
-                    if (cleanBase.length === 4) {
-                        const v0 = cleanBase.substring(0, 2) + "0" + cleanBase.substring(2);
-                        const v1 = cleanBase.substring(0, 2) + "1" + cleanBase.substring(2);
-                        trainToShapeMap.set(v0, shapeId);
-                        trainToShapeMap.set(v1, shapeId);
-                    }
-                };
-
-                processNumber(numRaw);
-                processNumber(shortNameRaw); // To naprawi brakujące Busy i niektóre Regio
-            }
-        }
-    } else {
-        console.warn("⚠️ Brak pliku trips.txt w folderze data.");
     }
 
     if (fs.existsSync(shapesPath)) {
@@ -147,28 +93,62 @@ const loadGTFS = () => {
             tempShapes[id].sort((a, b) => a.seq - b.seq);
             shapeCoordsMap.set(id, tempShapes[id].map(p => [p.lat, p.lon]));
         }
-    } else {
-        console.warn("⚠️ Brak pliku shapes.txt w folderze data.");
+        console.log(`✅ Kształty wczytane: ${shapeCoordsMap.size}`);
     }
 
-    console.log(`✅ Załadowano GTFS: ${trainToShapeMap.size} powiązań trips, ${shapeCoordsMap.size} wykreślonych tras.`);
-};
+    if (fs.existsSync(tripsPath)) {
+        const lines = fs.readFileSync(tripsPath, "utf8").split("\n");
+        const headers = lines[0].split(",").map(h => h.trim());
+        const plkNumIdx = headers.indexOf("plk_train_number");
+        const shortNameIdx = headers.indexOf("trip_short_name");
+        const shapeIdIdx = headers.indexOf("shape_id");
 
-const cleanNum = (n) => {
-    if (!n) return "";
-    
-    let raw = String(n).split('/')[0].trim();
-    let cleaned = raw.replace(/\D/g, '');
+        const bestShapes = new Map();
+        
+        const getVariants = (raw) => {
+            if (!raw) return [];
+            const cleanRaw = raw.trim();
+            const variants = new Set();
+            
+            if (cleanRaw.includes('/')) {
+                const parts = cleanRaw.split('/');
+                const base = parts[0].replace(/\D/g, ''); 
+                const suffix = parts[1].replace(/\D/g, ''); 
+                
+                if (base) variants.add(base);
+                
+                if (base && suffix) {
+                    const prefixLength = base.length - suffix.length;
+                    if (prefixLength > 0) {
+                        variants.add(base.substring(0, prefixLength) + suffix);
+                    }
+                }
+            } else {
+                variants.add(cleanRaw.replace(/\D/g, ''));
+            }
+            return Array.from(variants).filter(Boolean);
+        };
 
-    if (cleaned.length === 5 && (cleaned[2] === '0' || cleaned[2] === '1')) {
-   
-        const firstTwo = parseInt(cleaned.substring(0, 2));
-        if (firstTwo >= 10 && firstTwo <= 89) {
-            return cleaned.substring(0, 2) + cleaned.substring(3);
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const cols = lines[i].split(",");
+            const rawNum = cols[plkNumIdx]?.trim();
+            const shortName = cols[shortNameIdx]?.trim();
+            const shapeId = cols[shapeIdIdx]?.trim();
+
+            if (!shapeId) continue;
+
+            const allVariants = [...getVariants(rawNum), ...getVariants(shortName)];
+
+            allVariants.forEach(v => {
+                if (!trainToShapeMap.has(v)) {
+                    trainToShapeMap.set(v, new Set());
+                }
+                trainToShapeMap.get(v).add(shapeId);
+            });
         }
+        console.log(`✅ Powiązania tras wczytane: ${trainToShapeMap.size}`);
     }
-
-    return cleaned.replace(/^0+/, ''); 
 };
 
 const buildIndexes = () => {
@@ -446,19 +426,81 @@ app.get("/api/trains/:id", (req, res) => {
     const train = trainInfoMap.get(id);
     
     if (train) {
-        const cNum = cleanNum(train.number);
-        const shapeId = trainToShapeMap.get(cNum);
-        const shapeCoords = shapeId ? shapeCoordsMap.get(shapeId) : null;
-
-        console.log(`Szukam pociągu: "${cNum}" | Znaleziony ShapeID: ${shapeId}`);
+        const opNum = cleanNum(train.number);
         
-        if (!shapeId) {
-            console.log("Dostępne numery w mapie (pierwsze 5):", Array.from(trainToShapeMap.keys()).slice(0, 5));
+        const possibleNumbers = [opNum];
+        if (opNum.length === 5) {
+            possibleNumbers.push(opNum.substring(0, 4));
+            possibleNumbers.push(opNum.substring(0, 2) + opNum.substring(3)); 
         }
+        
+        let shapeIds = null;
+        let matched = "";
+        
+        for (const n of possibleNumbers) {
+            if (trainToShapeMap.has(n)) {
+                shapeIds = trainToShapeMap.get(n);
+                matched = n;
+                break;
+            }
+        }
+
+        let finalCoords = [];
+        if (shapeIds) {
+            const idsArr = Array.from(shapeIds);
+            let shapes = idsArr.map(sid => shapeCoordsMap.get(sid)).filter(Boolean);
+            
+            if (shapes.length > 0) {
+                shapes.sort((a, b) => b.length - a.length); 
+                let chain = shapes.shift();
+                
+                while (shapes.length > 0) {
+                    let chainStart = chain[0];
+                    let chainEnd = chain[chain.length - 1];
+                    
+                    let bestMatchIdx = -1;
+                    let bestDist = Infinity;
+                    let appendTo = 'end';
+                    let reverseShape = false;
+                    
+                    shapes.forEach((sh, idx) => {
+                        let shStart = sh[0];
+                        let shEnd = sh[sh.length - 1];
+                        
+                        let d1 = Math.hypot(chainEnd[0]-shStart[0], chainEnd[1]-shStart[1]);
+                        if (d1 < bestDist) { bestDist = d1; bestMatchIdx = idx; appendTo = 'end'; reverseShape = false; }
+                        
+                        let d2 = Math.hypot(chainEnd[0]-shEnd[0], chainEnd[1]-shEnd[1]);
+                        if (d2 < bestDist) { bestDist = d2; bestMatchIdx = idx; appendTo = 'end'; reverseShape = true; }
+                        
+                        let d3 = Math.hypot(chainStart[0]-shEnd[0], chainStart[1]-shEnd[1]);
+                        if (d3 < bestDist) { bestDist = d3; bestMatchIdx = idx; appendTo = 'start'; reverseShape = false; }
+                        
+                        let d4 = Math.hypot(chainStart[0]-shStart[0], chainStart[1]-shStart[1]);
+                        if (d4 < bestDist) { bestDist = d4; bestMatchIdx = idx; appendTo = 'start'; reverseShape = true; }
+                    });
+                    
+                    if (bestMatchIdx !== -1) {
+                        let match = shapes.splice(bestMatchIdx, 1)[0];
+                        if (reverseShape) match.reverse();
+                        if (appendTo === 'end') {
+                            chain = chain.concat(match);
+                        } else {
+                            chain = match.concat(chain);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                finalCoords = chain;
+            }
+        }
+
+        console.log(`Szukam pociągu: "${opNum}" | Próby: [${possibleNumbers.join(', ')}] | Wynik ShapeID: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'Brak'}`);
 
         res.json({
             ...train,
-            shapeCoords: shapeCoords || [] 
+            shapeCoords: finalCoords 
         });
     } else {
         res.status(404).json({ error: "Nie znaleziono pociągu" });

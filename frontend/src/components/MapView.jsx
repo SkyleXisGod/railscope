@@ -1,9 +1,9 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Polyline, Marker, useMapEvents } from "react-leaflet";
+import React, { useEffect, useState, memo, useRef } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import "./MapPopup.css";
 import L from "leaflet";
 import axios from "axios";
+import "./MapPopup.css";
 
 const POLAND_BOUNDS = L.latLngBounds([49.0, 14.0], [55.0, 24.5]);
 
@@ -14,282 +14,364 @@ const calcMin = (timeStr) => {
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
 };
 
-function ZoomListener({ setZoomLevel }) {
+const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, onStationClick }) => {
   useMapEvents({
-    zoomend: (e) => {
-      setZoomLevel(e.target.getZoom());
-    },
-  });
-  return null;
-}
+    popupclose: (e) => {
+      const params = new URLSearchParams(window.location.search);
+      const currentIdInUrl = params.get("stationId");
 
-function MapLogic({ sidebarOpen, station, routeCoords, trainId }) {
+      if (e.popup.options.className === "station-next-gen-popup" && currentIdInUrl) {
+        onStationClick(currentIdInUrl);
+      }
+    }
+  });
+
+  return (
+    <>
+      {stations.map(s => {
+        const isSelected = stationId && String(s.id) === String(stationId);
+        const isOnTrackedRoute = trackedTrain?.route?.some(rs => String(rs.id) === String(s.id));
+        
+        if (s.isRegional && currentZoom < 10 && !isOnTrackedRoute && !isSelected) return null;
+
+        return (
+          <React.Fragment key={`station-${s.id}`}>
+            <CircleMarker
+              center={[parseFloat(s.lat), parseFloat(s.lon)]}
+              radius={isSelected ? 6 : (s.isRegional ? 3 : 4)}
+              eventHandlers={{ 
+                click: () => onStationClick(s.id) 
+              }}
+              pathOptions={{
+                color: "#333",
+                fillColor: isSelected || isOnTrackedRoute ? "#ff2b2b" : (s.isRegional ? "#f1c40f" : "#00ffd5"),
+                fillOpacity: 1,
+                weight: 1,
+              }}
+            >
+              <Popup className="station-next-gen-popup" offset={[0, -5]}>
+                <div className="popup-main-container station-variant">
+                  <div className="popup-top-bar"></div>
+                  <div className="popup-content-padding">
+                    <div className="popup-station-header">
+                      <span className="popup-station-icon">🏢</span>
+                      <span className="popup-station-name">{s.name}</span>
+                    </div>
+                    
+                    <div className="popup-coords-grid">
+                      <div className="coord-box">
+                        <span className="coord-label">LAT</span>
+                        <span className="coord-value">{parseFloat(s.lat).toFixed(5)}</span>
+                      </div>
+                      <div className="coord-box">
+                        <span className="coord-label">LON</span>
+                        <span className="coord-value">{parseFloat(s.lon).toFixed(5)}</span>
+                      </div>
+                    </div>
+
+                    <div className="popup-station-footer">
+                      <span className="type-tag">{s.isRegional ? "REGIONALNA" : "DALEKOBIEŻNA"}</span>
+                    </div>
+                  </div>
+                </div>
+              </Popup>
+            </CircleMarker>
+
+            {isSelected && (
+              <CircleMarker
+                center={[parseFloat(s.lat), parseFloat(s.lon)]}
+                radius={12}
+                pathOptions={{ 
+                  color: '#ff2b2b', 
+                  weight: 2, 
+                  fillOpacity: 0, 
+                  dashArray: '5, 5' 
+                }}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+});
+
+function MapController({ selectedStation, trainLocation, sidebarOpen }) {
   const map = useMap();
-  const prevTrainId = useRef(null);
-  const prevStationId = useRef(null);
+  const lastTargetId = useRef(null);
 
   useEffect(() => {
     map.setMinZoom(6);
-    map.setMaxZoom(18); 
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 350);
+    map.setMaxZoom(18);
+    const timer = setTimeout(() => map.invalidateSize(), 300);
     return () => clearTimeout(timer);
   }, [sidebarOpen, map]);
 
   useEffect(() => {
-    if (station && station.id !== prevStationId.current) {
-      map.flyTo([station.lat, station.lon], 15, { duration: 1.2 });
-      prevStationId.current = station.id;
-    }
-  }, [station, map]);
-
-  useEffect(() => {
-    if (routeCoords && routeCoords.length > 0 && trainId !== prevTrainId.current) {
-      const bounds = L.latLngBounds(routeCoords);
-      map.fitBounds(bounds, { padding: [50, 50], duration: 1.2 });
-      prevTrainId.current = trainId;
-    }
-  }, [routeCoords, map, trainId]);
-
-  useEffect(() => {
-    const handleMoveEnd = () => {
-      if (!map.getBounds().overlaps(POLAND_BOUNDS)) {
-        map.panInsideBounds(POLAND_BOUNDS, { animate: true });
+    const target = trainLocation || selectedStation;
+    if (target && target.lat && target.lon) {
+      const currentId = trainLocation ? 'train' : selectedStation.id;
+      if (lastTargetId.current !== currentId) {
+        map.setView([target.lat, target.lon], 12);
+        lastTargetId.current = currentId;
       }
-    };
-    map.on("moveend", handleMoveEnd);
-    return () => map.off("moveend", handleMoveEnd);
-  }, [map]);
+    }
+  }, [selectedStation, trainLocation, map]);
 
   return null;
 }
 
-const trainDotIcon = L.divIcon({
-  className: 'custom-train-dot',
-  html: `<div style="width: 16px; height: 16px; background-color: #007bff; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5); transform: translate(-2px, -2px);"></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8]
-});
+function ZoomListener({ setZoomLevel }) {
+  useMapEvents({ zoomend: (e) => setZoomLevel(e.target.getZoom()) });
+  return null;
+}
 
 export default function MapView({ sidebarOpen }) {
-  const [stations, setStations] = useState([]);
-  const [trackedTrain, setTrackedTrain] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [localShapeCoords, setLocalShapeCoords] = useState([]);
-  
-  const stationId = searchParams.get("station");
+  const stationId = searchParams.get("stationId");
   const trainId = searchParams.get("trainId");
-  const isLiveMode = searchParams.get("live") === "true";
-  
-  const [mapInstance, setMapInstance] = useState(null);
-  const [pulseSize, setPulseSize] = useState(16);
-  const [trainPos, setTrainPos] = useState(null);
+  const isLive = searchParams.get("live") === "true";
+  const [stations, setStations] = useState([]);
+  const [selectedStation, setSelectedStation] = useState(null);
+  const [trackedTrain, setTrackedTrain] = useState(null);
+  const [routeCoords, setRouteCoords] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(6);
+  const [computedTrainPos, setComputedTrainPos] = useState(null);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
-      .catch(err => console.error(err));
+      .catch(err => console.error("Stations error:", err));
   }, []);
 
   useEffect(() => {
+    if (stationId) {
+      axios.get(`http://localhost:8080/api/stations/${stationId}`)
+        .then(res => setSelectedStation(res.data))
+        .catch(() => setSelectedStation(null)); 
+    } else {
+      setSelectedStation(null);
+    }
+  }, [stationId]);
+
+  useEffect(() => {
     if (trainId) {
-      axios.get(`http://localhost:8080/api/trains/${trainId}`)
-        .then(async (res) => {
-          let trainData = res.data;
-          trainData.delay = 0;
-
-          if (isLiveMode && trainData.route && trainData.route.length > 0) {
-            try {
-              const now = new Date();
-              const currentMins = now.getHours() * 60 + now.getMinutes();
-
-              const activeStation = trainData.route.find(s => {
-                  const arrMin = calcMin(s.arr);
-                  const depMin = calcMin(s.dep);
-                  return (arrMin && arrMin > currentMins - 20); 
-              }) || trainData.route[trainData.route.length - 1]; 
-
-              const timetableRes = await axios.get(`http://localhost:8080/api/timetable/${activeStation.id}`);
-              const rawTrains = timetableRes.data || [];
-              const getT = (iso) => iso?.includes("T") ? iso.split("T")[1].substring(0, 5) : iso?.substring(0, 5);
-              const liveTrain = rawTrains.find(t => String(t.trainOrderId) === String(trainId));
-              
-              if (liveTrain) {
-                const sInfo = liveTrain.stations?.find(s => String(s.stationId) === String(activeStation.id)) || {};
-                const pArr = getT(sInfo.plannedArrival);
-                const pDep = getT(sInfo.plannedDeparture);
-                const aArr = getT(sInfo.actualArrival);
-                const aDep = getT(sInfo.actualDeparture);
-
-                const delayArr = aArr && pArr ? Math.max(0, (calcMin(aArr) || 0) - (calcMin(pArr) || 0)) : 0;
-                const delayDep = aDep && pDep ? Math.max(0, (calcMin(aDep) || 0) - (calcMin(pDep) || 0)) : 0;
-                
-                trainData.delay = Math.max(delayArr, delayDep);
-              }
-            } catch (e) {
-              console.warn("Błąd pobierania delay live:", e);
-            }
+      axios.get(`http://localhost:8080/api/trains/${encodeURIComponent(trainId)}`)
+        .then(res => {
+          setTrackedTrain(res.data);
+          if (res.data.shapeCoords && res.data.shapeCoords.length > 0) {
+            setRouteCoords(res.data.shapeCoords);
+          } else if (res.data.route) {
+            setRouteCoords(res.data.route.map(s => [s.lat, s.lon]));
           }
-          setTrackedTrain(trainData);
         })
-        .catch(err => {
-          console.error(err);
+        .catch(() => {
           setTrackedTrain(null);
+          setRouteCoords([]);
         });
     } else {
       setTrackedTrain(null);
+      setRouteCoords([]);
     }
-  }, [trainId, isLiveMode]);
-
-  const getTrainStyle = (categorySymbol) => {
-    const categories = ["EIP", "EIC", "IC", "TLK"];
-    const styleClass = categories.includes(categorySymbol) ? `cat-${categorySymbol}` : "cat-REG";
-    const emojis = { "EIP": "🚄", "EIC": "🚆", "IC": "🚆", "TLK": "🚂", "BUS": "🚌", "ZKA": "🚌" };
-    return { accentClass: styleClass, label: categorySymbol || "REG", emoji: emojis[categorySymbol] || "🚆" };
-  };
+  }, [trainId]);
 
   useEffect(() => {
-    // 1. Zmieniamy źródło punktów: najpierw kształt GTFS, potem (jako backup) stacje
-    const points = (trackedTrain?.shapeCoords && trackedTrain.shapeCoords.length > 0) 
-      ? trackedTrain.shapeCoords 
-      : trackedTrain?.route?.filter(r => r.lat && r.lon).map(r => [r.lat, r.lon]);
-
-    if (!isLiveMode || !trackedTrain || !points || points.length < 2) {
-      setTrainPos(null);
+    if (!trackedTrain || !trackedTrain.route || routeCoords.length === 0) {
+      setComputedTrainPos(null);
       return;
     }
 
-    const updatePosition = () => {
-      const now = new Date();
-      const currentMins = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
-      
-      // Obliczamy całkowity postęp pociągu na trasie (od pierwszej do ostatniej stacji)
-      const firstStop = trackedTrain.route[0];
-      const lastStop = trackedTrain.route[trackedTrain.route.length - 1];
-      
-      const delay = trackedTrain.delay || 0;
-      const startTime = calcMin(firstStop.dep) + delay;
-      const endTime = calcMin(lastStop.arr) + delay;
+    const now = new Date();
+    const currentTotalMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    const d = trackedTrain.delay || 0;
+    const r = trackedTrain.route;
 
-      if (currentMins <= startTime) {
-        setTrainPos(points[0]);
-        return;
+    let newPos = null;
+
+    const firstDep = calcMin(r[0].dep) + d;
+    if (currentTotalMin < firstDep) {
+      newPos = { lat: r[0].lat, lon: r[0].lon, status: "stopped", progress: 0, nextStation: r[1] };
+    }
+
+    const lastArr = calcMin(r[r.length - 1].arr) + d;
+    if (!newPos && currentTotalMin > lastArr) {
+      newPos = { lat: r[r.length-1].lat, lon: r[r.length-1].lon, status: "finished", progress: 1, nextStation: null };
+    }
+
+    if (!newPos) {
+      for (let i = 0; i < r.length; i++) {
+        const arrTime = calcMin(r[i].arr) + d;
+        const depTime = calcMin(r[i].dep) + d;
+
+        if (currentTotalMin >= arrTime && currentTotalMin <= depTime) {
+          newPos = { lat: r[i].lat, lon: r[i].lon, status: "stopped", progress: 0, nextStation: r[i+1] };
+          break;
+        }
+
+        if (i < r.length - 1) {
+          let t1 = calcMin(r[i].dep) + d;
+          let t2 = calcMin(r[i+1].arr) + d;
+          if (t2 < t1) t2 += 1440;
+          
+          let tCurr = currentTotalMin;
+          if (tCurr < t1 - 120 && t2 > 1440) tCurr += 1440;
+
+          if (tCurr > t1 && tCurr < t2) {
+            const progress = (tCurr - t1) / (t2 - t1);
+            let cLat = r[i].lat, cLon = r[i].lon;
+
+            if (trackedTrain.shapeCoords && trackedTrain.shapeCoords.length > 0) {
+              let minDist1 = Infinity, idx1 = 0, minDist2 = Infinity, idx2 = 0;
+              trackedTrain.shapeCoords.forEach((pt, idx) => {
+                const d1 = Math.pow(pt[0] - r[i].lat, 2) + Math.pow(pt[1] - r[i].lon, 2);
+                if (d1 < minDist1) { minDist1 = d1; idx1 = idx; }
+                const d2 = Math.pow(pt[0] - r[i+1].lat, 2) + Math.pow(pt[1] - r[i+1].lon, 2);
+                if (d2 < minDist2) { minDist2 = d2; idx2 = idx; }
+              });
+
+              if (idx1 <= idx2) {
+                const targetIdx = idx1 + Math.floor(progress * (idx2 - idx1));
+                cLat = trackedTrain.shapeCoords[targetIdx][0];
+                cLon = trackedTrain.shapeCoords[targetIdx][1];
+              } else {
+                cLat = r[i].lat + (r[i+1].lat - r[i].lat) * progress;
+                cLon = r[i].lon + (r[i+1].lon - r[i].lon) * progress;
+              }
+            } else {
+              cLat = r[i].lat + (r[i+1].lat - r[i].lat) * progress;
+              cLon = r[i].lon + (r[i+1].lon - r[i].lon) * progress;
+            }
+
+            newPos = { lat: cLat, lon: cLon, status: "moving", progress, nextStation: r[i+1] };
+            break;
+          }
+        }
       }
-      if (currentMins >= endTime) {
-        setTrainPos(points[points.length - 1]);
-        return;
-      }
+    }
+    setComputedTrainPos(newPos);
+  }, [trackedTrain, routeCoords, tick]);
 
-      // Procentowy postęp całej trasy
-      const totalProgress = (currentMins - startTime) / (endTime - startTime);
-      
-      // Znajdujemy punkt na "ładnej linii" odpowiadający temu postępowi
-      const pointIndex = Math.floor(totalProgress * (points.length - 1));
-      const nextPointIndex = Math.min(pointIndex + 1, points.length - 1);
-      const segmentProgress = (totalProgress * (points.length - 1)) - pointIndex;
+  const handleStationClick = (id) => {
+    const newParams = new URLSearchParams(searchParams);
+    
+    if (stationId && String(stationId) === String(id)) {
+      newParams.delete("stationId");
+      setSelectedStation(null);
+    } else {
+      newParams.set("stationId", id);
+    }
+    
+    setSearchParams(newParams);
+  };
 
-      const p1 = points[pointIndex];
-      const p2 = points[nextPointIndex];
-
-      const interpolatedPos = [
-        p1[0] + (p2[0] - p1[0]) * segmentProgress,
-        p1[1] + (p2[1] - p1[1]) * segmentProgress
-      ];
-
-      setTrainPos(interpolatedPos);
-    };
-
-    updatePosition();
-    const interval = setInterval(updatePosition, 1000);
-    return () => clearInterval(interval);
-  }, [trackedTrain, isLiveMode]);
-
-  useEffect(() => {
-    if (!stationId) return;
-    let growing = true;
-    const interval = setInterval(() => {
-      setPulseSize(prev => {
-        if (prev > 20) growing = false;
-        if (prev < 14) growing = true;
-        return growing ? prev + 0.4 : prev - 0.4;
-      });
-    }, 40);
-    return () => clearInterval(interval);
-  }, [stationId]);
-
-  const handleMarkerClick = (id) => setSearchParams({ station: id });
-
-  const activeStation = stations.find(s => String(s.id) === String(stationId));
-  const routeCoords = trackedTrain?.route?.filter(stop => stop.lat && stop.lon).map(stop => [stop.lat, stop.lon]) || [];
-  const shapeCoords = trackedTrain?.shapeCoords || [];
-  const lineToDraw = shapeCoords.length > 0 ? shapeCoords : routeCoords;
+  const trainIcon = L.divIcon({
+    className: 'custom-train-icon',
+    html: `<div class="train-marker-wrapper ${computedTrainPos?.status === 'stopped' ? 'is-stopped' : ''}"><div class="train-marker-core"></div><div class="train-marker-pulse"></div></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
 
   return (
-    <MapContainer center={[52, 19]} zoom={6} className="map-container">
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <ZoomListener setZoomLevel={setCurrentZoom} />
-      <MapLogic sidebarOpen={sidebarOpen} station={activeStation} routeCoords={routeCoords} trainId={trainId} />
+    <div style={{ height: "100%", width: "100%", position: "relative" }}>
+      <MapContainer
+        center={[52.23, 21.01]} 
+        zoom={6} 
+        maxBounds={POLAND_BOUNDS}
+        preferCanvas={true} 
+        style={{ height: "100%", width: "100%", background: "#0b0b0b" }}
+      >
+        <TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
+        <ZoomListener setZoomLevel={setCurrentZoom} />
+        <MapController 
+          selectedStation={selectedStation} 
+          trainLocation={computedTrainPos} 
+          sidebarOpen={sidebarOpen} 
+        />
 
-      {lineToDraw.length > 0 && (
-        <Polyline positions={lineToDraw} pathOptions={{ color: "#ff2b2b", weight: 4, opacity: 0.6, lineJoin: 'round' }} />
-      )}
+        {routeCoords.length > 0 && (
+          <Polyline 
+            positions={routeCoords} 
+            pathOptions={{ color: "#ff2b2b", weight: 3, opacity: 0.4 }} 
+          />
+        )}
 
-      {isLiveMode && trainPos && trackedTrain && (
-        <Marker position={trainPos} icon={trainDotIcon} zIndexOffset={9999}>
-          <Popup className="train-next-gen-popup">
-            {(() => {
-              const style = getTrainStyle(trackedTrain.categorySymbol);
-              return (
-                <div className={`custom-popup ${style.accentClass}`}>
-                  <div className="popup-side-accent"></div>
-                  <div className="popup-content">
-                    <div className="popup-header">
-                      <span className="popup-emoji">{style.emoji}</span>
-                      <span className={`popup-category ${style.accentClass}-badge`}>{style.label}</span>
-                      <span className="popup-number">{trackedTrain.number}</span>
+        <Pane name="train-pane" style={{ zIndex: 650 }}>
+          {computedTrainPos && trackedTrain && isLive && (
+            <Marker position={[computedTrainPos.lat, computedTrainPos.lon]} icon={trainIcon} pane="train-pane">
+              <Popup 
+                className="train-next-gen-popup" 
+                offset={[0, -10]}
+              >
+                <div className={`popup-main-container popup-accent-${trackedTrain.categorySymbol}`}>
+                  <div className="popup-top-bar"></div> 
+                  
+                  <div className="popup-content-padding">
+                    <div className="popup-row-header">
+                      <div className="popup-train-identity">
+                        <span className="popup-category-tag">{trackedTrain.categorySymbol}</span>
+                        <span className="popup-train-id">{trackedTrain.number}</span>
+                      </div>
+                      <span className="popup-speed-badge">
+                        {computedTrainPos?.status === "stopped" ? "STOI" : `⚡ ${trackedTrain.speed || 85} km/h`}
+                      </span>
                     </div>
-                    {trackedTrain.name && (
-                      <div className="popup-train-name">"{trackedTrain.name}"</div>
+
+                    {trackedTrain.name && trackedTrain.name.trim().length > 0 && (
+                      <div className="popup-train-name-row">
+                        "{trackedTrain.name}"
+                      </div>
                     )}
-                    <div className="popup-relation">{trackedTrain.relation}</div>
-                    <div className={`popup-delay ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}>
-                      {trackedTrain.delay > 0 ? `Opóźnienie: +${trackedTrain.delay} min` : "O czasie"}
+
+                    <div className="popup-route-text">
+                      {trackedTrain.relation}
                     </div>
+
+                    <div className="popup-status-row">
+                      <span className={`status-dot ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}></span>
+                      <div className={`status-text ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}>
+                        Opóźnienie: {trackedTrain.delay > 0 ? (
+                          <strong>+{trackedTrain.delay} min</strong>
+                        ) : (
+                          <strong>O czasie</strong>
+                        )}
+                      </div>
+                    </div>
+
+                    {computedTrainPos?.nextStation && (
+                      <div className="popup-progress-section">
+                        <div className="popup-progress-info">
+                          <span> Następna: <strong>{computedTrainPos.nextStation.name} </strong></span>
+                          <span> Postęp: <strong>{(computedTrainPos.progress * 100).toFixed(2)}% </strong></span>
+                        </div>
+                        <div className="popup-progress-track">
+                          <div 
+                            className="popup-progress-fill" 
+                            style={{ width: `${computedTrainPos.progress * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })()}
-          </Popup>
-        </Marker>
-      )}
+              </Popup>
+            </Marker>
+          )}
+        </Pane>
 
-      {stations.map(s => {
-        const isActive = String(s.id) === String(stationId);
-        const isOnTrackedRoute = trackedTrain?.route?.some(rs => String(rs.id) === String(s.id));
-        if (s.isRegional && currentZoom < 10 && !isOnTrackedRoute && !isActive) return null;
-
-        return (
-          <CircleMarker
-            key={s.id}
-            center={[s.lat, s.lon]}
-            radius={isActive ? 6 : (s.isRegional ? 3 : 4)} 
-            eventHandlers={{ click: () => handleMarkerClick(s.id) }}
-            pathOptions={{
-              color: "#333",
-              fillColor: isActive || isOnTrackedRoute ? "#ff2b2b" : (s.isRegional ? "#f1c40f" : "#00ffd5"), 
-              fillOpacity: 1,
-              weight: 1
-            }}
-          >
-            {isActive && (
-              <CircleMarker center={[s.lat, s.lon]} radius={pulseSize} pathOptions={{ color: "#ff2b2b", fillOpacity: 0.2 }} />
-            )}
-            <Popup><strong>{s.name}</strong></Popup>
-          </CircleMarker>
-        );
-      })}
-    </MapContainer>
+        <StationsLayer 
+          stations={stations}
+          currentZoom={currentZoom}
+          stationId={stationId}
+          trackedTrain={isLive ? trackedTrain : null} 
+          onStationClick={handleStationClick}
+        />
+      </MapContainer>
+    </div>
   );
 }
