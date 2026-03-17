@@ -1,3 +1,7 @@
+/* ------------------------------------------------- */
+/* ------- 1. GŁÓWNE ZNACZNIKI (MARKERY NA MAPIE) -- */
+/* ------------------------------------------------- */
+
 .train-marker-wrapper {
     position: relative;
     width: 20px;
@@ -27,249 +31,107 @@
     z-index: 1;
 }
 
+.train-marker-wrapper.is-stopped .train-marker-pulse {
+    animation: none;
+    background-color: rgba(150, 150, 150, 0.5);
+}
+
+.train-marker-wrapper.is-stopped .train-marker-core {
+    background-color: #999;
+    box-shadow: 0 0 10px rgba(150, 150, 150, 0.8);
+}
+
 @keyframes train-pulse {
     0% { transform: scale(0.5); opacity: 1; }
     100% { transform: scale(2.5); opacity: 0; }
 }
 
-.train-next-gen-popup .leaflet-popup-content-wrapper {
-  background: #121212 !important;
-  color: #ffffff !important;
-  padding: 0 !important;
-  border-radius: 8px !important;
-  border: 1px solid #333 !important;
-  overflow: hidden;
-}
-
-.train-next-gen-popup .leaflet-popup-content {
-  margin: 0 !important;
-  width: 240px !important;
-}
-
-.train-next-gen-popup .leaflet-popup-tip {
-  background: #121212 !important;
-  border: 1px solid #333;
-}
-
-.custom-popup {
-  display: flex;
-  min-height: 80px;
-  background: #121212;
-}
-
-.custom-popup.cat-EIP { 
-  --cat-color: #4a148c; 
-}
-
-.custom-popup.cat-EIC { 
-  --cat-color: #0d47a1; 
-}
-
-.custom-popup.cat-IC  { 
-  --cat-color: #f39c12; 
-}
-
-.custom-popup.cat-TLK { 
-  --cat-color: #2980b9; 
-}
-
-.custom-popup.cat-REG { 
-  --cat-color: #7f8c8d; 
-}
-
-.popup-side-accent {
-  width: 6px;
-  flex-shrink: 0;
-  background-color: var(--cat-color, #7f8c8d);
-}
-
-.cat-EIP-badge { 
-  background-color: #4a148c; color: white; 
-}
-
-.cat-EIC-badge { 
-  background-color: #0d47a1; color: white; 
-}
-
-.cat-IC-badge  { 
-  background-color: #f39c12; color: white; 
-}
-
-.cat-TLK-badge { 
-  background-color: #2980b9; color: white; 
-}
-
-.cat-REG-badge { 
-  background-color: #7f8c8d; color: white; 
-}
-
-.popup-category {
-padding: 2px 8px;
-border-radius: 4px;
-font-weight: bold;
-font-size: 0.85rem;
-margin-right: 8px;
-display: inline-block;
-} 
-
-.popup-category-label {
-background-color: var(--cat-color);
-color: white;
-padding: 2px 8px;
-border-radius: 4px;
-font-weight: bold;
-font-size: 0.85rem;
-}
-
-.popup-content {
-  padding: 12px;
-  flex-grow: 1;
-}
-
-.popup-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.popup-emoji { 
-  font-size: 1.2em; 
-}
-
-.popup-category {
-  font-weight: 800;
-  color: #aaa;
-  font-size: 0.85em;
-}
-
-.popup-number {
-  font-weight: bold;
-  font-size: 1.1em;
-  color: #fff;
-}
-
-.popup-train-name {
-  color: #ffda6b;
-  font-style: italic;
-  font-size: 0.9em;
-  margin-bottom: 6px;
-}
-
-.popup-relation {
-  font-size: 0.85em;
-  color: #ccc;
-  border-top: 1px solid #222;
-  padding-top: 6px;
-  margin-bottom: 6px;
-}
-
-.popup-delay {
-  font-size: 0.85em;
-  font-weight: bold;
-}
-
-.popup-delay.on-time { 
-  color: #00ffcc; 
-}
-
-.popup-delay.delayed { 
-  color: #ff4d4d; 
-}
-
-.delay-dot {
-  color: #ff4d4d;
-  margin-right: 4px;
-  animation: pulse-red 2s infinite;
-}
-
-.on-time-dot {
-  color: #00ffcc;
-  margin-right: 4px;
-}
-
-@keyframes pulse-red {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-.custom-train-icon {
-    transition: all 1s linear; 
-}
-
-.train-marker-wrapper {
-    position: relative;
-    width: 26px; 
-    height: 26px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.train-marker-core {
-    width: 14px;
-    height: 14px;
-    background-color: #ff2b2b;
-    border: 2px solid #fff;
+.train-shadow-icon {
+    width: 20px; 
+    height: 20px;
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
-    z-index: 5;
-    box-shadow: 0 0 15px rgba(255, 43, 43, 1);
+    filter: blur(5px);
+    transform: scaleY(0.4) translateY(12px);
+    transition: all 1s linear;
 }
 
-.train-next-gen-popup .leaflet-popup-content {
-  width: 280px !important; 
-  margin: 0 !important;
-}
+/* ------------------------------------------------- */
+/* ------- 2. NADPISYWANIE DOMYŚLNYCH POPUPÓW LEAFLET- */
+/* ------------------------------------------------- */
 
-.train-next-gen-popup .leaflet-popup-content-wrapper {
-    background: #1a1a1a !important;
-    border: 1px solid #333;
-    border-left: 5px solid #ff2b2b; 
-    color: white;
-    font-family: 'Inter', sans-serif;
-    padding-top: 25px !important;
-    background: #121212 !important;
+.train-next-gen-popup .leaflet-popup-content-wrapper, .station-next-gen-popup .leaflet-popup-content-wrapper {
+    background: rgba(18, 18, 18, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
     padding: 0 !important;
-    overflow: hidden !important;
-    border-radius: 8px !important;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.train-next-gen-popup .leaflet-popup-tip, .station-next-gen-popup .leaflet-popup-tip {
+    background: rgba(18, 18, 18, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+}
+
+.train-next-gen-popup .leaflet-popup-content, .station-next-gen-popup .leaflet-popup-content {
+    margin: 0 !important;
+    width: 260px !important; /* Sztywna szerokość dla czytelności */
+}
+
+.station-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #eee !important;
+    font-size: 0.7rem !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px 3px black, -1px -1px 3px black !important;
+}
+
+/* ------------------------------------------------- */
+/* ------- 3. WSPÓLNY UKŁAD (KONTENERY WNĘTRZA) ---- */
+/* ------------------------------------------------- */
+
+.popup-main-container {
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
 }
 
 .popup-content-padding {
-  padding: 12px;
-}
-
-.train-next-gen-popup .leaflet-popup-close-button:hover {
-  color: #fff !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 4px;
-}
-
-.train-next-gen-popup .leaflet-popup-close-button {
-  top: 4px !important;
-  right: 4px !important;
-  color: rgba(255, 255, 255, 0.8) !important; /* Biały, lekko przezroczysty */
-  font-size: 16px !important;
-  width: 20px !important;
-  height: 20px !important;
-  padding: 0 !important;
-  z-index: 1000; /* Nad paskiem */
+    padding: 12px 16px;
 }
 
 .popup-top-bar {
-  height: 28px; /* Wysokość wystarczająca, by pomieścić "x" */
-  width: 100%;
-  display: block;
-  position: relative;
+    height: 4px;
+    width: 100%;
 }
 
-.popup-main-container {
-  display: flex;
-  flex-direction: column;
-  position: relative;
+.popup-accent-IC .popup-top-bar, .popup-accent-TLK .popup-top-bar { 
+  background: #f39c12; box-shadow: 0 2px 10px rgba(243, 156, 18, 0.4); 
 }
+
+.popup-accent-EIP .popup-top-bar, .popup-accent-EIC .popup-top-bar { 
+  background: #4a148c; box-shadow: 0 2px 10px rgba(74, 20, 140, 0.4); 
+}
+
+.popup-accent-REG .popup-top-bar { 
+  background: #7f8c8d; box-shadow: 0 2px 10px rgba(127, 140, 141, 0.4); 
+}
+
+.station-variant .popup-top-bar { 
+  background: #00ffd5; box-shadow: 0 2px 10px rgba(0, 255, 213, 0.4); 
+}
+
+/* ------------------------------------------------- */
+/* ------- 4. POPUP POCIĄGU (NAGŁÓWEK, STATUSY) ---- */
+/* ------------------------------------------------- */
 
 .popup-row-header {
     display: flex;
@@ -278,166 +140,321 @@ font-size: 0.85rem;
     margin-bottom: 8px;
 }
 
+.popup-train-identity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.popup-category-tag {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
 .popup-train-id {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
 .popup-speed-badge {
-    background: #333;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background: rgba(0, 255, 213, 0.1);
+    color: #00ffd5;
+    border: 1px solid rgba(0, 255, 213, 0.3);
+    padding: 3px 8px;
+    border-radius: 12px;
     font-size: 0.7rem;
-    color: #aaa;
-}
-
-.popup-accent-EIP .popup-top-bar { 
-  background-color: #4a148c !important; 
-}
-
-.popup-accent-EIC .popup-top-bar { 
-  background-color: #0d47a1 !important; 
-}
-
-.popup-accent-IC .popup-top-bar  { 
-  background-color: #f39c12 !important; 
-}
-
-.popup-accent-TLK .popup-top-bar { 
-  background-color: #2980b9 !important; 
-}
-
-.popup-accent-REG .popup-top-bar { 
-  background-color: #c0392b !important; 
-}
-
-.popup-route-text {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 8px;
-  color: #eee;
-  line-height: 1.2;
-  word-break: break-word; 
-}
-
-.popup-status-bar {
-    display: flex;
-    gap: 10px;
-    font-size: 0.8rem;
-    margin-bottom: 12px;
-}
-
-.popup-progress-label {
-    font-size: 0.7rem;
-    color: #777;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-}
-
-.popup-progress-track {
-    height: 4px;
-    background: #333;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.popup-progress-fill {
-    height: 100%;
-    background: #ff2b2b;
-    transition: width 1s linear;
+    font-weight: bold;
 }
 
 .popup-train-name-row {
-    color: #ffda6b;
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 4px 0 8px 0;
     font-style: italic;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
 }
 
-.station-next-gen-popup .leaflet-popup-content-wrapper, .station-next-gen-popup .leaflet-popup-tip {
-  background: #121212 !important;
-  color: #fff !important;
-  border: 1px solid #333;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+.popup-route-text {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #ddd;
+    margin-bottom: 12px;
 }
 
-.station-next-gen-popup .leaflet-popup-content {
-  width: 240px !important;
-  margin: 0 !important;
+.popup-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 10px;
+    border-radius: 6px;
 }
 
-.station-variant .popup-top-bar {
-  background: #00ffd5 !important;
-  height: 4px;
-  box-shadow: 0 2px 10px rgba(0, 255, 213, 0.4);
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
 }
+
+.status-dot.on-time { 
+  background: #2ecc71; box-shadow: 0 0 8px #2ecc71; 
+}
+
+.status-dot.delayed { 
+  background: #e74c3c; box-shadow: 0 0 8px #e74c3c; animation: pulse-error 1.5s infinite; 
+}
+
+.status-text.on-time { 
+  color: #2ecc71; 
+}
+
+.status-text.delayed { 
+  color: #e74c3c; 
+}
+
+@keyframes pulse-error {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ------------------------------------------------- */
+/* ------- 5. OŚ CZASU (TIMELINE POCIĄGU) ---------- */
+/* ------------------------------------------------- */
+
+.timeline-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.timeline-station {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60px;
+    text-align: center;
+}
+
+.timeline-station-name {
+    font-size: 0.65rem;
+    color: #ccc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+    font-weight: bold;
+}
+
+.timeline-time {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #fff;
+    margin-top: 2px;
+}
+
+.timeline-track {
+    flex-grow: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    margin: 0 10px;
+    border-radius: 2px;
+}
+
+.timeline-progress {
+    height: 100%;
+    background: #ff2b2b;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: width 1s linear;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(255, 43, 43, 0.8);
+}
+
+.timeline-train-icon {
+    position: absolute;
+    top: -8px;
+    margin-left: -8px; /* Środek emoji */
+    font-size: 14px;
+    transition: left 1s linear;
+    text-shadow: 0 0 5px rgba(0,0,0,0.8);
+}
+
+/* ------------------------------------------------- */
+/* ------- 6. POPUP STACJI (INFO BAZOWE) ----------- */
+/* ------------------------------------------------- */
 
 .popup-station-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #222;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 8px;
 }
 
 .popup-station-name {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #00ffd5;
-  letter-spacing: 0.5px;
-}
-
-.popup-coords-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.coord-box {
-  background: #1a1a1a;
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid #252525;
-}
-
-.coord-label {
-  display: block;
-  font-size: 0.6rem;
-  color: #666;
-  font-weight: 800;
-  margin-bottom: 2px;
-}
-
-.coord-value {
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
-  font-size: 0.8rem;
-  color: #eee;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #00ffd5;
+    letter-spacing: 0.5px;
 }
 
 .popup-station-footer {
-  margin-top: 5px;
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
 }
 
 .type-tag {
-  font-size: 0.65rem;
-  background: #222;
-  padding: 2px 8px;
-  border-radius: 10px;
-  color: #888;
-  border: 1px solid #333;
+    background: #333;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: #aaa;
+    border: 1px solid #444;
 }
 
-.station-next-gen-popup .leaflet-popup-close-button {
-  color: #888 !important;
-  top: 8px !important;
-  right: 8px !important;
+.mini-coords {
+    font-size: 0.55rem;
+    color: #666;
+    font-family: 'Courier New', monospace;
 }
 
-.station-next-gen-popup .leaflet-popup-close-button:hover {
-  color: #fff !important;
+.popup-coords-grid {
+    display: none; 
+}
+
+/* ------------------------------------------------- */
+/* ------- 7. TABLICA ODJAZDÓW ZE STACJI ----------- */
+/* ------------------------------------------------- */
+
+.departures-list {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.departures-title {
+    font-size: 0.7rem;
+    color: #aaa;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.departure-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.2s;
+}
+
+.departure-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dep-cat {
+    font-weight: 900;
+    margin-right: 8px;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: #333;
+    color: #fff;
+    min-width: 32px;
+    text-align: center;
+}
+
+.dep-cat.cat-IC, .dep-cat.cat-TLK { 
+  background: #f39c12; color: #000; 
+}
+
+.dep-cat.cat-EIP, .dep-cat.cat-EIC { 
+  background: #4a148c; 
+}
+
+.dep-cat.cat-REG { 
+  background: #7f8c8d; 
+}
+
+.dep-dest {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    color: #eee;
+}
+
+.dep-time {
+    font-family: 'Courier New', monospace;
+    color: #00ffd5;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-left: 8px;
+}
+
+.no-departures {
+    font-size: 0.75rem;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 10px 5px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+.dep-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.dep-details {
+    font-size: 0.65rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.dep-time-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.dep-delay {
+    font-size: 0.7rem;
+    color: #e74c3c;
+    font-weight: bold;
+    animation: pulse-error 1.5s infinite;
+}
+
+.live-indicator {
+    color: #ff2b2b;
+    font-size: 0.6rem;
+    font-weight: bold;
+    margin-left: 5px;
+    animation: pulse-error 1s infinite;
 }

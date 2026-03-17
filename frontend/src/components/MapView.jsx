@@ -1,5 +1,5 @@
-import React, { useEffect, useState, memo, useRef, useCallback } from "react"
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents } from "react-leaflet";
+import React, { useEffect, useState, memo, useRef, useCallback } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents, Tooltip } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
 import L from "leaflet";
 import axios from "axios";
@@ -15,7 +15,16 @@ const calcMin = (timeStr) => {
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
 };
 
-const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, onStationClick }) => {
+// NOWE: Funkcja pomocnicza potrzebna do isTrainInTransit
+const getStopMins = (stop, index, totalStops) => {
+  if (!stop) return null;
+  if (index === 0) return calcMin(stop.dep !== "-" ? stop.dep : stop.arr);
+  if (index === totalStops - 1) return calcMin(stop.arr !== "-" ? stop.arr : stop.dep);
+  const depMins = calcMin(stop.dep);
+  return depMins !== null ? depMins : calcMin(stop.arr);
+};
+
+const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, onStationClick, stationDepartures }) => {
   useMapEvents({
     popupclose: (e) => {
       const params = new URLSearchParams(window.location.search);
@@ -26,26 +35,56 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
     }
   });
 
+  const isTrainInTransit = (route, delayMins = 0) => {
+    if (!route || route.length < 2) return false;
+    
+    const now = new Date();
+    let currentMins = now.getHours() * 60 + now.getMinutes();
+
+    let startMins = getStopMins(route[0], 0, route.length);
+    let endMins = getStopMins(route[route.length - 1], route.length - 1, route.length);
+
+    if (startMins === null || endMins === null) return false;
+
+    startMins += delayMins;
+    endMins += delayMins;
+
+    if (endMins < startMins) endMins += 24 * 60;
+    
+    if (currentMins < startMins && startMins > 18 * 60 && currentMins < 6 * 60) {
+      currentMins += 24 * 60;
+    }
+
+    return currentMins >= startMins && currentMins <= endMins;
+  };
+  
   return (
     <>
       {stations.map(s => {
         const isSelected = stationId && String(s.id) === String(stationId);
         const isOnTrackedRoute = trackedTrain?.route?.some(rs => String(rs.id) === String(s.id));
+        
         if (s.isRegional && currentZoom < 10 && !isOnTrackedRoute && !isSelected) return null;
 
         return (
           <React.Fragment key={`station-${s.id}`}>
             <CircleMarker
               center={[parseFloat(s.lat), parseFloat(s.lon)]}
-              radius={isSelected ? 6 : (s.isRegional ? 3 : 4)}
+              radius={isSelected ? 6 : (s.isRegional ? 3 : 5)}
               eventHandlers={{ click: () => onStationClick(s.id) }}
               pathOptions={{
-                color: "#333",
+                color: "#222",
                 fillColor: isSelected || isOnTrackedRoute ? "#ff2b2b" : (s.isRegional ? "#f1c40f" : "#00ffd5"),
                 fillOpacity: 1,
-                weight: 1,
+                weight: 1.5,
               }}
             >
+              {!s.isRegional && currentZoom >= 12 && !isSelected && (
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.8} permanent className="station-tooltip">
+                  {s.name}
+                </Tooltip>
+              )}
+
               <Popup className="station-next-gen-popup" offset={[0, -5]}>
                 <div className="popup-main-container station-variant">
                   <div className="popup-top-bar"></div>
@@ -54,28 +93,57 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                       <span className="popup-station-icon">🏢</span>
                       <span className="popup-station-name">{s.name}</span>
                     </div>
-                    <div className="popup-coords-grid">
-                      <div className="coord-box">
-                        <span className="coord-label">LAT</span>
-                        <span className="coord-value">{parseFloat(s.lat).toFixed(5)}</span>
+
+                    {isSelected && (
+                      <div className="departures-list">
+                        <div className="departures-title">Najbliższe odjazdy:</div>
+                        {/* POPRAWKA: Zmiana timetable na stationDepartures i sprawdzenie długości */}
+                        {stationDepartures && stationDepartures.length > 0 ? (
+                          stationDepartures.slice(0, 5).map((t, idx) => {
+                            const live = isTrainInTransit(t.route, t.delay);
+                            
+                            return (
+                              <div key={idx} className="departure-item">
+                                <span className={`dep-cat cat-${t.trainCategory}`}>
+                                  {t.trainCategory}
+                                </span>
+                                <div className="dep-info">
+                                  <div className="dep-dest">
+                                    {t.relation.split("➔")[1] || t.relation} 
+                                    {live && <span className="live-indicator"> ● LIVE</span>}
+                                  </div>
+                                  <div className="dep-details">
+                                    {t.trainName && <span className="dep-name">"{t.trainName}" </span>}
+                                    <span className="dep-num">{t.displayNumber}</span>
+                                  </div>
+                                </div>
+                                <div className="dep-time-group">
+                                  <span className="dep-time">{t.currentStationTime}</span>
+                                  {t.delay > 0 && <span className="dep-delay">+{t.delay}</span>}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="no-departures">Wczytywanie lub brak połączeń...</div>
+                        )}
                       </div>
-                      <div className="coord-box">
-                        <span className="coord-label">LON</span>
-                        <span className="coord-value">{parseFloat(s.lon).toFixed(5)}</span>
-                      </div>
-                    </div>
+                    )}
+                    
                     <div className="popup-station-footer">
                       <span className="type-tag">{s.isRegional ? "REGIONALNA" : "DALEKOBIEŻNA"}</span>
+                      <span className="mini-coords">{parseFloat(s.lat).toFixed(4)}, {parseFloat(s.lon).toFixed(4)}</span>
                     </div>
                   </div>
                 </div>
               </Popup>
             </CircleMarker>
+            
             {isSelected && (
               <CircleMarker
                 center={[parseFloat(s.lat), parseFloat(s.lon)]}
-                radius={12}
-                pathOptions={{ color: '#ff2b2b', weight: 2, fillOpacity: 0, dashArray: '5, 5' }}
+                radius={14}
+                pathOptions={{ color: '#00ffd5', weight: 2, fillOpacity: 0, dashArray: '4, 6' }}
               />
             )}
           </React.Fragment>
@@ -109,14 +177,12 @@ function MapController({ selectedStation, trainLocation, sidebarOpen, isTracking
       const targetEntityId = isLive ? 'active-train' : (selectedStation ? `station-${selectedStation.id}` : 'route-start');
 
       if (lastTargetId.current !== targetEntityId) {
-        map.setView([target.lat, target.lon], 12, { animate: true });
+        map.flyTo([target.lat, target.lon], 12, { animate: true, duration: 1.2 });
         lastTargetId.current = targetEntityId;
       }
+
       if (isLive && isTracking && trainLocation) {
-        map.setView([trainLocation.lat, trainLocation.lon], 15, {
-          animate: true,
-          duration: 0.5
-        });
+        map.setView([trainLocation.lat, trainLocation.lon], 14, { animate: true, duration: 0.5 });
       }
     } else if (!target) {
       lastTargetId.current = null;
@@ -139,12 +205,12 @@ export default function MapView({ sidebarOpen }) {
   
   const [stations, setStations] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
+  const [stationDepartures, setStationDepartures] = useState([]);
   const [trackedTrain, setTrackedTrain] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(6);
   const [computedTrainPos, setComputedTrainPos] = useState(null);
   const [tick, setTick] = useState(0);
-  
   const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
@@ -159,14 +225,50 @@ export default function MapView({ sidebarOpen }) {
   }, []);
 
   useEffect(() => {
-    if (stationId) {
-      axios.get(`http://localhost:8080/api/stations/${stationId}`)
-        .then(res => setSelectedStation(res.data))
-        .catch(() => setSelectedStation(null)); 
-    } else {
-      setSelectedStation(null);
-    }
-  }, [stationId]);
+  if (stationId) {
+    // 1. Pobieramy dane o samej stacji (nazwa, koordynaty)
+    axios.get(`http://localhost:8080/api/stations/${stationId}`)
+      .then(res => setSelectedStation(res.data))
+      .catch(() => setSelectedStation(null));
+
+    // 2. Pobieramy rozkład (Twoja tablica JSON)
+    axios.get(`http://localhost:8080/api/timetable/${stationId}`)
+      .then(res => {
+        const rawData = res.data;
+        
+        const processed = rawData.map(train => {
+          // Szukamy obiektu stacji wewnątrz pociągu, tak jak w StationsPage
+          const stationInfo = train.stations?.find(s => String(s.stationId) === String(stationId));
+          
+          // Wyciągamy czas (priorytet: planowany odjazd, potem faktyczny, potem przyjazd)
+          const rawTime = stationInfo?.plannedDeparture || 
+                          stationInfo?.actualDeparture || 
+                          stationInfo?.plannedArrival;
+
+          // Formatujemy czas (HH:mm)
+          const displayTime = rawTime 
+            ? (rawTime.includes('T') ? rawTime.split('T')[1].substring(0, 5) : rawTime.substring(0, 5))
+            : "??:??";
+
+          return {
+            ...train,
+            displayTime, // To pójdzie do renderowania
+            delay: stationInfo?.delay || 0,
+            destination: train.relation?.split('➔')[1]?.trim() || "Nieznany"
+          };
+        });
+
+        // Sortujemy chronologicznie
+        const sorted = processed.sort((a, b) => a.displayTime.localeCompare(b.displayTime));
+        
+        setStationDepartures(sorted);
+      })
+      .catch(err => {
+        console.error("Błąd pobierania rozkładu:", err);
+        setStationDepartures([]);
+      });
+  }
+}, [stationId]);
 
   useEffect(() => {
     if (trainId) {
@@ -202,7 +304,6 @@ export default function MapView({ sidebarOpen }) {
     const r = trackedTrain.route;
 
     let newPos = null;
-
     const firstDep = calcMin(r[0].dep) + d;
     if (currentTotalMin < firstDep) {
       newPos = { lat: r[0].lat, lon: r[0].lon, status: "stopped", progress: 0, nextStation: r[1] };
@@ -268,7 +369,6 @@ export default function MapView({ sidebarOpen }) {
     setSearchParams((prevParams) => {
       const newParams = new URLSearchParams(prevParams);
       const currentId = newParams.get("stationId");
-      
       if (currentId && String(currentId) === String(id)) {
         newParams.delete("stationId");
         setSelectedStation(null); 
@@ -279,11 +379,37 @@ export default function MapView({ sidebarOpen }) {
     });
   }, [setSearchParams]); 
 
+  let pastRoute = [];
+  let futureRoute = routeCoords;
+  if (isLive && computedTrainPos && routeCoords.length > 0) {
+      let minD = Infinity, closestIdx = 0;
+      routeCoords.forEach((pt, i) => {
+          const d = Math.pow(pt[0] - computedTrainPos.lat, 2) + Math.pow(pt[1] - computedTrainPos.lon, 2);
+          if (d < minD) { minD = d; closestIdx = i; }
+      });
+      pastRoute = routeCoords.slice(0, closestIdx + 1);
+      futureRoute = routeCoords.slice(closestIdx);
+  }
+
+  const nextStation = computedTrainPos?.nextStation;
+  let prevStation = null;
+  if (nextStation && trackedTrain?.route) {
+      const nextIdx = trackedTrain.route.findIndex(s => s.id === nextStation.id);
+      if (nextIdx > 0) prevStation = trackedTrain.route[nextIdx - 1];
+  }
+
   const trainIcon = L.divIcon({
     className: 'custom-train-icon',
     html: `<div class="train-marker-wrapper ${computedTrainPos?.status === 'stopped' ? 'is-stopped' : ''}"><div class="train-marker-core"></div><div class="train-marker-pulse"></div></div>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10]
+  });
+
+  const trainShadowIcon = L.divIcon({
+    className: 'train-shadow-icon',
+    html: ``,
+    iconSize: [20, 20],
+    iconAnchor: [10, -5] 
   });
 
   const firstStationOnRoute = trackedTrain?.route?.[0];
@@ -320,12 +446,25 @@ export default function MapView({ sidebarOpen }) {
           firstStation={firstStationOnRoute}
         />
 
-        {routeCoords.length > 0 && (
+        {pastRoute.length > 0 && (
           <Polyline 
-            positions={routeCoords} 
-            pathOptions={{ color: "#ff2b2b", weight: 3, opacity: 0.4 }} 
+            positions={pastRoute} 
+            pathOptions={{ color: "#750000", weight: 3, opacity: 0.5, dashArray: '5, 5' }} 
           />
         )}
+
+        {futureRoute.length > 0 && (
+          <Polyline 
+            positions={futureRoute} 
+            pathOptions={{ color: "#ff2b2b", weight: 4, opacity: 0.8 }} 
+          />
+        )}
+
+        <Pane name="shadow-pane" style={{ zIndex: 640 }}>
+          {computedTrainPos && trackedTrain && isLive && (
+            <Marker position={[computedTrainPos.lat, computedTrainPos.lon]} icon={trainShadowIcon} pane="shadow-pane" interactive={false} />
+          )}
+        </Pane>
 
         <Pane name="train-pane" style={{ zIndex: 650 }}>
           {computedTrainPos && trackedTrain && isLive && (
@@ -347,21 +486,28 @@ export default function MapView({ sidebarOpen }) {
                       <div className="popup-train-name-row">"{trackedTrain.name}"</div>
                     )}
                     <div className="popup-route-text">{trackedTrain.relation}</div>
+                    
                     <div className="popup-status-row">
                       <span className={`status-dot ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}></span>
                       <div className={`status-text ${trackedTrain.delay > 0 ? 'delayed' : 'on-time'}`}>
                         Opóźnienie: {trackedTrain.delay > 0 ? <strong>+{trackedTrain.delay} min</strong> : <strong>O czasie</strong>}
                       </div>
                     </div>
-                    {computedTrainPos?.nextStation && (
-                      <div className="popup-progress-section">
-                        <div className="popup-progress-info">
-                          <span> Następna: <strong>{computedTrainPos.nextStation.name} </strong></span><br></br>
-                          <span> Postęp: <strong>{(computedTrainPos.progress * 100).toFixed(2)}% </strong></span>
-                        </div>
-                        <div className="popup-progress-track">
-                          <div className="popup-progress-fill" style={{ width: `${computedTrainPos.progress * 100}%` }}></div>
-                        </div>
+
+                    {prevStation && nextStation && (
+                      <div className="timeline-container">
+                         <div className="timeline-station">
+                             <div className="timeline-station-name">{prevStation.name}</div>
+                             <div className="timeline-time">{prevStation.dep}</div>
+                         </div>
+                         <div className="timeline-track">
+                             <div className="timeline-progress" style={{ width: `${computedTrainPos.progress * 100}%` }}></div>
+                             <div className="timeline-train-icon" style={{ left: `${computedTrainPos.progress * 100}%` }}>🚅</div>
+                         </div>
+                         <div className="timeline-station">
+                             <div className="timeline-station-name">{nextStation.name}</div>
+                             <div className="timeline-time">{nextStation.arr}</div>
+                         </div>
                       </div>
                     )}
                   </div>
@@ -376,6 +522,7 @@ export default function MapView({ sidebarOpen }) {
           currentZoom={currentZoom}
           stationId={stationId}
           trackedTrain={trackedTrain} 
+          stationDepartures={stationDepartures}
           onStationClick={handleStationClick}
         />
       </MapContainer>

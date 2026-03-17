@@ -304,7 +304,6 @@ const downloadInitialData = async () => {
     }
 };
 
-// Start aplikacji
 downloadInitialData().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Backend gotowy na http://localhost:${PORT}`);
@@ -345,18 +344,24 @@ app.get("/api/timetable/:id", async (req, res) => {
                 finalCat = "REG";
             }
 
+            let fallbackRelation = "Relacja nieznana";
+            if (t.stations && t.stations.length > 1) {
+                const first = t.stations[0].stationName;
+                const last = t.stations[t.stations.length - 1].stationName;
+                fallbackRelation = `${first} ➔ ${last}`;
+            }
+
             return {
                 ...t,
                 stations: t.stations || [], 
                 cleanNumber: opCleanNum,
                 trainName: staticInfo.name || "",
                 trainCategory: finalCat,
-                relation: staticInfo.relation || "Relacja nieznana",
+                relation: staticInfo.relation || fallbackRelation,
                 displayNumber: staticInfo.number || t.trainNumber,
                 route: staticInfo.route || []
             };
-        })
-        .filter(t => t.relation !== "Relacja nieznana")
+        });
 
         res.json(enriched);
     } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
@@ -504,6 +509,23 @@ app.get("/api/trains/:id", (req, res) => {
         });
     } else {
         res.status(404).json({ error: "Nie znaleziono pociągu" });
+    }
+});
+
+app.get("/api/stations/:id", (req, res) => {
+    const stationId = req.params.id;
+
+    try {
+        const stationsData = JSON.parse(fs.readFileSync(FULL_STATIONS_CACHE, "utf8"));
+        const station = stationsData.find(s => String(s.id) === String(stationId));
+        
+        if (station) {
+            res.json(station);
+        } else {
+            res.status(404).send("Station not found");
+        }
+    } catch (err) {
+        res.status(500).send("Error reading stations cache");
     }
 });
 
