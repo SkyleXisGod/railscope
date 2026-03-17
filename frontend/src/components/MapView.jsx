@@ -15,7 +15,6 @@ const calcMin = (timeStr) => {
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
 };
 
-// NOWE: Funkcja pomocnicza potrzebna do isTrainInTransit
 const getStopMins = (stop, index, totalStops) => {
   if (!stop) return null;
   if (index === 0) return calcMin(stop.dep !== "-" ? stop.dep : stop.arr);
@@ -95,41 +94,28 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                     </div>
 
                     {isSelected && (
-                      <div className="departures-list">
-                        <div className="departures-title">Najbliższe odjazdy:</div>
-                        {/* POPRAWKA: Zmiana timetable na stationDepartures i sprawdzenie długości */}
-                        {stationDepartures && stationDepartures.length > 0 ? (
-                          stationDepartures.slice(0, 5).map((t, idx) => {
-                            const live = isTrainInTransit(t.route, t.delay);
-                            
-                            return (
-                              <div key={idx} className="departure-item">
-                                <span className={`dep-cat cat-${t.trainCategory}`}>
-                                  {t.trainCategory}
-                                </span>
-                                <div className="dep-info">
-                                  <div className="dep-dest">
-                                    {t.relation.split("➔")[1] || t.relation} 
-                                    {live && <span className="live-indicator"> ● LIVE</span>}
-                                  </div>
-                                  <div className="dep-details">
-                                    {t.trainName && <span className="dep-name">"{t.trainName}" </span>}
-                                    <span className="dep-num">{t.displayNumber}</span>
-                                  </div>
-                                </div>
+                   <div className="popup-departures">
+                      <div className="departures-title">Najbliższe odjazdy</div>
+                     <div className="departures-list">
+                        {stationDepartures.length > 0 ? (
+                          stationDepartures.map((dep) => (
+                            <div key={dep.uKey} className="departure-item">
+                              <span className={`dep-cat cat-${dep.category}`}>{dep.category}</span>
+                              <div className="dep-main-info">
                                 <div className="dep-time-group">
-                                  <span className="dep-time">{t.currentStationTime}</span>
-                                  {t.delay > 0 && <span className="dep-delay">+{t.delay}</span>}
+                                  <span className="dep-time">{dep.time}</span>
+                                  {dep.delay > 0 && <span className="dep-delay">+{dep.delay}</span>}
                                 </div>
+                                <span className="dep-dest" title={dep.destination}>{dep.destination}</span>
                               </div>
-                            );
-                          })
+                            </div>
+                          ))
                         ) : (
-                          <div className="no-departures">Wczytywanie lub brak połączeń...</div>
+                          <div className="no-departures">Brak nadchodzących kursów</div>
                         )}
                       </div>
+                    </div>
                     )}
-                    
                     <div className="popup-station-footer">
                       <span className="type-tag">{s.isRegional ? "REGIONALNA" : "DALEKOBIEŻNA"}</span>
                       <span className="mini-coords">{parseFloat(s.lat).toFixed(4)}, {parseFloat(s.lon).toFixed(4)}</span>
@@ -224,49 +210,50 @@ export default function MapView({ sidebarOpen }) {
       .catch(err => console.error("Stations error:", err));
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
   if (stationId) {
-    // 1. Pobieramy dane o samej stacji (nazwa, koordynaty)
-    axios.get(`http://localhost:8080/api/stations/${stationId}`)
-      .then(res => setSelectedStation(res.data))
-      .catch(() => setSelectedStation(null));
+    Promise.all([
+      axios.get(`http://localhost:8080/api/stations/${stationId}`),
+      axios.get(`http://localhost:8080/api/timetable/${stationId}`)
+    ])
+    .then(([stationRes, timetableRes]) => {
+      const stationData = stationRes.data;
+      setSelectedStation(stationData);
+      
+      const now = new Date();
+      const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                          now.getMinutes().toString().padStart(2, '0');
 
-    // 2. Pobieramy rozkład (Twoja tablica JSON)
-    axios.get(`http://localhost:8080/api/timetable/${stationId}`)
-      .then(res => {
-        const rawData = res.data;
-        
-        const processed = rawData.map(train => {
-          // Szukamy obiektu stacji wewnątrz pociągu, tak jak w StationsPage
-          const stationInfo = train.stations?.find(s => String(s.stationId) === String(stationId));
-          
-          // Wyciągamy czas (priorytet: planowany odjazd, potem faktyczny, potem przyjazd)
-          const rawTime = stationInfo?.plannedDeparture || 
-                          stationInfo?.actualDeparture || 
-                          stationInfo?.plannedArrival;
+     const allMatches = timetableRes.data.flatMap((train, tIdx) => {
+     const stop = train.route?.find(r => 
+        r.name.toLowerCase() === stationData.name.toLowerCase()
+      );
 
-          // Formatujemy czas (HH:mm)
-          const displayTime = rawTime 
-            ? (rawTime.includes('T') ? rawTime.split('T')[1].substring(0, 5) : rawTime.substring(0, 5))
-            : "??:??";
+      if (!stop) return [];
 
-          return {
-            ...train,
-            displayTime, // To pójdzie do renderowania
-            delay: stationInfo?.delay || 0,
-            destination: train.relation?.split('➔')[1]?.trim() || "Nieznany"
-          };
-        });
-
-        // Sortujemy chronologicznie
-        const sorted = processed.sort((a, b) => a.displayTime.localeCompare(b.displayTime));
-        
-        setStationDepartures(sorted);
-      })
-      .catch(err => {
-        console.error("Błąd pobierania rozkładu:", err);
-        setStationDepartures([]);
+      const time = (stop.dep && stop.dep !== "-") ? stop.dep : stop.arr;
+      
+        return [{
+          uKey: `dep-${train.id}-${time}-${tIdx}`, 
+          id: train.id,
+          category: train.categorySymbol || "REG",
+          time: time,
+          delay: stop.delay || 0,
+          destination: train.route[train.route.length - 1]?.name || "Stacja docelowa"
+        }];
       });
+
+      const processed = allMatches
+        .filter(t => t.time >= currentTime) 
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .slice(0, 5);
+
+      setStationDepartures(processed);
+    })
+    .catch(err => {
+      console.error("Błąd stacji:", err);
+      setStationDepartures([]);
+    });
   }
 }, [stationId]);
 

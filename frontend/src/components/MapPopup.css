@@ -341,78 +341,110 @@
 /* ------- 7. TABLICA ODJAZDÓW ZE STACJI ----------- */
 /* ------------------------------------------------- */
 
-.departures-list {
-    margin-top: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding-top: 8px;
+.popup-departures {
+    margin-top: 12px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .departures-title {
-    font-size: 0.7rem;
-    color: #aaa;
+    font-size: 0.65rem;
+    color: #888;
     text-transform: uppercase;
-    margin-bottom: 4px;
-    font-weight: bold;
-    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.departures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* Odstęp między wierszami */
 }
 
 .departure-item {
     display: flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.05);
-    padding: 6px;
+    padding: 6px 8px;
     border-radius: 4px;
-    font-size: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.03);
     transition: background 0.2s;
+    border-left: 3px solid #444; /* Domyślny pasek z boku */
 }
 
 .departure-item:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.dep-cat {
-    font-weight: 900;
-    margin-right: 8px;
-    font-size: 0.65rem;
-    padding: 3px 6px;
-    border-radius: 4px;
-    background: #333;
-    color: #fff;
-    min-width: 32px;
-    text-align: center;
+.departure-item:has(.cat-IC), .departure-item:has(.cat-TLK) { 
+  border-left-color: #f39c12; 
 }
 
-.dep-cat.cat-IC, .dep-cat.cat-TLK { 
+.departure-item:has(.cat-EIP), .departure-item:has(.cat-EIC) { 
+  border-left-color: #9b59b6; 
+}
+
+.departure-item:has(.cat-REG), .departure-item:has(.cat-SKM) { 
+  border-left-color: #7f8c8d; 
+}
+
+.dep-cat {
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 35px;
+    text-align: center;
+    background: #333;
+    color: #fff;
+    margin-right: 10px;
+}
+
+.cat-IC, .cat-TLK { 
   background: #f39c12; color: #000; 
 }
 
-.dep-cat.cat-EIP, .dep-cat.cat-EIC { 
-  background: #4a148c; 
+.cat-EIP, .cat-EIC { 
+  background: #4a148c; color: #fff; 
 }
 
-.dep-cat.cat-REG { 
-  background: #7f8c8d; 
+.dep-main-info {
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 0; 
 }
 
-.dep-dest {
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 600;
-    color: #eee;
+.dep-time-group {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 65px;
 }
 
 .dep-time {
-    font-family: 'Courier New', monospace;
-    color: #00ffd5;
+    font-family: 'Monaco', 'Courier New', monospace;
     font-weight: bold;
+    color: #fff;
     font-size: 0.9rem;
-    margin-left: 8px;
+}
+
+.dep-delay {
+    color: #ff4d4d;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.dep-dest {
+    color: #ccc;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 10px;
+    flex: 1;
+    text-align: right;
 }
 
 .no-departures {
@@ -420,41 +452,7 @@
     color: #666;
     font-style: italic;
     text-align: center;
-    padding: 10px 5px;
+    padding: 15px;
     background: rgba(0,0,0,0.2);
     border-radius: 4px;
-}
-
-.dep-info {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.dep-details {
-    font-size: 0.65rem;
-    color: #888;
-    margin-top: 2px;
-}
-
-.dep-time-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.dep-delay {
-    font-size: 0.7rem;
-    color: #e74c3c;
-    font-weight: bold;
-    animation: pulse-error 1.5s infinite;
-}
-
-.live-indicator {
-    color: #ff2b2b;
-    font-size: 0.6rem;
-    font-weight: bold;
-    margin-left: 5px;
-    animation: pulse-error 1s infinite;
 }

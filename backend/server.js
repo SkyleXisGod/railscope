@@ -357,11 +357,11 @@ app.get("/api/timetable/:id", async (req, res) => {
                 cleanNumber: opCleanNum,
                 trainName: staticInfo.name || "",
                 trainCategory: finalCat,
-                relation: staticInfo.relation || fallbackRelation,
+                relation: staticInfo.relation || "Relacja nieznana",
                 displayNumber: staticInfo.number || t.trainNumber,
                 route: staticInfo.route || []
             };
-        });
+        }).filter(t => t.relation !== "Relacja nieznana")
 
         res.json(enriched);
     } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
