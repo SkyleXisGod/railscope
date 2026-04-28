@@ -34,6 +34,54 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
     }
   });
 
+const getUpcomingDepartures = (departures) => {
+  // 1. Zabezpieczenie: jeśli danych jeszcze nie ma, zwracamy pustą tablicę
+  if (!departures) return [];
+
+  // 2. Naprawa błędu z konsoli: konwersja obiektu na tablicę (jeśli to konieczne)
+  const departuresArray = Array.isArray(departures) 
+    ? departures 
+    : Object.values(departures);
+
+  // 3. Jeśli po konwersji dalej jest pusto, przerywamy
+  if (departuresArray.length === 0) return [];
+
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+
+  return departuresArray
+    .filter(t => {
+      const timeStr = (t.dep && t.dep !== "-") ? t.dep : t.arr;
+      if (!timeStr || timeStr === "??:??") return false;
+
+      const [hours, mins] = timeStr.split(':').map(Number);
+      const tMins = hours * 60 + mins;
+
+      let diff = tMins - currentMins;
+      
+      // Korekta przejścia przez północ
+      if (diff < -720) diff += 1440; 
+      
+      return diff >= 0; 
+    })
+    .sort((a, b) => {
+      const timeA = (a.dep && a.dep !== "-") ? a.dep : a.arr;
+      const timeB = (b.dep && b.dep !== "-") ? b.dep : b.arr;
+
+      const [hA, mA] = timeA.split(':').map(Number);
+      const [hB, mB] = timeB.split(':').map(Number);
+
+      let diffA = (hA * 60 + mA) - currentMins;
+      if (diffA < -720) diffA += 1440;
+
+      let diffB = (hB * 60 + mB) - currentMins;
+      if (diffB < -720) diffB += 1440;
+
+      return diffA - diffB; 
+    })
+    .slice(0, 5); // Pobieramy 5 najbliższych
+};
+
   const isTrainInTransit = (route, delayMins = 0) => {
     if (!route || route.length < 2) return false;
     
@@ -96,22 +144,22 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
                     {isSelected && (
                    <div className="popup-departures">
                       <div className="departures-title">Najbliższe odjazdy</div>
-                     <div className="departures-list">
-                        {stationDepartures.length > 0 ? (
-                          stationDepartures.map((dep) => (
-                            <div key={dep.uKey} className="departure-item">
-                              <span className={`dep-cat cat-${dep.category}`}>{dep.category}</span>
+                      <div className="station-departures-list">
+                        {getUpcomingDepartures(stationDepartures).length > 0 ? (
+                          getUpcomingDepartures(stationDepartures).map((dep, index) => (
+                            <div key={index} className="departure-item">
+                              <div className={`dep-cat cat-${dep.cat}`}>{dep.cat}</div>
                               <div className="dep-main-info">
-                                <div className="dep-time-group">
-                                  <span className="dep-time">{dep.time}</span>
-                                  {dep.delay > 0 && <span className="dep-delay">+{dep.delay}</span>}
-                                </div>
-                                <span className="dep-dest" title={dep.destination}>{dep.destination}</span>
+                                <span className="dep-train-name">{dep.train}</span>
+                                <span className="dep-dest">{dep.dest}</span>
+                              </div>
+                              <div className="dep-time">
+                                {dep.dep !== "-" ? dep.dep : dep.arr}
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="no-departures">Brak nadchodzących kursów</div>
+                          <div className="no-data">Brak nadchodzących pociągów</div>
                         )}
                       </div>
                     </div>
