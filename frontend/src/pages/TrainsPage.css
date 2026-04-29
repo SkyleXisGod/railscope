@@ -1,3 +1,6 @@
+/* ========================================= */
+/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
+/* ========================================= */
 .trains-container {
     height: 100vh;
     display: flex;
@@ -15,6 +18,7 @@
     font-family: 'Dancing Script', cursive;
     font-size: 3.5rem;
     margin: 0;
+    text-shadow: 0 0 15px rgba(0, 255, 213, 0.2);
 }
 
 .trains-subtitle {
@@ -22,34 +26,53 @@
     color: #ccc;
 }
 
-.search-controls {
+/* ========================================= */
+/* 2. STREFA WYSZUKIWANIA I FILTRY           */
+/* ========================================= */
+.search-grid {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 1000px;
+    background: #161616;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.search-row {
+    display: flex;
+    gap: 10px;
     align-items: center;
-    max-width: 800px;
 }
 
-.train-search-input {
-    flex: 2;
-    padding: 14px 20px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    color: white;
-    font-size: 1rem;
-}
-
-.category-select {
+.search-row input,
+.search-row select {
     flex: 1;
-    padding: 14px 20px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    color: #ccc;
-    font-size: 1rem;
-    cursor: pointer;
+    background: #0f0f0f;
+    border: 1px solid #444;
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
 }
 
+.search-row input:focus, .search-row select:focus {
+    border-color: #00ffd5;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 213, 0.15);
+}
+
+.separator {
+    color: #666;
+    font-weight: bold;
+}
+
+/* ========================================= */
+/* 3. LISTA POCIĄGÓW I KARTY                 */
+/* ========================================= */
 .trains-list {
     flex: 1;
     overflow-y: auto;
@@ -61,11 +84,18 @@
     border-radius: 12px;
     margin-bottom: 10px;
     border: 1px solid #222;
-    transition: 0.3s;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+}
+
+.train-card:hover {
+    border-color: #444;
+    transform: translateY(-2px);
 }
 
 .train-card.active {
     border-color: #00ffd5;
+    box-shadow: 0 5px 20px rgba(0, 255, 213, 0.05);
 }
 
 .train-card-header {
@@ -93,6 +123,7 @@
     color: #f1c40f;
     font-weight: bold;
     font-size: 1.1rem;
+    text-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
 }
 
 .train-relation-section {
@@ -103,17 +134,20 @@
     padding-right: 20px;
 }
 
+/* ========================================= */
+/* 4. SZCZEGÓŁY TRASY (ROZWIJANE)            */
+/* ========================================= */
 .train-route-details {
     padding: 20px 24px;
     background: #121212;
     border-top: 1px solid #333;
-    border-radius: 0 0 12px 12px;
 }
 
 .route-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
+    position: relative;
 }
 
 .route-table th {
@@ -127,62 +161,44 @@
     padding: 10px 5px;
     border-bottom: 1px solid #1f1f1f;
     color: #ccc;
+    transition: all 0.3s ease;
 }
 
-.stop-name {
-    font-weight: bold;
+.route-row { position: relative; }
+
+/* Pionowa linia osi czasu */
+.route-row::before {
+    content: "";
+    position: absolute;
+    left: 20px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: #333;
+    z-index: 1;
+    transition: background 0.3s ease;
 }
 
-.stop-time {
-    font-family: 'JetBrains Mono', monospace;
-    color: #00ffcc;
-}
+.route-row.passed::before { background: #00ffcc88; }
+.route-row.active::before { background: #00ffd5; box-shadow: 0 0 8px #00ffd5; }
 
-.cat-badge {
-    display: inline-block;
-    min-width: 45px;
-    text-align: center;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-weight: 900;
-    font-size: 0.75rem;
-}
+.stop-name { font-weight: bold; }
+.stop-time { font-family: 'JetBrains Mono', monospace; color: #00ffcc; }
 
-.timetable-table td:last-child {
-    font-family: 'JetBrains Mono', monospace;
-    color: #aaa;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-.cat-IC-badge {
-    background-color: #f39c12;
-    color: white;
-}
-
-.cat-TLK-badge {
-    background-color: #2980b9;
-    color: white;
-}
-
-.cat-EIP-badge {
-    background-color: #8e44ad;
-    color: white;
-}
-
-.cat-REG-badge {
-    background-color: #7f8c8d;
-    color: white;
-}
-
+/* Highlight dla wierszy */
 .row-current {
-    background: rgba(0, 255, 213, 0.1);
+    background: rgba(0, 255, 213, 0.05);
     box-shadow: inset 4px 0 0 #00ffd5;
 }
 
-.row-current td {
-    color: #00ffd5 !important;
+.row-current td { color: #00ffd5 !important; }
+
+.search-highlight {
+    background: rgba(241, 196, 15, 0.05) !important;
+    border-left: 4px solid #f1c40f;
 }
+
+.search-highlight td.stop-name { color: #f1c40f !important; font-weight: 900; }
+.row-passed td { opacity: 0.4; filter: grayscale(100%); }
 
 .live-dot {
     color: #00ffd5;
@@ -190,159 +206,9 @@
     animation: blink 1.5s infinite;
 }
 
-.row-passed td {
-    opacity: 0.4;
-}
-
 @keyframes blink {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.3;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.experimental-warning {
-    background: rgba(243, 156, 18, 0.1);
-    border: 1px solid #f39c12;
-    color: #f39c12;
-    padding: 10px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-}
-
-.track-map-btn {
-    background: #00ffd5;
-    color: #000;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-right: 15px;
-    transition: 0.2s;
-}
-
-.track-map-btn:hover {
-    background: #fff;
-    box-shadow: 0 0 10px #00ffd5;
-}
-
-.route-table {
-    position: relative;
-}
-
-.route-row {
-    position: relative;
-}
-
-.route-row::before {
-    content: "";
-    position: absolute;
-    left: 20px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #333;
-    z-index: 1;
-}
-
-.route-row.passed::before {
-    background: #00ffcc88;
-}
-
-.route-row.active::before {
-    background: #00ffd5;
-}
-
-.experimental-warning {
-    border: 1px solid #f39c12;
-    box-shadow: 0 0 15px rgba(243, 156, 18, 0.2);
-    animation: pulse-warning 2s infinite;
-}
-
-@keyframes pulse-warning {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.search-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-width: 1000px;
-    background: #161616;
-    padding: 20px;
-    border-radius: 15px;
-    border: 1px solid #333;
-}
-
-.search-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.search-row input,
-.search-row select {
-    flex: 1;
-    background: #0f0f0f;
-    border: 1px solid #444;
-    padding: 12px;
-    border-radius: 8px;
-    color: white;
-    font-size: 0.9rem;
-}
-
-.search-row input:focus {
-    border-color: #00ffd5;
-    outline: none;
-}
-
-.separator {
-    color: #666;
-    font-weight: bold;
-}
-
-.search-highlight {
-    background: rgba(241, 196, 15, 0.15) !important;
-    border-left: 4px solid #f1c40f;
-}
-
-.search-highlight td.stop-name {
-    color: #f1c40f !important;
-    font-weight: 900;
-}
-
-.search-highlight td {
-    border-bottom: 1px solid #f1c40f44 !important;
-}
-
-.loader, .no-data, .error-message {
-    text-align: center;
-    padding: 40px;
-    color: #888;
-    font-size: 1.1rem;
-}
-
-.error-message {
-    color: #ff4d4d;
+    0%, 100% { opacity: 1; text-shadow: 0 0 8px #00ffd5; }
+    50% { opacity: 0.3; text-shadow: none; }
 }
 
 .passed-check {
@@ -360,92 +226,33 @@
     letter-spacing: 0.5px;
 }
 
-.experimental-toggle-container {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    background: transparent;
-    border: 1px solid #f39c12;
-    padding: 6px 16px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-}
-
-.experimental-label {
-    color: #f39c12;
-    font-weight: bold;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-}
-
-.switch {
-    position: relative;
+/* ========================================= */
+/* 5. BADGE I WIZUALIA KATEGORII             */
+/* ========================================= */
+.cat-badge {
     display: inline-block;
-    width: 38px;
-    height: 20px;
+    min-width: 45px;
+    text-align: center;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 0.75rem;
 }
 
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
+.cat-IC-badge { background-color: #f39c12; color: white; }
+.cat-TLK-badge { background-color: #2980b9; color: white; }
+.cat-EIP-badge { background-color: #8e44ad; color: white; }
+.cat-REG-badge { background-color: #7f8c8d; color: white; }
+.cat-OTHER-badge { background-color: #6c757d; color: white; }
 
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #333;
-    transition: .4s;
-}
-
-.slider.round {
-    border-radius: 20px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 14px;
-    width: 14px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: #f39c12;
-}
-
-input:checked + .slider:before {
-    transform: translateX(18px);
-}
-
-.cat-OTHER-badge {
-    background-color: #6c757d;
-    color: white;
-}
-
+/* ========================================= */
+/* 6. PRZYCISKI I AKCJE                      */
+/* ========================================= */
 .route-action-container {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     min-width: 160px;
-}
-
-.track-btn-container, .route-action-container {
-    width: 170px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .track-map-btn {
@@ -470,16 +277,64 @@ input:checked + .slider:before {
 
 .track-map-btn:hover {
     background: #383838;
-    border-color: #666;
-    color: #ffffff;
+    border-color: #00ffd5;
+    color: #00ffd5;
+    box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
 }
 
-.btn-content {
-    display: flex;
+.btn-content { display: flex; align-items: center; gap: 8px; }
+
+/* ========================================= */
+/* 7. TRYB EKSPERYMENTALNY                   */
+/* ========================================= */
+.experimental-toggle-container {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    background: transparent;
+    border: 1px solid #f39c12;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
 }
 
-.progress-bar-fill {
-    display: none;
+.experimental-toggle-container:hover {
+    background: rgba(243, 156, 18, 0.05);
 }
+
+.experimental-label {
+    color: #f39c12;
+    font-weight: bold;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.experimental-warning {
+    background: rgba(243, 156, 18, 0.05);
+    border: 1px solid #f39c12;
+    color: #f39c12;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.1);
+    animation: pulse-warning 2.5s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { box-shadow: 0 0 15px rgba(243, 156, 18, 0.1); border-color: #f39c12; }
+    50% { box-shadow: 0 0 25px rgba(243, 156, 18, 0.3); border-color: #f1c40f; }
+}
+
+.switch { position: relative; display: inline-block; width: 38px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s cubic-bezier(0.68, -0.55, 0.265, 1.55); border-radius: 50%; }
+input:checked + .slider { background-color: #f39c12; }
+input:checked + .slider:before { transform: translateX(18px); }
+
+/* Komunikaty ładowania / błędów */
+.loader, .no-data, .error-message { text-align: center; padding: 40px; color: #888; font-size: 1.1rem; }
+.error-message { color: #ff4d4d; }
+.progress-bar-fill { display: none; }

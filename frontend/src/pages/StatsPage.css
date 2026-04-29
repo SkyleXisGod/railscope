@@ -1,3 +1,6 @@
+/* ========================================= */
+/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
+/* ========================================= */
 .stats-container {
     height: 100vh;
     padding: 40px;
@@ -14,6 +17,7 @@
     font-family: 'Dancing Script', cursive;
     font-size: 3.5rem;
     margin: 0;
+    text-shadow: 0 0 15px rgba(0, 255, 213, 0.2);
 }
 
 .stats-subtitle {
@@ -21,6 +25,9 @@
     font-size: 1.1rem;
 }
 
+/* ========================================= */
+/* 2. GRID I KARTY STATYSTYK                 */
+/* ========================================= */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -33,12 +40,27 @@
     border: 1px solid #333;
     padding: 25px;
     border-radius: 20px;
-    transition: transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: transparent;
+    transition: background 0.4s ease;
 }
 
 .stats-card:hover {
     transform: translateY(-5px);
     border-color: #444;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.stats-card:hover::before {
+    background: linear-gradient(90deg, transparent, #00ffd5, transparent);
 }
 
 .stats-card h3 {
@@ -49,17 +71,24 @@
     color: #aaa;
 }
 
+.wide { grid-column: span 2; }
+
+/* ========================================= */
+/* 3. WARTOŚCI I TYPOGRAFIA                  */
+/* ========================================= */
 .big-value {
     font-size: 3.5rem;
     font-weight: 800;
     margin-bottom: 10px;
+    transition: all 0.3s ease;
 }
 
 .neon-green { color: #00ffd5; text-shadow: 0 0 15px rgba(0, 255, 213, 0.3); }
 .neon-orange { color: #f39c12; text-shadow: 0 0 15px rgba(243, 156, 18, 0.3); }
 
-.wide { grid-column: span 2; }
-
+/* ========================================= */
+/* 4. REKORD OPÓŹNIENIA                      */
+/* ========================================= */
 .delay-record {
     display: flex;
     align-items: center;
@@ -70,6 +99,13 @@
     font-size: 3rem;
     color: #ff2b2b;
     font-weight: 900;
+    text-shadow: 0 0 15px rgba(255, 43, 43, 0.3);
+    animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+    0%, 100% { text-shadow: 0 0 15px rgba(255, 43, 43, 0.3); }
+    50% { text-shadow: 0 0 25px rgba(255, 43, 43, 0.6); }
 }
 
 .delay-info {
@@ -77,33 +113,30 @@
     flex-direction: column;
 }
 
-.delay-info strong { font-size: 1.4rem; }
+.delay-info strong { font-size: 1.4rem; color: #fff; }
 
-.category-split {
+/* ========================================= */
+/* 5. LISTY (KATEGORIE I TECH)               */
+/* ========================================= */
+.category-split, .tech-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-.cat-item {
+.cat-item, .tech-row {
     display: flex;
     justify-content: space-between;
     padding-bottom: 10px;
     border-bottom: 1px solid #333;
+    transition: border-color 0.3s ease;
 }
 
-.tech-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.cat-item:hover, .tech-row:hover {
+    border-color: #555;
 }
 
-.tech-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.95rem;
-}
-
+.tech-row { font-size: 0.95rem; gap: 10px; }
 .tech-row span { color: #666; }
 
 @media (max-width: 768px) {

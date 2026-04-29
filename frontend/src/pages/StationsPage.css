@@ -1,3 +1,6 @@
+/* ========================================= */
+/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
+/* ========================================= */
 .stations-container {
   height: 100vh;
   display: flex;
@@ -12,10 +15,20 @@
   padding: 40px 0 20px 0;
 }
 
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
 .stations-title {
   font-family: 'Dancing Script', cursive;
   font-size: 3.5rem;
   margin: 0;
+  text-shadow: 0 0 15px rgba(0, 255, 213, 0.2); /* Seksowny glow */
 }
 
 .stations-subtitle {
@@ -23,6 +36,9 @@
   color: #ccc;
 }
 
+/* ========================================= */
+/* 2. KONTROLKI WYSZUKIWANIA                 */
+/* ========================================= */
 .search-controls {
   display: flex;
   gap: 15px;
@@ -38,6 +54,13 @@
   border-radius: 12px;
   color: white;
   font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.station-search-input:focus {
+  outline: none;
+  border-color: #00ffd5;
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
 }
 
 .sort-btn {
@@ -48,7 +71,7 @@
   color: #ccc;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.3s;
+  transition: all 0.3s ease;
   white-space: nowrap;
 }
 
@@ -56,8 +79,12 @@
 .sort-btn.active {
   border-color: #00ffd5;
   color: #00ffd5;
+  box-shadow: 0 0 15px rgba(0, 255, 213, 0.15);
 }
 
+/* ========================================= */
+/* 3. LISTA STACJI I ELEMENTY                */
+/* ========================================= */
 .stations-list-wrapper {
   flex: 1;
   overflow-y: auto;
@@ -69,11 +96,20 @@
   border-radius: 12px;
   margin-bottom: 8px;
   border: 1px solid transparent;
-  transition: 0.3s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Płynniejsze przejścia */
+  overflow: hidden; /* Zapobiega wylewaniu się animowanego tła */
+}
+
+.station-item:hover {
+  border-color: #333;
+  transform: translateX(5px); /* Delikatny ruch przy najeździe */
 }
 
 .station-item.active {
   border-color: #00ffd5;
+  background: #1a1a1a;
+  box-shadow: 0 5px 20px rgba(0, 255, 213, 0.05);
+  transform: translateX(0); /* Reset ruchu po kliknięciu */
 }
 
 .station-row {
@@ -92,6 +128,7 @@
 .station-actions {
   display: flex;
   align-items: center;
+  gap: 15px; /* Zastąpione margin-right na gap dla czystości */
 }
 
 .map-btn {
@@ -101,20 +138,23 @@
   padding: 5px 10px;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 15px;
-  transition: 0.2s;
+  transition: all 0.3s ease;
 }
 
 .map-btn:hover {
   background: #00ffd5;
   color: black;
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.5);
 }
 
+/* ========================================= */
+/* 4. SZCZEGÓŁY STACJI (ROZWIJANE)           */
+/* ========================================= */
 .station-details {
   padding: 20px 24px;
   border-top: 1px solid #222;
   background: #121212;
-  border-radius: 0 0 12px 12px;
+  /* Usunięto radius dolny, ponieważ kontener główny jest ukrywany przez framer-motion */
 }
 
 .control-btn {
@@ -124,10 +164,17 @@
   color: #fff;
   border-radius: 4px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s ease;
   margin-bottom: 15px;
 }
 
+.control-btn:hover {
+  background: rgba(0, 255, 213, 0.1);
+}
+
+/* ========================================= */
+/* 5. TABELE I ODJAZDY                       */
+/* ========================================= */
 .timetable-table {
   width: 100%;
   border-collapse: collapse;
@@ -146,6 +193,11 @@
 .timetable-table td {
   padding: 12px 10px;
   border-bottom: 1px solid #252525;
+  transition: background 0.3s ease;
+}
+
+.timetable-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .main-time {
@@ -162,8 +214,36 @@
   padding: 2px 6px;
   border-radius: 4px;
   margin-left: 8px;
+  display: inline-block;
+  animation: pulse-error 2s infinite;
 }
 
+.relation-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-cell {
+  text-align: center;
+  width: 60px;
+}
+
+.platform-cell {
+  text-align: center;
+  font-weight: bold;
+  color: #fff;
+}
+
+.row-past td {
+  opacity: 0.4;
+  filter: grayscale(100%);
+}
+
+/* ========================================= */
+/* 6. BADGE (KATEGORIE I STATUSY)            */
+/* ========================================= */
 .cat-badge {
   display: inline-block;
   min-width: 45px;
@@ -175,30 +255,17 @@
   color: white;
 }
 
-.cat-EIP-badge {
-  background-color: #4a148c;
-}
-
-.cat-EIC-badge {
-  background-color: #0d47a1;
-}
-
-.cat-IC-badge {
-  background-color: #f39c12;
-}
-
-.cat-TLK-badge {
-  background-color: #2980b9;
-}
-
-.cat-REG-badge {
-  background-color: #7f8c8d;
-}
+.cat-EIP-badge { background-color: #4a148c; }
+.cat-EIC-badge { background-color: #0d47a1; }
+.cat-IC-badge { background-color: #f39c12; }
+.cat-TLK-badge { background-color: #2980b9; }
+.cat-REG-badge { background-color: #444; color: #aaa; }
 
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
+  font-weight: bold;
 }
 
 .status-badge.OK {
@@ -216,199 +283,25 @@
   color: #666;
 }
 
-.row-past td {
-  opacity: 0.4;
-}
-
+/* ========================================= */
+/* 7. PRZYCISKI I AKCJE W TABELI             */
+/* ========================================= */
 .expand-list-btn {
   width: 100%;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   color: #00ffcc;
   cursor: pointer;
   font-weight: bold;
   margin-top: 5px;
+  transition: all 0.3s ease;
 }
 
-.header-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.experimental-zone {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 166, 0, 0.1);
-  padding: 8px 15px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 166, 0, 0.3);
-}
-
-.exp-label {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: orange;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* Alert Ostrzegawczy */
-.experimental-warning {
-  background: #2a1b00;
-  border-left: 4px solid orange;
-  color: #ffcc80;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #333;
-  transition: .4s;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .4s;
-}
-
-input:checked+.slider {
-  background-color: orange;
-}
-
-input:checked+.slider:before {
-  transform: translateX(20px);
-}
-
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
-}
-
-.cat-REG-badge {
-  background-color: #444;
-  color: #aaa;
-}
-
-.relation-cell {
-  max-width: 300px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.header-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.experimental-zone {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background: rgba(255, 166, 0, 0.1);
-  padding: 10px 18px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 166, 0, 0.3);
-  white-space: nowrap;
-}
-
-.experimental-warning {
-  margin-top: -10px;
-  margin-bottom: 25px;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #0f0f0f;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 10px;
-  border: 2px solid #0f0f0f;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #00ffd5;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #333 #0f0f0f;
-}
-
-.stations-list-wrapper::-webkit-scrollbar-thumb {
-  background: #222;
-}
-
-.stations-list-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #00ffd5;
-  box-shadow: 0 0 10px #00ffd5;
-}
-
-.track-cell {
-  text-align: center;
-  width: 60px;
-}
-
-.platform-cell {
-  text-align: center;
-  font-weight: bold;
+.expand-list-btn:hover {
+  background: rgba(0, 255, 213, 0.05);
+  color: #fff;
 }
 
 .blocked-track-icon {
@@ -423,7 +316,6 @@ input:checked+.slider:before {
   border-radius: 4px;
 }
 
-/* Kontener przycisku */
 .track-btn-container, .route-action-container {
   width: 170px;
   display: flex;
@@ -431,14 +323,13 @@ input:checked+.slider:before {
   align-items: center;
 }
 
-/* Ujednolicony przycisk dla wszystkich pociągów */
 .track-map-btn {
   position: relative;
   width: 160px;
   height: 35px;
   border-radius: 6px;
   border: 1px solid #444;
-  background: #2a2a2a; /* Ciemny szary */
+  background: #2a2a2a;
   color: #e0e0e0;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -452,21 +343,209 @@ input:checked+.slider:before {
   text-decoration: none;
 }
 
-/* Efekt najechania - delikatne rozjaśnienie */
 .track-map-btn:hover {
   background: #383838;
-  border-color: #666;
-  color: #ffffff;
+  border-color: #00ffd5;
+  color: #00ffd5;
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
 }
 
-/* Ikony wewnątrz przycisku */
 .btn-content {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* Usunięcie starego paska postępu (nie będzie już renderowany) */
-.progress-bar-fill {
-  display: none;
+/* ========================================= */
+/* 8. STREFA EKSPERYMENTALNA I TOGGLE        */
+/* ========================================= */
+.experimental-zone {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 166, 0, 0.1);
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 166, 0, 0.3);
+  white-space: nowrap;
+}
+
+.exp-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: orange;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.experimental-warning {
+  background: #2a1b00;
+  border-left: 4px solid orange;
+  color: #ffcc80;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-top: -10px;
+  margin-bottom: 25px;
+  font-size: 0.9rem;
+  animation: slideDownFade 0.4s ease-out;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #333;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bounce effect */
+  border-radius: 50%;
+}
+
+input:checked + .slider { background-color: orange; }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* ========================================= */
+/* 9. SCROLLBAR (CZYSTY I NOWOCZESNY)        */
+/* ========================================= */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f0f0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffd5;
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.5);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #0f0f0f;
+}
+
+/* ========================================= */
+/* 10. ANIMACJE KLUCZOWE                     */
+/* ========================================= */
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-error {
+  0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(255, 77, 77, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+}
+
+/* ========================================= */
+/* 11. DODANE RZECZY / POSEGREGUJ            */
+/* ========================================= */
+.progress-bar-fill { display: none; }
+
+/* Komunikat o REGIO */
+.regio-message-area {
+    height: 30px;
+    margin-top: 10px;
+}
+
+.regio-info-text {
+    font-size: 0.85rem;
+    color: #888;
+    margin: 0;
+}
+
+.regio-info-text.active {
+    color: #f39c12;
+    text-shadow: 0 0 10px rgba(243, 156, 18, 0.2);
+}
+
+/* SKELETON LOADERS - Efekt pulsującego ładowania */
+.skeleton-wrapper {
+    width: 100%;
+    padding: 20px;
+    background: #151515;
+    border-radius: 8px;
+    min-height: 250px; /* Zapewnia, że kontener ma stałą wysokość podczas ładowania */
+}
+
+.skeleton-header {
+    height: 30px;
+    width: 100%;
+    background: #222;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    animation: skeleton-pulse 1.5s infinite;
+}
+
+.skeleton-row {
+    height: 45px;
+    width: 100%;
+    background: #1a1a1a;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    animation: skeleton-pulse 1.5s infinite;
+}
+
+@keyframes skeleton-pulse {
+    0% { opacity: 0.5; background: #1a1a1a; }
+    50% { opacity: 1; background: #252525; }
+    100% { opacity: 0.5; background: #1a1a1a; }
+}
+
+/* UI Polishing */
+.station-item {
+    border: 1px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.station-item.active {
+    border-color: rgba(0, 255, 213, 0.3);
+    background: rgba(25, 25, 25, 0.8);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    margin: 10px 0;
+}
+
+.station-row:hover {
+    background: #222;
+    padding-left: 15px; /* Delikatny efekt przesunięcia przy hover */
+}
+
+.station-details-overflow {
+    overflow: hidden;
+}
+
+/* Peron w kółeczku dla lepszego wyglądu */
+.platform-badge {
+    background: #333;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    border: 1px solid #444;
 }

@@ -8,6 +8,24 @@ import "./MapCenterButton.css";
 
 const POLAND_BOUNDS = L.latLngBounds([46.0, 10.0], [58.0, 28.0]);
 
+const listVariants = {
+  visible: { 
+    opacity: 1, 
+    transition: { staggerChildren: 0.1, delayChildren: 0.3 } 
+  },
+  hidden: { opacity: 0 }
+};
+
+const itemVariants = {
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { type: "spring", damping: 12, stiffness: 100 } 
+  },
+  hidden: { opacity: 0, y: 20, scale: 0.95 }
+};
+
 const calcMin = (timeStr) => {
   if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
   const parts = timeStr.split(':');
@@ -23,7 +41,7 @@ const getStopMins = (stop, index, totalStops) => {
   return depMins !== null ? depMins : calcMin(stop.arr);
 };
 
-const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, onStationClick, stationDepartures }) => {
+const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, stationDepartures, onStationClick, loadingDepartures }) => {
   useMapEvents({
     popupclose: (e) => {
       const params = new URLSearchParams(window.location.search);
@@ -34,52 +52,42 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, on
     }
   });
 
-const getUpcomingDepartures = (departures) => {
-  // 1. Zabezpieczenie: jeśli danych jeszcze nie ma, zwracamy pustą tablicę
-  if (!departures) return [];
+const getUpcomingDepartures = (payload) => {
+  // Rozpakowanie danych (obsługa obiektu { departures: [] })
+  const departures = Array.isArray(payload) ? payload : (payload?.departures || []);
 
-  // 2. Naprawa błędu z konsoli: konwersja obiektu na tablicę (jeśli to konieczne)
-  const departuresArray = Array.isArray(departures) 
-    ? departures 
-    : Object.values(departures);
-
-  // 3. Jeśli po konwersji dalej jest pusto, przerywamy
-  if (departuresArray.length === 0) return [];
+  if (!departures.length) return [];
 
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
-  return departuresArray
-    .filter(t => {
-      const timeStr = (t.dep && t.dep !== "-") ? t.dep : t.arr;
-      if (!timeStr || timeStr === "??:??") return false;
+  // 1. Obliczamy różnicę czasu dla każdego pociągu
+  const processed = departures.map(t => {
+    const timeStr = (t.dep && t.dep !== "-") ? t.dep : t.arr;
+    if (!timeStr || timeStr === "??:??") return { ...t, diff: 9999 };
 
-      const [hours, mins] = timeStr.split(':').map(Number);
-      const tMins = hours * 60 + mins;
+    const [hours, mins] = timeStr.split(':').map(Number);
+    let tMins = hours * 60 + mins;
+    let diff = tMins - currentMins;
+    
+    // Obsługa zawijania doby
+    if (diff < -720) diff += 1440; 
+    
+    return { ...t, diff };
+  });
 
-      let diff = tMins - currentMins;
-      
-      // Korekta przejścia przez północ
-      if (diff < -720) diff += 1440; 
-      
-      return diff >= 0; 
-    })
-    .sort((a, b) => {
-      const timeA = (a.dep && a.dep !== "-") ? a.dep : a.arr;
-      const timeB = (b.dep && b.dep !== "-") ? b.dep : b.arr;
+  // 2. Sortujemy: najpierw te, które odjadą (diff >= 0), potem te, co odjechały (diff < 0)
+  // Ale ogólnie chcemy te, których diff jest najbliższy zeru.
+  processed.sort((a, b) => {
+    // Pociągi w przyszłości mają priorytet i są rosnąco (0, 10, 20min...)
+    // Pociągi w przeszłości są na końcu
+    if (a.diff >= 0 && b.diff < 0) return -1;
+    if (a.diff < 0 && b.diff >= 0) return 1;
+    return a.diff - b.diff;
+  });
 
-      const [hA, mA] = timeA.split(':').map(Number);
-      const [hB, mB] = timeB.split(':').map(Number);
-
-      let diffA = (hA * 60 + mA) - currentMins;
-      if (diffA < -720) diffA += 1440;
-
-      let diffB = (hB * 60 + mB) - currentMins;
-      if (diffB < -720) diffB += 1440;
-
-      return diffA - diffB; 
-    })
-    .slice(0, 5); // Pobieramy 5 najbliższych
+  // 3. Zwracamy 5 rekordów (najbliższych czasowo)
+  return processed.slice(0, 5);
 };
 
   const isTrainInTransit = (route, delayMins = 0) => {
@@ -145,23 +153,26 @@ const getUpcomingDepartures = (departures) => {
                    <div className="popup-departures">
                       <div className="departures-title">Najbliższe odjazdy</div>
                       <div className="station-departures-list">
-                        {getUpcomingDepartures(stationDepartures).length > 0 ? (
-                          getUpcomingDepartures(stationDepartures).map((dep, index) => (
-                            <div key={index} className="departure-item">
-                              <div className={`dep-cat cat-${dep.cat}`}>{dep.cat}</div>
-                              <div className="dep-main-info">
-                                <span className="dep-train-name">{dep.train}</span>
-                                <span className="dep-dest">{dep.dest}</span>
-                              </div>
-                              <div className="dep-time">
-                                {dep.dep !== "-" ? dep.dep : dep.arr}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="no-data">Brak nadchodzących pociągów</div>
-                        )}
-                      </div>
+    {loadingDepartures ? (
+      <div className="loader-container">
+        <div className="loading-spinner"></div>
+        <p>Ładowanie...</p>
+      </div>
+    ) : stationDepartures.length > 0 ? (
+      stationDepartures.map((dep, index) => (
+        <div key={index} className="departure-item">
+          <div className={`dep-cat cat-${dep.cat}`}>{dep.cat}</div>
+          <div className="dep-main-info">
+            <span className="dep-train-name">{dep.train}</span>
+            <span className="dep-dest">{dep.dest}</span>
+          </div>
+          <div className="dep-time">{dep.dep}</div>
+        </div>
+      ))
+    ) : (
+      <p className="no-data">Brak pociągów</p>
+    )}
+  </div>
                     </div>
                     )}
                     <div className="popup-station-footer">
@@ -236,7 +247,7 @@ export default function MapView({ sidebarOpen }) {
   const stationId = searchParams.get("stationId");
   const trainId = searchParams.get("trainId");
   const isLive = searchParams.get("live") === "true";
-  
+  const [loadingDepartures, setLoadingDepartures] = useState(false);
   const [stations, setStations] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
   const [stationDepartures, setStationDepartures] = useState([]);
@@ -259,51 +270,57 @@ export default function MapView({ sidebarOpen }) {
   }, []);
 
 useEffect(() => {
-  if (stationId) {
-    Promise.all([
-      axios.get(`http://localhost:8080/api/stations/${stationId}`),
-      axios.get(`http://localhost:8080/api/timetable/${stationId}`)
-    ])
-    .then(([stationRes, timetableRes]) => {
-      const stationData = stationRes.data;
-      setSelectedStation(stationData);
-      
-      const now = new Date();
-      const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
-                          now.getMinutes().toString().padStart(2, '0');
+    if (stationId) {
+      setLoadingDepartures(true); // Odpalamy loader
+      setStationDepartures([]);    // CZYŚCIMY stare dane, żeby nie "straszyły"
 
-     const allMatches = timetableRes.data.flatMap((train, tIdx) => {
-     const stop = train.route?.find(r => 
-        r.name.toLowerCase() === stationData.name.toLowerCase()
-      );
+      Promise.all([
+        axios.get(`http://localhost:8080/api/stations/${stationId}`),
+        axios.get(`http://localhost:8080/api/timetable/${stationId}`)
+      ])
+      .then(([stationRes, timetableRes]) => {
+        setSelectedStation(stationRes.data);
+        
+        const rawTrains = timetableRes.data || [];
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        const getT = (iso) => iso?.includes("T") ? iso.split("T")[1].substring(0, 5) : iso?.substring(0, 5);
 
-      if (!stop) return [];
+        // Grupowanie - identyczne jak w StationsPage
+        const trainGroups = {};
+        rawTrains.forEach(train => {
+          const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
+          const groupKey = train.cleanNumber ? `${train.cleanNumber}_${train.trainCategory}` : train.trainOrderId;
+          
+          if (!trainGroups[groupKey]) {
+            trainGroups[groupKey] = {
+              cat: train.trainCategory || "REG",
+              train: train.trainName || train.displayNumber || "Pociąg",
+              dest: train.relation?.split(" - ").pop() || "Stacja docelowa",
+              dep: getT(sInfo.plannedDeparture) || getT(sInfo.plannedArrival) || "??:??",
+            };
+          }
+        });
 
-      const time = (stop.dep && stop.dep !== "-") ? stop.dep : stop.arr;
-      
-        return [{
-          uKey: `dep-${train.id}-${time}-${tIdx}`, 
-          id: train.id,
-          category: train.categorySymbol || "REG",
-          time: time,
-          delay: stop.delay || 0,
-          destination: train.route[train.route.length - 1]?.name || "Stacja docelowa"
-        }];
-      });
+        // Filtrowanie i sortowanie 5 najbliższych
+        const processed = Object.values(trainGroups)
+          .map(t => {
+            const [h, m] = t.dep.split(':').map(Number);
+            let tMins = h * 60 + m;
+            let diff = tMins - currentMins;
+            if (diff < -720) diff += 1440;
+            return { ...t, diff };
+          })
+          .filter(t => t.diff >= -2) 
+          .sort((a, b) => a.diff - b.diff)
+          .slice(0, 5);
 
-      const processed = allMatches
-        .filter(t => t.time >= currentTime) 
-        .sort((a, b) => a.time.localeCompare(b.time))
-        .slice(0, 5);
-
-      setStationDepartures(processed);
-    })
-    .catch(err => {
-      console.error("Błąd stacji:", err);
-      setStationDepartures([]);
-    });
-  }
-}, [stationId]);
+        setStationDepartures(processed);
+      })
+      .catch(err => console.error("Błąd stacji:", err))
+      .finally(() => setLoadingDepartures(false)); // Wyłączamy loader
+    }
+  }, [stationId]);
 
   useEffect(() => {
     if (trainId) {
@@ -555,6 +572,7 @@ useEffect(() => {
         <StationsLayer 
           stations={stations}
           currentZoom={currentZoom}
+          loadingDepartures={loadingDepartures}
           stationId={stationId}
           trackedTrain={trackedTrain} 
           stationDepartures={stationDepartures}

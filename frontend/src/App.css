@@ -282,5 +282,19 @@
   gap: 8px;
 }
 
+.global-loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 11, 11, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #00ffd5;
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: bold;
+}
+.loader-content { text-align: center; }
 
 /* Kacper Zagłoba i Mateusz Kuśmierski 4P */
