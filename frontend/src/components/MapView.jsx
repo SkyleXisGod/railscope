@@ -531,7 +531,7 @@ useEffect(() => {
                         <span className="popup-train-id">{trackedTrain.number}</span>
                       </div>
                       <span className="popup-speed-badge">
-                        {computedTrainPos?.status === "stopped" ? "STOI" : `⚡ ${trackedTrain.speed || 85} km/h`}
+                        {computedTrainPos?.status === "stopped" ? "STOI" : `⚡ ${trackedTrain.speed || 150} km/h`}
                       </span>
                     </div>
                     {trackedTrain.name && trackedTrain.name.trim().length > 0 && (

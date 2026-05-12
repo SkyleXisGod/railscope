@@ -1,52 +1,73 @@
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Topbar.css";
+
+// Zakładam, że masz te assety w projekcie
+import logo from "../assets/railscope-minature.png"; 
 
 export default function Topbar({ onToggleSidebar }) {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  const menuItems = [
-    { label: "Mapa", path: "/" },
-    { label: "Pociągi", path: "/pociagi" },
-    { label: "Stacje", path: "/stacje" },
-    { label: "Statystyki", path: "/statystyki" }
-  ];
+  // Symulacja zalogowanego użytkownika (docelowo z Twojego Contextu)
+  const user = { username: "SkyleX", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SkyleX" };
+
+  const handleLogout = () => {
+    // Tutaj logika usuwania tokena/sesji
+    console.log("Wylogowano");
+    navigate("/login");
+  };
 
   return (
-    <div className="topbar">
+    <header className="topbar">
       <div className="topbar-left">
-        <button
-          className="hamburger"
-          onClick={onToggleSidebar}
-        >
-          ☰
+        <button className="menu-toggle-btn" onClick={onToggleSidebar}>
+          <i className="fas fa-bars">☰</i>
         </button>
-
-        <span className="brand-title" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
-          Railscope
-        </span>
-      </div>
-
-      <div className="topbar-center">
-        {menuItems.map((item) => (
-          <div key={item.label} className="topbar-slot">
-            <button 
-              className="topbar-nav-item"
-              onClick={() => navigate(item.path)}
-            >
-              {item.label}
-            </button>
-          </div>
-        ))}
+        <div className="topbar-logo" onClick={() => navigate("/")}>
+          <img src={logo} alt="RailScope Logo" className="logo-img" />
+          <span className="logo-text">RailScope</span>
+        </div>
       </div>
 
       <div className="topbar-right">
-        <button className="icon-btn user-btn">
-          <div className="user-avatar"></div>
-        </button>
+        <div className="system-status">
+          <span className="status-dot"></span>
+          <span className="status-label">Live System Online</span>
+        </div>
 
-        <button className="icon-btn gear-btn">
-          ⚙
-        </button>
+        {/* Sekcja użytkownika */}
+        <div className="user-section">
+          <div 
+            className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+          >
+            <img src={user.avatar} alt="Avatar" className="user-avatar" />
+            <span className="username">{user.username}</span>
+            <i className={`fas fa-chevron-down arrow ${isUserMenuOpen ? "up" : ""}`}></i>
+          </div>
+
+          {isUserMenuOpen && (
+            <div className="user-dropdown">
+              <div className="dropdown-info">
+                <p className="role">Administrator Systemu</p>
+              </div>
+              <ul className="dropdown-menu">
+                <li onClick={() => { navigate("/settings"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-cog"></i> Ustawienia
+                </li>
+                <li onClick={() => { navigate("/profile"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-user-circle"></i> Mój Profil
+                </li>
+                <li className="divider"></li>
+                <li className="logout-btn" onClick={handleLogout}>
+                  <i className="fas fa-sign-out-alt"></i> Wyloguj
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </header>
   );
 }

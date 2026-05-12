@@ -1,0 +1,206 @@
+.topbar {
+    height: 70px;
+    background: #111;
+    border-bottom: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-toggle-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 10px;
+    transition: color 0.3s;
+}
+
+.menu-toggle-btn:hover {
+    color: #00ffd5;
+}
+
+.topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.logo-img {
+    height: 35px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #fff, #00ffd5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 255, 213, 0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 255, 213, 0.2);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #00ffd5;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ffd5;
+    animation: pulse 2s infinite;
+}
+
+.status-label {
+    font-size: 0.8rem;
+    color: #00ffd5;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Sekcja Profilu i Dropdown */
+.user-section {
+    position: relative;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 12px;
+    transition: background 0.3s;
+}
+
+.profile-trigger:hover, .profile-trigger.active {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #333;
+}
+
+.username {
+    font-weight: 500;
+    color: #eee;
+}
+
+.arrow {
+    font-size: 0.8rem;
+    color: #666;
+    transition: transform 0.3s;
+}
+
+.arrow.up {
+    transform: rotate(180deg);
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(15px);
+    border: 1px solid #333;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+    animation: dropdownFade 0.2s ease-out;
+}
+
+.dropdown-info {
+    padding: 15px;
+    border-bottom: 1px solid #222;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.role {
+    font-size: 0.75rem;
+    color: #888;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dropdown-menu {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+}
+
+.dropdown-menu li {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #ccc;
+}
+
+.dropdown-menu li i {
+    width: 16px;
+}
+
+.dropdown-menu li:hover {
+    background: rgba(0, 255, 213, 0.1);
+    color: #00ffd5;
+}
+
+.divider {
+    height: 1px;
+    background: #222;
+    margin: 8px 0;
+}
+
+.logout-btn {
+    color: #ff4d4d !important;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 77, 77, 0.1) !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes dropdownFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
