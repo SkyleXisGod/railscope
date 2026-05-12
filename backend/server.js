@@ -6,6 +6,24 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 
+import sqlite3 from 'sqlite3'; // Dodaj to
+import bcrypt from 'bcrypt';   // Dodaj to
+
+// Inicjalizacja bazy danych (jeśli jej brakuje)
+const db = new sqlite3.Database('./railscope.db', (err) => {
+    if (err) console.error("Błąd połączenia z bazą:", err.message);
+    else {
+        console.log("Połączono z bazą SQLite.");
+        // Tworzenie tabeli użytkowników, jeśli nie istnieje
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            email TEXT UNIQUE,
+            password TEXT
+        )`);
+    }
+});
+
 const serverStartTime = Date.now();
 
 let plkApiRequestsCount = 0;
@@ -44,20 +62,24 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Rejestracja
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
-    db.run(sql, [username, email, hashedPassword], function(err) {
-        if (err) return res.status(400).json({ error: "Email lub login jest już zajęty" });
+    
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const query = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
         
-        const userId = this.lastID;
-        db.run(`INSERT INTO user_settings (user_id) VALUES (?)`, [userId], () => {
-            res.json({ success: true, message: "Konto utworzone!" });
+        db.run(query, [username, email, hashedPassword], function(err) {
+            if (err) {
+                // Np. gdy email już istnieje (UNIQUE constraint)
+                return res.status(400).json({ error: "Użytkownik o takim adresie e-mail już istnieje." });
+            }
+            res.status(201).json({ message: "Konto utworzone pomyślnie!" });
         });
-    });
+    } catch (error) {
+        console.error("Błąd rejestracji:", error);
+        res.status(500).json({ error: "Błąd serwera podczas rejestracji." });
+    }
 });
 
 // --- AKTUALIZACJA USTAWIEŃ ---

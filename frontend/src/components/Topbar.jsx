@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Topbar.css";
 
-// Zakładam, że masz te assety w projekcie
 import logo from "../assets/railscope-minature.png"; 
 
 export default function Topbar({ onToggleSidebar }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Symulacja zalogowanego użytkownika (docelowo z Twojego Contextu)
   const user = { username: "SkyleX", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SkyleX" };
 
   const handleLogout = () => {
