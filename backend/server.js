@@ -25,33 +25,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- REJESTRACJA ---
+app.post('/api/login', (req, res) => {
+    const { email, password } = req.body;
+    
+    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
+        if (err) return res.status(500).json({ error: "Błąd bazy danych" });
+        if (!user) return res.status(401).json({ error: "Nie znaleziono użytkownika" });
+
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return res.status(401).json({ error: "Błędne hasło" });
+
+        // Pobierz ustawienia
+        db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
+            // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
+            const { password, ...userSafeData } = user;
+            res.json({ user: { ...userSafeData, settings } });
+        });
+    });
+});
+
+// Rejestracja
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
     db.run(sql, [username, email, hashedPassword], function(err) {
-        if (err) return res.status(400).json({ error: "Użytkownik już istnieje" });
+        if (err) return res.status(400).json({ error: "Email lub login jest już zajęty" });
         
-        // Tworzenie domyślnych ustawień dla nowego usera
-        db.run(`INSERT INTO user_settings (user_id) VALUES (?)`, [this.lastID]);
-        res.json({ message: "Zarejestrowano pomyślnie", userId: this.lastID });
-    });
-});
-
-// --- LOGOWANIE ---
-app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    
-    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ error: "Błędne dane logowania" });
-        }
-        
-        // Pobierz ustawienia użytkownika
-        db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
-            res.json({ user, settings });
+        const userId = this.lastID;
+        db.run(`INSERT INTO user_settings (user_id) VALUES (?)`, [userId], () => {
+            res.json({ success: true, message: "Konto utworzone!" });
         });
     });
 });
