@@ -1,0 +1,41 @@
+/* src/styles/theme.css */
+:root {
+  /* Kolory Główne */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --accent-color: #00ffd5;
+  --accent-gradient: linear-gradient(135deg, #00ffd5 0%, #0088ff 100%);
+  --text-main: #ffffff;
+  --text-dim: #888888;
+  --danger: #ff4d4d;
+  --warning: #f39c12;
+  
+  /* Rangi */
+  --rank-user: #888888;
+  --rank-plus: #ffcc00; /* Złoty */
+  --rank-admin: #ff2b2b; /* Czerwony */
+  
+  /* Animacje */
+  --transition-speed: 0.3s;
+  --enable-animations: 1; /* 1 = tak, 0 = nie (sterowane przez JS) */
+}
+
+/* Przykład globalnego upiększenia */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  transition: background var(--transition-speed);
+}
+
+.plus-badge-anim {
+  background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
+  background-size: 200% auto;
+  animation: shine 2s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
+}

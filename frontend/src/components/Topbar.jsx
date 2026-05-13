@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
 import "./Topbar.css";
-
 import logo from "../assets/railscope-minature.png"; 
 
 export default function Topbar({ onToggleSidebar }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { user, logout } = useAuth(); // Pobieramy dane zalogowanego usera i funkcję logout
   const navigate = useNavigate();
 
-  const user = { username: "SkyleX", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=SkyleX" };
-
   const handleLogout = () => {
-    // Tutaj logika usuwania tokena/sesji
-    console.log("Wylogowano");
-    navigate("/login");
+    logout(); // Czyści localStorage i stan w aplikacji
+    navigate("/auth"); // Wywala do logowania
   };
+
+  // Jeśli user nie jest jeszcze załadowany, nie renderujemy sekcji profilu
+  if (!user) return null;
 
   return (
     <header className="topbar">
@@ -34,13 +35,17 @@ export default function Topbar({ onToggleSidebar }) {
           <span className="status-label">Live System Online</span>
         </div>
 
-        {/* Sekcja użytkownika */}
         <div className="user-section">
           <div 
             className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
           >
-            <img src={user.avatar} alt="Avatar" className="user-avatar" />
+            {/* Generujemy avatar na podstawie nazwy użytkownika */}
+            <img 
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                alt="Avatar" 
+                className="user-avatar" 
+            />
             <span className="username">{user.username}</span>
             <i className={`fas fa-chevron-down arrow ${isUserMenuOpen ? "up" : ""}`}></i>
           </div>
@@ -48,13 +53,11 @@ export default function Topbar({ onToggleSidebar }) {
           {isUserMenuOpen && (
             <div className="user-dropdown">
               <div className="dropdown-info">
-                <p className="role">Administrator Systemu</p>
+                <p className="user-email">{user.email}</p>
+                <p className="role">Operator Systemu</p>
               </div>
               <ul className="dropdown-menu">
-                <li onClick={() => { navigate("/ustawienia"); setIsUserMenuOpen(false); }}>
-                  <i className="fas fa-cog"></i> Ustawienia
-                </li>
-                <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
+                <li onClick={() => { navigate("/profile"); setIsUserMenuOpen(false); }}>
                   <i className="fas fa-user-circle"></i> Mój Profil
                 </li>
                 <li className="divider"></li>

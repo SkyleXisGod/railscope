@@ -11,6 +11,8 @@ import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 import AuthPage from "./pages/AuthPage";
 import GlobalLoader from "./components/GlobalLoader";
+import ProfilePage from "./pages/ProfilePage";
+import PaymentPage from "./pages/PaymentPage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -55,6 +57,8 @@ function AppContent() {
               <button className="sidebar-nav-item" onClick={() => go("/pociagi")}>🚆 Pociągi</button>
               <button className="sidebar-nav-item" onClick={() => go("/stacje")}>🚉 Stacje</button>
               <button className="sidebar-nav-item" onClick={() => go("/statystyki")}>📊 Statystyki</button>
+              <button className="sidebar-nav-item" onClick={() => go("/ustawienia")}>⚙️ Ustawienia</button>
+              <button className="sidebar-nav-item" onClick={() => go("/profil")}>👤 Profil</button>
             </div>
           }
         >
@@ -65,9 +69,8 @@ function AppContent() {
               <Route path="/stacje" element={<PrivateRoute><PageWrapper><StationsPage /></PageWrapper></PrivateRoute>} />
               <Route path="/statystyki" element={<PrivateRoute><PageWrapper><StatsPage /></PageWrapper></PrivateRoute>} />
               <Route path="/ustawienia" element={<PrivateRoute><PageWrapper><SettingsPage /></PageWrapper></PrivateRoute>} />
-              <Route path="/profil" element={<PrivateRoute><PageWrapper><div className="coming-soon">Profil Użytkownika - Wkrótce</div></PageWrapper></PrivateRoute>} />
-              
-              {/* Przekieruj nieznane ścieżki na stronę główną */}
+              <Route path="/profil" element={<PrivateRoute><PageWrapper><ProfilePage /></PageWrapper></PrivateRoute>} />
+              <Route path="/pay" element={<PrivateRoute><PageWrapper><PaymentPage /></PageWrapper></PrivateRoute>} />
               <Route path="*" element={<Navigate to="/auth" />} />
             </Routes>
           </AnimatePresence>

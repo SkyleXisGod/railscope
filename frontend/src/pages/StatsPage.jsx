@@ -1,99 +1,88 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
+} from "recharts";
 import PageWrapper from "../components/PageWrapper";
 import "./StatsPage.css";
 
 export default function StatsPage() {
     const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get("http://localhost:8080/api/stats")
-            .then(res => {
-                setStats(res.data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Błąd statystyk:", err);
-                setLoading(false);
-            });
+        axios.get("http://localhost:8080/api/stats").then(res => setStats(res.data));
     }, []);
 
-    if (loading) return <div className="loading">Analizowanie danych sieciowych...</div>;
-    if (!stats) return <div className="error">Nie udało się pobrać statystyk.</div>;
+    if (!stats) return <div className="loader">Inicjalizacja macierzy danych...</div>;
+
+    // Przykładowe dane dla wykresów (emulacja rozkładu godzinowego)
+    const hourlyData = [
+        { name: '06:00', pociagi: 45, opoznienia: 2 },
+        { name: '12:00', pociagi: 80, opoznienia: 15 },
+        { name: '18:00', pociagi: 65, opoznienia: 8 },
+        { name: '00:00', pociagi: 20, opoznienia: 1 },
+    ];
+
+    const COLORS = ['#00ffd5', '#f39c12', '#ff4d4d', '#0088ff'];
 
     return (
         <PageWrapper>
             <div className="stats-container">
                 <header className="stats-header">
-                    <h1 className="stats-title">Statystyki</h1>
-                    <p className="stats-subtitle">Podgląd kondycji polskiej sieci kolejowej w czasie rzeczywistym.</p>
+                    <h1>Network Intelligence Dashboard</h1>
+                    <p>Analiza przepływu jednostek trakcyjnych w czasie rzeczywistym.</p>
                 </header>
+
                 <div className="stats-grid">
-                    {/* Pociągi w trasie */}
-                    <div className="stats-card highlight">
-                        <h3>Pociągi w bazie</h3>
-                        <div className="big-value">{stats.system.activeTrains}</div>
-                        <p>Aktywne połączenia dzisiaj</p>
-                    </div>
-
-                    {/* Punktualność - poprawiona klasa neon-green */}
-                    <div className="stats-card">
-                        <h3>Obsługiwane relacje</h3>
-                        <div className="big-value neon-green">{stats.traffic.destinations}</div>
-                        <p>Unikalne stacje docelowe</p>
-                    </div>
-                    <div className="stats-card highlight">
-                        <h3>Pociągi w trasie</h3>
-                        <div className="big-value">{stats?.system?.activeTrains || 0}</div>
-                        <p>Zaktualizowane dane z PLK</p>
-                    </div>
-
-                    <div className="stats-card">
-                        <h3>Punktualność</h3>
-                        <div className="big-value neon-green">{stats?.traffic?.punctuality || "100%"}</div>
-                        <p>Tolerancja opóźnienia do 5 min</p>
-                    </div>
-
-                    <div className="stats-card">
-                        <h3>Średnie Opóźnienie</h3>
-                        <div className="big-value neon-orange">{stats?.traffic?.averageDelay || "0 min"}</div>
-                        <p>Dla wszystkich składów</p>
-                    </div>
-
-                    <div className="stats-card wide">
-                        <h3>Największe Opóźnienie</h3>
-                        <div className="delay-record">
-                            {/* Zauważ: używamy .value oraz .name - tak jak w Twoim JSONIE */}
-                            <span className="delay-minutes">+{stats?.traffic?.biggestDelay?.value || 0} min</span>
-                            <div className="delay-info">
-                                <strong>{stats?.traffic?.biggestDelay?.name || "Pociąg"}</strong>
-                                <span>Nr: {stats?.traffic?.biggestDelay?.number || "-"}</span>
-                            </div>
+                    {/* Wielki Wykres Liniowy - Ruch */}
+                    <div className="stats-card wide-card">
+                        <h3>Obciążenie Sieci (24h)</h3>
+                        <div style={{ width: '100%', height: 300 }}>
+                            <ResponsiveContainer>
+                                <LineChart data={hourlyData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                    <XAxis dataKey="name" stroke="#888" />
+                                    <YAxis stroke="#888" />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                                    <Line type="monotone" dataKey="pociagi" stroke="#00ffd5" strokeWidth={3} dot={{ r: 6 }} />
+                                    <Line type="monotone" dataKey="opoznienia" stroke="#ff4d4d" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
-
+                    {/* Małe karty z danymi "nerdowskimi" */}
                     <div className="stats-card">
-                        <h3>Struktura Składów</h3>
-                        <div className="category-split">
-                            <div className="cat-item">
-                                <span className="cat-label">IC/Premium</span>
-                                <span className="cat-count">{stats.distribution.IC}</span>
-                            </div>
-                            <div className="cat-item">
-                                <span className="cat-label">Regionalne</span>
-                                <span className="cat-count">{stats.distribution.REG}</span>
-                            </div>
-                        </div>
+                        <h3>Punktualność Globalna</h3>
+                        <div className="big-number neon-text">{stats.traffic.punctuality}</div>
+                        <p>Średnie opóźnienie: {stats.traffic.averageDelay}</p>
                     </div>
 
-                    <div className="stats-card technical">
-                        <h3>Status Serwera</h3>
-                        <div className="tech-list">
-                            <div className="tech-row"><span>Uptime:</span> <strong>{stats.system.uptime}</strong></div>
-                            <div className="tech-row"><span>Zapytania API:</span> <strong>{stats.system.apiRequests}</strong></div>
-                            <div className="tech-row"><span>W bazie:</span> <strong>{stats.system.totalStations} stacji</strong></div>
+                    <div className="stats-card">
+                        <h3>Struktura Taboru</h3>
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Pie 
+                                    data={[
+                                        { name: 'IC', value: stats.distribution.IC },
+                                        { name: 'REG', value: stats.distribution.REG }
+                                    ]} 
+                                    innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
+                                >
+                                    {COLORS.map((color, i) => <Cell key={i} fill={color} />)}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="stats-card">
+                        <h3>Status Systemu</h3>
+                        <div className="tech-details">
+                            <div className="row"><span>Uptime:</span> <span>{stats.system.uptime}</span></div>
+                            <div className="row"><span>API Calls:</span> <span>{stats.system.apiRequests}</span></div>
+                            <div className="row"><span>SQL Index:</span> <span>Optimized</span></div>
                         </div>
                     </div>
                 </div>
