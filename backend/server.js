@@ -93,6 +93,24 @@ app.post('/api/settings', (req, res) => {
     });
 });
 
+// Endpoint do usuwania użytkownika
+app.delete('/api/users/:id', (req, res) => {
+    const { id } = req.params;
+    db.run(`DELETE FROM users WHERE id = ?`, [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Konto usunięte" });
+    });
+});
+
+// Endpoint do "płatności" (emulacja upgrade'u)
+app.post('/api/upgrade', (req, res) => {
+    const { id, role } = req.body; // role: 'PLUS' lub 'ADMIN'
+    db.run(`UPDATE users SET role = ? WHERE id = ?`, [role, id], (err) => {
+        if (err) return res.status(500).json({ error: "Błąd bazy" });
+        res.json({ message: "Ranga zaktualizowana!" });
+    });
+});
+
 app.get("/api/statistics", (req, res) => {
     res.json({
         sessionRequests: plkApiRequestsCount,

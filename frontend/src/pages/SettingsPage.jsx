@@ -1,79 +1,68 @@
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import "./SettingsPage.css";
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import './SettingsPage.css';
 
 export default function SettingsPage() {
     const { user, logout } = useAuth();
-    const [themeColor, setThemeColor] = useState("#00ffd5");
-    const [lang, setLang] = useState("PL");
-    const [animations, setAnimations] = useState(true);
+    const [lang, setLang] = useState(localStorage.getItem('rs_lang') || 'PL');
 
-    const t = {
-        PL: { title: "Ustawienia Systemu", theme: "Motyw i Kolory", lang: "Język", danger: "Strefa Zagrożenia", del: "Usuń Konto" },
-        EN: { title: "System Settings", theme: "Theme & Colors", lang: "Language", danger: "Danger Zone", del: "Delete Account" }
-    }[lang];
-
-    const handleThemeChange = (color) => {
-        setThemeColor(color);
-        document.documentElement.style.setProperty('--accent-color', color);
+    const translations = {
+        PL: { title: "Ustawienia", theme: "Kolor Akcentu", performance: "Animacje", danger: "Usuń Konto" },
+        EN: { title: "Settings", theme: "Accent Color", performance: "Animations", danger: "Delete Account" }
     };
 
-    const toggleAnimations = () => {
-        setAnimations(!animations);
-        document.documentElement.style.setProperty('--enable-animations', animations ? "0" : "1");
+    const t = translations[lang];
+
+    const changeTheme = (color) => {
+        document.documentElement.style.setProperty('--accent-color', color);
+        localStorage.setItem('rs_theme', color);
+    };
+
+    const toggleAnims = (e) => {
+        const val = e.target.checked ? 'block' : 'none';
+        document.documentElement.style.setProperty('--display-anim', val);
+    };
+
+    const handleDeleteAccount = async () => {
+        if (window.confirm("UWAGA: Operacja nieodwracalna. Usunąć konto?")) {
+            try {
+                await axios.delete(`http://localhost:8080/api/users/${user.id}`);
+                logout();
+            } catch (err) { alert("Błąd podczas usuwania konta."); }
+        }
     };
 
     return (
-        <div className="settings-container">
-            <div className="settings-content">
+        <div className="settings-wrapper">
+            <div className="settings-card">
                 <h1>{t.title}</h1>
                 
-                <section className="settings-section horizontal">
-                    <div className="setting-item">
-                        <label>{t.theme}</label>
-                        <div className="color-picker">
-                            {['#00ffd5', '#ff2b2b', '#ffcc00', '#0088ff'].map(c => (
-                                <div 
-                                    key={c} 
-                                    className={`color-circle ${themeColor === c ? 'active' : ''}`}
-                                    style={{ backgroundColor: c }}
-                                    onClick={() => handleThemeChange(c)}
-                                />
-                            ))}
-                        </div>
+                <div className="setting-group">
+                    <label>{t.theme}</label>
+                    <div className="color-grid">
+                        {['#00ffd5', '#ff2b2b', '#ffcc00', '#7000ff'].map(c => (
+                            <div key={c} className="color-opt" style={{bg: c}} onClick={() => changeTheme(c)} />
+                        ))}
                     </div>
+                </div>
 
-                    <div className="setting-item">
-                        <label>{t.lang}</label>
-                        <select value={lang} onChange={(e) => setLang(e.target.value)}>
-                            <option value="PL">Polski</option>
-                            <option value="EN">English</option>
-                        </select>
-                    </div>
+                <div className="setting-group">
+                    <label>Język / Language</label>
+                    <select value={lang} onChange={(e) => {setLang(e.target.value); localStorage.setItem('rs_lang', e.target.value);}}>
+                        <option value="PL">Polski</option>
+                        <option value="EN">English</option>
+                    </select>
+                </div>
 
-                    <div className="setting-item">
-                        <label>Animacje (Performance)</label>
-                        <button 
-                            className={`toggle-btn ${animations ? 'on' : 'off'}`}
-                            onClick={toggleAnimations}
-                        >
-                            {animations ? "WŁĄCZONE" : "WYŁĄCZONE"}
-                        </button>
-                    </div>
-                </section>
+                <div className="setting-group">
+                    <label>{t.performance}</label>
+                    <input type="checkbox" defaultChecked onChange={toggleAnims} />
+                </div>
 
-                <section className="settings-section danger-zone">
-                    <h2>{t.danger}</h2>
-                    <p>Usunięcie konta spowoduje bezpowrotne wymazanie danych z bazy SQL.</p>
-                    <button className="delete-btn" onClick={() => {
-                        if(window.confirm("Czy na pewno chcesz usunąć konto?")) {
-                            // Tutaj wywołanie axios.delete('/api/user')
-                            logout();
-                        }
-                    }}>
-                        {t.del}
-                    </button>
-                </section>
+                <div className="danger-zone">
+                    <button onClick={handleDeleteAccount} className="btn-del">{t.danger}</button>
+                </div>
             </div>
         </div>
     );
