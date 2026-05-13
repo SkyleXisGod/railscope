@@ -1,27 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './SettingsPage.css';
 
 export default function SettingsPage() {
-    const { user, logout } = useAuth();
-    const [lang, setLang] = useState(localStorage.getItem('rs_lang') || 'PL');
+    const { user, updateSettings } = useAuth();
+    const [lang, setLang] = useState(user?.settings?.language || 'PL');
+    const [theme, setTheme] = useState(user?.settings?.theme || '#00ffd5');
+    const [animations, setAnimations] = useState(user?.settings?.animations !== 'none');
+
+    useEffect(() => {
+        if (user?.settings) {
+            setLang(user.settings.language || 'PL');
+            setTheme(user.settings.theme || '#00ffd5');
+            setAnimations(user.settings.animations !== 'none');
+        }
+    }, [user]);
 
     const translations = {
-        PL: { title: "Ustawienia", theme: "Kolor Akcentu", performance: "Animacje", danger: "Usuń Konto" },
-        EN: { title: "Settings", theme: "Accent Color", performance: "Animations", danger: "Delete Account" }
+        PL: { title: "Ustawienia", theme: "Kolor Akcentu", performance: "Animacje", danger: "Usuń Konto", save: "Zapisz" },
+        EN: { title: "Settings", theme: "Accent Color", performance: "Animations", danger: "Delete Account", save: "Save" }
     };
 
     const t = translations[lang];
 
-    const changeTheme = (color) => {
+    const changeTheme = async (color) => {
+        setTheme(color);
         document.documentElement.style.setProperty('--accent-color', color);
-        localStorage.setItem('rs_theme', color);
+        try {
+            await axios.post('http://localhost:8080/api/settings', {
+                userId: user.id,
+                theme: color,
+                language: lang,
+                animations: animations ? 'block' : 'none'
+            });
+            updateSettings({ theme: color });
+        } catch (err) {
+            console.error('Błąd zapisu ustawień:', err);
+        }
     };
 
-    const toggleAnims = (e) => {
-        const val = e.target.checked ? 'block' : 'none';
-        document.documentElement.style.setProperty('--display-anim', val);
+    const toggleAnims = async (e) => {
+        const val = e.target.checked;
+        setAnimations(val);
+        document.documentElement.style.setProperty('--display-anim', val ? 'block' : 'none');
+        try {
+            await axios.post('http://localhost:8080/api/settings', {
+                userId: user.id,
+                theme,
+                language: lang,
+                animations: val ? 'block' : 'none'
+            });
+            updateSettings({ animations: val ? 'block' : 'none' });
+        } catch (err) {
+            console.error('Błąd zapisu ustawień:', err);
+        }
+    };
+
+    const changeLang = async (newLang) => {
+        setLang(newLang);
+        try {
+            await axios.post('http://localhost:8080/api/settings', {
+                userId: user.id,
+                theme,
+                language: newLang,
+                animations: animations ? 'block' : 'none'
+            });
+            updateSettings({ language: newLang });
+        } catch (err) {
+            console.error('Błąd zapisu ustawień:', err);
+        }
     };
 
     const handleDeleteAccount = async () => {
@@ -42,14 +90,14 @@ export default function SettingsPage() {
                     <label>{t.theme}</label>
                     <div className="color-grid">
                         {['#00ffd5', '#ff2b2b', '#ffcc00', '#7000ff'].map(c => (
-                            <div key={c} className="color-opt" style={{bg: c}} onClick={() => changeTheme(c)} />
+                            <div key={c} className="color-opt" style={{background: c}} onClick={() => changeTheme(c)} />
                         ))}
                     </div>
                 </div>
 
                 <div className="setting-group">
                     <label>Język / Language</label>
-                    <select value={lang} onChange={(e) => {setLang(e.target.value); localStorage.setItem('rs_lang', e.target.value);}}>
+                    <select value={lang} onChange={(e) => changeLang(e.target.value)}>
                         <option value="PL">Polski</option>
                         <option value="EN">English</option>
                     </select>
@@ -57,7 +105,7 @@ export default function SettingsPage() {
 
                 <div className="setting-group">
                     <label>{t.performance}</label>
-                    <input type="checkbox" defaultChecked onChange={toggleAnims} />
+                    <input type="checkbox" checked={animations} onChange={toggleAnims} />
                 </div>
 
                 <div className="danger-zone">

@@ -1,14 +1,27 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import './PaymentPage.css';
 
 export default function PaymentPage() {
     const navigate = useNavigate();
+    const { user, updateUser } = useAuth();
 
-    const handleMockPayment = () => {
-        alert("Symulacja płatności przebiegła pomyślnie! Twoja ranga zostanie zaktualizowana.");
-        // W realnym świecie: axios.post('/api/upgrade-rank')
-        navigate("/profile");
+    const handleMockPayment = async () => {
+        try {
+            await axios.post('http://localhost:8080/api/upgrade', {
+                id: user.id,
+                role: 'PLUS'
+            });
+            updateUser({ role: 'PLUS' });
+            alert('Symulacja płatności przebiegła pomyślnie! Twoja ranga została zaktualizowana.');
+            navigate('/profile');
+        } catch (err) {
+            console.error('Błąd podczas aktualizacji rangi:', err);
+            alert('Nie udało się dokonać aktualizacji rangi. Spróbuj ponownie.');
+        }
     };
 
     return (

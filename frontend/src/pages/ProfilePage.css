@@ -1,98 +1,177 @@
-.profile-container {
-    height: 100vh;
+/* Specyficzne style tylko dla profilu (bazują na zmiennych z theme.css) */
+
+.profile-header {
     display: flex;
-    justify-content: center;
     align-items: center;
-    background: #0f0f0f;
-    padding: 20px;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtelny gradient w tle nagłówka wykorzystujący główny kolor */
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: var(--primary-color);
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--bg-input);
+    border: 4px solid var(--bg-card);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.profile-status-indicator {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--success-color);
+    border: 3px solid var(--bg-card);
+    border-radius: 50%;
+}
+
+.profile-header-info h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.2rem;
+    color: var(--text-primary);
+}
+
+.profile-status-text {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.profile-header-actions {
+    margin-left: auto; /* Przesuwa przycisk do prawej krawędzi */
+}
+
+/* Grid podziału na kolumny */
+.profile-grid,
+.profile-page-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
 }
 
 .profile-card {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 500px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-}
-
-.large-avatar {
-    width: 120px;
-    height: 120px;
-    background: #222;
-    border-radius: 50%;
-    padding: 10px;
-    border: 2px solid #00ffd5;
-    margin-bottom: 15px;
-}
-
-.profile-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    color: white;
-}
-
-.badge {
-    display: inline-block;
-    background: rgba(0, 255, 213, 0.1);
-    color: #00ffd5;
-    padding: 5px 15px;
+    background: rgba(26, 26, 26, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
-    font-size: 0.8rem;
-    margin-top: 10px;
-    border: 1px solid rgba(0, 255, 213, 0.3);
+    padding: 24px;
+    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }
 
 .profile-details {
-    margin: 30px 0;
-    text-align: left;
-}
-
-.detail-item {
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #222;
-}
-
-.detail-item label {
-    display: block;
-    color: #666;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-}
-
-.detail-item p {
-    margin: 0;
-    color: #eee;
-    font-size: 1.1rem;
-}
-
-.status-active {
-    color: #00ffd5 !important;
-    font-weight: bold;
-}
-
-.profile-logout-btn {
-    width: 100%;
-    padding: 15px;
-    background: transparent;
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.profile-logout-btn:hover {
-    background: #ff4d4d;
-    color: white;
-    box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profile-form label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    transition: border-color var(--transition-speed) ease, background-color var(--transition-speed) ease;
+}
+
+.profile-form input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.theme-button {
+    min-width: 120px;
+}
+
+.profile-message {
+    margin-top: 1rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(0, 255, 213, 0.08);
+    border: 1px solid rgba(0, 255, 213, 0.18);
+    color: var(--text-primary);
+}
+
+/* Grupy informacji */
+.info-group {
+    margin-bottom: 1rem;
+}
+
+.info-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.2rem;
+}
+
+.info-group p {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Przyciski motywów */
+.settings-desc {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.theme-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* RWD - Responsywność dla telefonów */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 2rem;
+    }
+
+    .profile-header-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .profile-header-actions .btn {
+        width: 100%;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr; /* Jedna kolumna na telefonach */
+    }
 }

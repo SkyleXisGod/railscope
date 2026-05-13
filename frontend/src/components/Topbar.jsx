@@ -57,7 +57,7 @@ export default function Topbar({ onToggleSidebar }) {
                 <p className="role">Operator Systemu</p>
               </div>
               <ul className="dropdown-menu">
-                <li onClick={() => { navigate("/profile"); setIsUserMenuOpen(false); }}>
+                <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
                   <i className="fas fa-user-circle"></i> Mój Profil
                 </li>
                 <li className="divider"></li>

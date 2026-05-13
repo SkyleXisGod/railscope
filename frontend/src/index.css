@@ -1,37 +1,147 @@
+/* ==========================================================================
+   GLOBALNE ZMIENNE (Łatwa zmiana motywu w ustawieniach)
+   ========================================================================== */
 :root {
-  /* Podstawowe kolory - zmieniane przez JS */
-  --accent-color: #00ffd5;
-  --bg-dark: #0a0a0a;
-  --bg-card: #141414;
-  --text-main: #ffffff;
-  --font-cyber: 'Inter', sans-serif;
-  
-  /* System rang */
-  --rank-user: #888888;
-  --rank-plus: #ffcc00;
-  --rank-admin: #ff2b2b;
+    /* Kolory główne */
+    --primary-color: #3498db;
+    --primary-hover: #2980b9;
+    --accent-color: #e67e22;
+    
+    /* Tła i powierzchnie */
+    --bg-main: #121417;
+    --bg-card: #1e2126;
+    --bg-input: #2a2e35;
+    
+    /* Tekst i obramowania */
+    --text-primary: #ecf0f1;
+    --text-secondary: #95a5a6;
+    --border-color: #343a40;
+    
+    /* Systemowe */
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    
+    /* Odstępy i kształty */
+    --border-radius: 12px;
+    --transition-speed: 0.3s;
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+}
 
-  /* Optymalizacja */
-  --anim-speed: 0.3s;
-  --display-anim: block; /* sterowane przez SettingsPage */
+/* ==========================================================================
+   RESET I BAZOWE STYLE
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  font-family: var(--font-cyber);
-  transition: all var(--anim-speed);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
 }
 
-/* Klasa dla animowanej rangi PLUS */
-.plus-glow {
-  background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
-  background-size: 200% auto;
-  animation: shine 2s linear infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: bold;
-  text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+:root {
+    transition: color var(--transition-speed) ease, background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }
 
-@keyframes shine { to { background-position: 200% center; } }
+* {
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+/* ==========================================================================
+   GLOBALNE KLASY DLA WSZYSTKICH STRON (Używaj ich w każdym pliku .jsx)
+   ========================================================================== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    width: 100%;
+}
+
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform var(--transition-speed) ease;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+/* ==========================================================================
+   ELEMENTY INTERFEJSU (Przyciski, Inputy)
+   ========================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-speed) ease, transform 0.1s ease;
+    text-decoration: none;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+}
+
+.btn, .form-control {
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: #ffffff;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color var(--transition-speed) ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+}

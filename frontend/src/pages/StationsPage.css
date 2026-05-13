@@ -299,6 +299,24 @@
   transition: all 0.3s ease;
 }
 
+.load-more-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 255, 213, 0.1);
+  border: 1px solid #00ffd5;
+  color: #00ffd5;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.load-more-btn:hover {
+  background: rgba(0, 255, 213, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 213, 0.3);
+}
+
 .expand-list-btn:hover {
   background: rgba(0, 255, 213, 0.05);
   color: #fff;

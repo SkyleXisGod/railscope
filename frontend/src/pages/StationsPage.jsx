@@ -156,6 +156,7 @@ export default function StationsPage() {
                     <div className="station-details">
                         <button className="control-btn" onClick={() => setShowPast(!showPast)}>{showPast ? "Ukryj odjechane" : "Pokaż historię"}</button>
                         {loading ? <div className="loader">Ładowanie...</div> : visibleTrains.length > 0 ? (
+                        <>
                         <table className="timetable-table">
                             <thead><tr><th>Czas</th><th>Pociąg</th><th>Relacja</th><th>Status</th><th>Peron</th><th>Akcja</th></tr></thead>
                             <tbody>
@@ -175,6 +176,12 @@ export default function StationsPage() {
                             ))}
                             </tbody>
                         </table>
+                        {displayPool.length > visibleLimit && (
+                            <button className="load-more-btn" onClick={() => setVisibleLimit(prev => prev + 10)}>
+                                Załaduj więcej (+10)
+                            </button>
+                        )}
+                        </>
                         ) : <p>Brak danych.</p>}
                     </div>
                     </motion.div>
