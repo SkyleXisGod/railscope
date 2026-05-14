@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; 
+import { translations } from "../pages/constants/translations";
 import "./Topbar.css";
 import logo from "../assets/railscope-minature.png"; 
 
@@ -21,6 +22,8 @@ export default function Topbar({ onToggleSidebar }) {
   const statusTimeoutRef = useRef(null);
   const currentTargetRef = useRef(displayStatus);
   const { user, logout } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang].app;
   const navigate = useNavigate();
 
   const updateStatusLabel = (target) => {
@@ -133,11 +136,11 @@ export default function Topbar({ onToggleSidebar }) {
               </div>
               <ul className="dropdown-menu">
                 <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
-                  <i className="fas fa-user-circle"></i> Mój Profil
+                  <i className="fas fa-user-circle"></i> {t.my_profile}
                 </li>
                 <li className="divider"></li>
                 <li className="logout-btn" onClick={handleLogout}>
-                  <i className="fas fa-sign-out-alt"></i> Wyloguj
+                  <i className="fas fa-sign-out-alt"></i> {t.logout}
                 </li>
               </ul>
             </div>

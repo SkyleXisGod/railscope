@@ -1,6 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
+import { translations } from "../pages/constants/translations";
 
 export default function GlobalLoader({ isVisible }) {
+  const { user } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang]?.globalLoader || translations.PL.globalLoader;
   return (
     <AnimatePresence>
       {isVisible && (
@@ -78,7 +83,7 @@ export default function GlobalLoader({ isVisible }) {
                 textShadow: "0 0 10px rgba(255,255,255,0.4)"
               }}
             >
-              Uruchamianie Silników...
+              {t.starting_engines}
             </motion.p>
           </div>
         </motion.div>

@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
+import { translations } from "./constants/translations";
 import "./StationsPage.css";
 
 const premiumCats = ["IC", "TLK", "EIP", "EIC", "EC", "EN", "NJ"];
@@ -18,6 +20,10 @@ const itemVariants = {
 };
 
 export default function StationsPage() {
+  const { user } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang].stations;
+  
   const [stations, setStations] = useState([]);
   const [search, setSearch] = useState("");
   const [sortAlphabetical, setSortAlphabetical] = useState(false);
@@ -32,8 +38,8 @@ export default function StationsPage() {
   useEffect(() => {
     axios.get("http://localhost:8080/api/stations")
       .then(res => setStations(res.data))
-      .catch(err => console.error("Błąd ładowania stacji:", err));
-  }, []);
+      .catch(err => console.error(t.error, err));
+  }, [t]);
 
   // FUNKCJE LOGICZNE (NIE DOTYKANE)
   const calcMin = (timeStr) => {
@@ -122,21 +128,28 @@ export default function StationsPage() {
   return (
     <div className="stations-container">
       <div className="stations-header">
-        <h1 className="stations-title">Stacje</h1>
+        <h1 className="stations-title">{t.title}</h1>
         <div className="search-controls">
-          <input type="text" placeholder="Szukaj stacji..." className="station-search-input" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input type="text" placeholder={t.search_placeholder} className="station-search-input" value={search} onChange={(e) => setSearch(e.target.value)} />
           <button className={`sort-btn ${sortAlphabetical ? 'active' : ''}`} onClick={() => setSortAlphabetical(!sortAlphabetical)}>
-            {sortAlphabetical ? "A-Z" : "Domyślne"}
+            {sortAlphabetical ? t.sort_active : t.sort}
           </button>
           <div className="experimental-zone">
             <label className="switch">
                 <input type="checkbox" checked={showRegio} onChange={() => setShowRegio(!showRegio)} />
                 <span className="slider round"></span>
             </label>
-            <span>REGIO</span>
+            <span>{t.regio_label}</span>
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {showRegio && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="experimental-warning">
+            {t.experimental_warning}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.div className="stations-list-wrapper custom-scrollbar" variants={listVariants} initial="hidden" animate="visible">
         <AnimatePresence mode="popLayout">
@@ -145,7 +158,7 @@ export default function StationsPage() {
                 <div className="station-row" onClick={() => toggleStation(s.id)}>
                     <span className="station-name">{s.name}</span>
                     <div className="station-actions">
-                        <button className="map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?station=${s.id}`); }}>📍 Mapa</button>
+                        <button className="map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?station=${s.id}`); }}>📍 {t.text_tracking}</button>
                         <span className="arrow">▼</span>
                     </div>
                 </div>
@@ -154,22 +167,22 @@ export default function StationsPage() {
                 {expandedId === s.id && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
                     <div className="station-details">
-                        <button className="control-btn" onClick={() => setShowPast(!showPast)}>{showPast ? "Ukryj odjechane" : "Pokaż historię"}</button>
-                        {loading ? <div className="loader">Ładowanie...</div> : visibleTrains.length > 0 ? (
+                        <button className="control-btn" onClick={() => setShowPast(!showPast)}>{showPast ? t.hide_past : t.show_past}</button>
+                        {loading ? <div className="loader">{t.loading}</div> : visibleTrains.length > 0 ? (
                         <>
                         <table className="timetable-table">
-                            <thead><tr><th>Czas</th><th>Pociąg</th><th>Relacja</th><th>Status</th><th>Peron</th><th>Akcja</th></tr></thead>
+                            <thead><tr><th>{t.title_time}</th><th>{t.title_train}</th><th>{t.title_relation}</th><th>{t.title_status}</th><th>{t.title_platform}</th><th>{t.title_action}</th></tr></thead>
                             <tbody>
-                            {visibleTrains.map((t, idx) => (
-                                <tr key={idx} className={t.isPast ? 'row-past' : ''}>
-                                    <td>{t.displayTime} {t.delay > 0 && <span className="delay-tag">+{t.delay}</span>}</td>
-                                    <td><span className={`cat-badge cat-${t.category}-badge`}>{t.category}</span> {t.number}</td>
-                                    <td>{t.relation}</td>
-                                    <td>{t.isPast ? 'ODJECHAŁ' : (t.delay > 0 ? `+${t.delay}` : 'OK')}</td>
-                                    <td>{t.platform}</td>
+                            {visibleTrains.map((train, idx) => (
+                                <tr key={idx} className={train.isPast ? 'row-past' : ''}>
+                                    <td>{train.displayTime} {train.delay > 0 && <span className="delay-tag">+{train.delay}</span>}</td>
+                                    <td><span className={`cat-badge cat-${train.category}-badge`}>{train.category}</span> {train.number}</td>
+                                    <td>{train.relation}</td>
+                                    <td>{train.isPast ? t.status_departed : (train.delay > 0 ? `+${train.delay}` : t.status_ok)}</td>
+                                    <td>{train.platform}</td>
                                     <td>
-                                        {isTrainInTransit(t.route, t.delay) && (
-                                            <button className="track-map-btn" onClick={() => navigate(`/?trainId=${t.id}&live=true`)}>📍 ŚLEDŹ</button>
+                                        {isTrainInTransit(train.route, train.delay) && (
+                                            <button className="track-map-btn" onClick={() => navigate(`/?trainId=${train.id}&live=true`)}>{t.show_route}</button>
                                         )}
                                     </td>
                                 </tr>
@@ -178,11 +191,11 @@ export default function StationsPage() {
                         </table>
                         {displayPool.length > visibleLimit && (
                             <button className="load-more-btn" onClick={() => setVisibleLimit(prev => prev + 10)}>
-                                Załaduj więcej (+10)
+                                {t.load_more}
                             </button>
                         )}
                         </>
-                        ) : <p>Brak danych.</p>}
+                        ) : <p>{t.no_results}</p>}
                     </div>
                     </motion.div>
                 )}

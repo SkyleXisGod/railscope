@@ -4,17 +4,23 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
 } from "recharts";
+import { useAuth } from "../context/AuthContext";
+import { translations } from "./constants/translations";
 import PageWrapper from "../components/PageWrapper";
 import "./StatsPage.css";
 
 export default function StatsPage() {
+    const { user } = useAuth();
+    const lang = user?.settings?.language || 'PL';
+    const t = translations[lang].stats;
+    
     const [stats, setStats] = useState(null);
 
     useEffect(() => {
         axios.get("http://localhost:8080/api/stats").then(res => setStats(res.data));
     }, []);
 
-    if (!stats) return <div className="loader">Inicjalizacja macierzy danych...</div>;
+    if (!stats) return <div className="loader">{t.subtitle}...</div>;
 
     // Przykładowe dane dla wykresów (emulacja rozkładu godzinowego)
     const hourlyData = [
@@ -30,21 +36,24 @@ export default function StatsPage() {
         <PageWrapper>
             <div className="stats-container">
                 <header className="stats-header">
-                    <h1>Network Intelligence Dashboard</h1>
-                    <p>Analiza przepływu jednostek trakcyjnych w czasie rzeczywistym.</p>
+                    <h1>{t.title}</h1>
+                    <p>{t.subtitle}</p>
                 </header>
 
                 <div className="stats-grid">
                     {/* Wielki Wykres Liniowy - Ruch */}
                     <div className="stats-card wide-card">
-                        <h3>Obciążenie Sieci (24h)</h3>
+                        <h3>{t.network_load}</h3>
                         <div style={{ width: '100%', height: 300 }}>
                             <ResponsiveContainer>
                                 <LineChart data={hourlyData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                                     <XAxis dataKey="name" stroke="#888" />
                                     <YAxis stroke="#888" />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                                        formatter={(value, name) => [value, name === 'pociagi' ? t.tooltip_trains : t.tooltip_delays]}
+                                    />
                                     <Line type="monotone" dataKey="pociagi" stroke="#00ffd5" strokeWidth={3} dot={{ r: 6 }} />
                                     <Line type="monotone" dataKey="opoznienia" stroke="#ff4d4d" strokeWidth={2} />
                                 </LineChart>
@@ -54,13 +63,13 @@ export default function StatsPage() {
 
                     {/* Małe karty z danymi "nerdowskimi" */}
                     <div className="stats-card">
-                        <h3>Punktualność Globalna</h3>
+                        <h3>{t.global_punctuality}</h3>
                         <div className="big-number neon-text">{stats.traffic.punctuality}</div>
-                        <p>Średnie opóźnienie: {stats.traffic.averageDelay}</p>
+                        <p>{t.average_delay} {stats.traffic.averageDelay}</p>
                     </div>
 
                     <div className="stats-card">
-                        <h3>Struktura Taboru</h3>
+                        <h3>{t.fleet_structure}</h3>
                         <ResponsiveContainer width="100%" height={200}>
                             <PieChart>
                                 <Pie 
@@ -78,11 +87,11 @@ export default function StatsPage() {
                     </div>
 
                     <div className="stats-card">
-                        <h3>Status Systemu</h3>
+                        <h3>{t.system_status}</h3>
                         <div className="tech-details">
-                            <div className="row"><span>Uptime:</span> <span>{stats.system.uptime}</span></div>
-                            <div className="row"><span>API Calls:</span> <span>{stats.system.apiRequests}</span></div>
-                            <div className="row"><span>SQL Index:</span> <span>Optimized</span></div>
+                            <div className="row"><span>{t.uptime}</span> <span>{stats.system.uptime}</span></div>
+                            <div className="row"><span>{t.api_calls}</span> <span>{stats.system.apiRequests}</span></div>
+                            <div className="row"><span>{t.sql_index}</span> <span>Optimized</span></div>
                         </div>
                     </div>
                 </div>

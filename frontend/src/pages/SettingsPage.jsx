@@ -2,6 +2,7 @@
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './SettingsPage.css';
+import { translations } from './constants/translations';
 
 const DEFAULT_SETTINGS = {
     theme: '#00ffd5',
@@ -35,40 +36,7 @@ export default function SettingsPage() {
         }
     }, [user]);
 
-    const translations = {
-        PL: {
-            title: 'Ustawienia',
-            title_header: 'Wygląd i Motywy',    
-            theme: 'Główny kolor (tło strony)',
-            accent: 'Kolor akcentu (przyciski, ikony)',
-            textColor: 'Kolor tekstu',
-            textOutline: 'Obrys tekstu',
-            background: 'Wygląd strony',
-            mapTheme: 'Motyw mapy',
-            performance: 'Animacje',
-            language: 'Język / Language',
-            danger: 'Usuń konto',
-            save: 'Zapisz',
-            reset: 'Przywróć domyślne'
-        },
-        EN: {
-            title: 'Settings',
-            title_header: 'Appearance & Themes',
-            theme: 'Primary color (page background)',
-            accent: 'Accent color (buttons, icons)',
-            textColor: 'Text color',
-            textOutline: 'Text outline',
-            background: 'Page appearance',
-            mapTheme: 'Map theme',
-            performance: 'Animations',
-            language: 'Language',
-            danger: 'Delete account',
-            save: 'Save',
-            reset: 'Reset to default'
-        }
-    };
-
-    const t = translations[lang] || translations.PL;
+    const t = translations[lang].settings;
 
     const applyThemeImmediately = (settings) => {
         const newTheme = settings.theme ?? theme;
@@ -239,8 +207,8 @@ export default function SettingsPage() {
                                 saveSettings({ backgroundMode: e.target.value });
                             }}
                         >
-                            <option value="dark">Ciemny / Dark</option>
-                            <option value="light">Jasny / Light</option>
+                            <option value="dark">{t.dark_theme}</option>
+                            <option value="light">{t.light_theme}</option>
                         </select>
                     </div>
 
@@ -253,8 +221,8 @@ export default function SettingsPage() {
                                 saveSettings({ mapTheme: e.target.value });
                             }}
                         >
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
+                            <option value="dark">{t.dark_theme}</option>
+                            <option value="light">{t.light_theme}</option>
                         </select>
                     </div>
 
@@ -264,7 +232,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="settings-section">
-                    <h2 className="section-header">Preferencje</h2>
+                    <h2 className="section-header">{t.preferences}</h2>
                     
                     <div className="setting-group">
                         <label>{t.language}</label>

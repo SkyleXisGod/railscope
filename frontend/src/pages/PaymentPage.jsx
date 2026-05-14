@@ -2,12 +2,15 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from '../context/AuthContext';
+import { translations } from "./constants/translations";
 import axios from 'axios';
 import './PaymentPage.css';
 
 export default function PaymentPage() {
     const navigate = useNavigate();
     const { user, updateUser } = useAuth();
+    const lang = user?.settings?.language || 'PL';
+    const t = translations[lang].payment;
 
     const handleMockPayment = async () => {
         try {
@@ -16,11 +19,11 @@ export default function PaymentPage() {
                 role: 'PLUS'
             });
             updateUser({ role: 'PLUS' });
-            alert('Symulacja płatności przebiegła pomyślnie! Twoja ranga została zaktualizowana.');
+            alert(t.success);
             navigate('/profil');
         } catch (err) {
             console.error('Błąd podczas aktualizacji rangi:', err);
-            alert('Nie udało się dokonać aktualizacji rangi. Spróbuj ponownie.');
+            alert(t.error);
         }
     };
 
@@ -29,26 +32,26 @@ export default function PaymentPage() {
             <motion.div className="payment-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                 <div className="payment-header">
                     <h2>Ulepsz Konto do <span className="plus-badge-anim">PLUS</span></h2>
-                    <p>Wspieraj rozwój RailScope i zyskaj unikalny wygląd profilu.</p>
+                    <p>{t.subtitle}</p>
                 </div>
 
                 <div className="price-tag">
                     <span className="amount">19.99</span>
-                    <span className="currency">PLN / MSC</span>
+                    <span className="currency">{t.price}</span>
                 </div>
 
                 <ul className="benefits">
-                    <li><i className="fas fa-check"></i> Złota, animowana ranga</li>
-                    <li><i className="fas fa-check"></i> Brak limitów zapytań API</li>
-                    <li><i className="fas fa-check"></i> Priorytetowe wsparcie techniczne</li>
+                    <li><i className="fas fa-check"></i> {t.benefit1}</li>
+                    <li><i className="fas fa-check"></i> {t.benefit2}</li>
+                    <li><i className="fas fa-check"></i> {t.benefit3}</li>
                 </ul>
 
                 <div className="warning-box">
-                    <strong>UWAGA:</strong> To jest moduł emulacji. Żadne środki nie zostaną pobrane z Twojego konta.
+                    <strong>UWAGA:</strong> {t.warning}
                 </div>
 
                 <button className="pay-btn" onClick={handleMockPayment}>
-                    ZAPŁAĆ TESTOWO
+                    {t.pay_btn}
                 </button>
             </motion.div>
         </div>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import './AuthPage.css';
+import { translations } from './constants/translations';
 
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
@@ -14,15 +15,17 @@ export default function AuthPage() {
         password: ''
     });
     const [error, setError] = useState('');
+    const [lang, setLang] = useState('PL');
     
     const { login } = useAuth();
     const navigate = useNavigate();
+    const t = translations[lang].auth;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
-
+        
         const endpoint = isLogin ? 'login' : 'register';
         
         try {
@@ -38,7 +41,7 @@ export default function AuthPage() {
                 setFormData({ ...formData, password: '' });
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Wystąpił błąd połączenia z serwerem.');
+            setError(err.response?.data?.error || t.error);
         } finally {
             setLoading(false);
         }
@@ -67,7 +70,7 @@ export default function AuthPage() {
                             <i className="fas fa-user"></i>
                             <input 
                                 type="text" 
-                                placeholder="Nazwa użytkownika"
+                                placeholder={t.username}
                                 required
                                 value={formData.username}
                                 onChange={(e) => setFormData({...formData, username: e.target.value})}
@@ -79,7 +82,7 @@ export default function AuthPage() {
                         <i className="fas fa-envelope"></i>
                         <input 
                             type="email" 
-                            placeholder="Adres E-mail" 
+                            placeholder={t.email} 
                             required
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -90,7 +93,7 @@ export default function AuthPage() {
                         <i className="fas fa-lock"></i>
                         <input 
                             type="password" 
-                            placeholder="Hasło" 
+                            placeholder={t.password} 
                             required
                             value={formData.password}
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -101,14 +104,14 @@ export default function AuthPage() {
                         {loading ? (
                             <span className="spinner"></span>
                         ) : (
-                            isLogin ? 'ZALOGUJ SYSTEM' : 'UTWÓRZ KONTO'
+                            isLogin ? t.login_btn : t.register_btn
                         )}
                     </button>
                 </form>
 
                 <div className="auth-footer">
                     <p onClick={() => { setIsLogin(!isLogin); setError(''); }}>
-                        {isLogin ? 'Nie masz konta? Zarejestruj się' : 'Masz już konto? Zaloguj się'}
+                        {isLogin ? t.toggle_register : t.toggle_login}
                     </p>
                 </div>
             </motion.div>

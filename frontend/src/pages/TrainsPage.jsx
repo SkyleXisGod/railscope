@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
+import { translations } from "./constants/translations";
 import "./TrainsPage.css";
 
 const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"];
@@ -21,6 +23,10 @@ const itemVariants = {
 
 export default function TrainsPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const lang = user?.settings?.language || 'PL';
+    const t = translations[lang].trains;
+    
     const [trains, setTrains] = useState([]);
     const [expandedTrain, setExpandedTrain] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -61,7 +67,7 @@ export default function TrainsPage() {
                 });
                 setTrains(res.data);
             } catch (err) {
-                setError("Błąd połączenia z serwerem.");
+                setError(t.error);
             } finally { setLoading(false); }
         };
         const delay = setTimeout(fetchTrains, 400);
@@ -71,10 +77,10 @@ export default function TrainsPage() {
     return (
         <div className="trains-container">
             <div className="trains-header">
-                <h1 className="trains-title">Katalog Pociągów</h1>
-                <p className="trains-subtitle">Wyszukaj po numerze, nazwie lub dowolnych stacjach na trasie</p>
+                <h1 className="trains-title">{t.title}</h1>
+                <p className="trains-subtitle">{t.subtitle}</p>
                 <div className="experimental-toggle-container">
-                    <span className="experimental-label">EKSPERYMENTALNE: REGIO / BUS</span>
+                    <span className="experimental-label">{t.experimental}</span>
                     <label className="switch">
                         <input type="checkbox" checked={experimentalEnabled} onChange={(e) => setExperimentalEnabled(e.target.checked)} />
                         <span className="slider round"></span>
@@ -84,17 +90,17 @@ export default function TrainsPage() {
                 <AnimatePresence>
                     {experimentalEnabled && (
                         <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="experimental-warning">
-                            ⚠️ <strong>Tryb eksperymentalny aktywny:</strong> Dostęp do danych REGIO / BUS. Dane mogą być niekompletne.
+                            {t.experimental_warning}
                         </motion.div>
                     )}
                 </AnimatePresence>
 
                 <div className="search-grid">
                     <div className="search-row">
-                        <input placeholder="Numer (np. 7412)" value={numSearch} onChange={e => setNumSearch(e.target.value)} />
-                        <input placeholder="Nazwa (np. WIATRAK)" value={nameSearch} onChange={e => setNameSearch(e.target.value)} />
+                        <input placeholder={t.number_placeholder} value={numSearch} onChange={e => setNumSearch(e.target.value)} />
+                        <input placeholder={t.name_placeholder} value={nameSearch} onChange={e => setNameSearch(e.target.value)} />
                         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-                            <option value="">Wszystkie Kategorie</option>
+                            <option value="">{t.category_placeholder}</option>
                             <option value="IC">IC</option>
                             <option value="EIC">EIC</option>
                             <option value="TLK">TLK</option>
@@ -103,24 +109,24 @@ export default function TrainsPage() {
                         </select>
                     </div>
                     <div className="search-row">
-                        <input placeholder="Stacja (przez / z)..." value={startStation} onChange={e => setStartStation(e.target.value)} />
-                        <span className="separator">➔</span>
-                        <input placeholder="Stacja (przez / do)..." value={endStation} onChange={e => setEndStation(e.target.value)} />
+                        <input placeholder={t.search_bar} value={startStation} onChange={e => setStartStation(e.target.value)} />
+                        <span className="separator">⟔</span>
+                        <input placeholder={t.search_bar} value={endStation} onChange={e => setEndStation(e.target.value)} />
                     </div>
                 </div>
             </div>
 
             <motion.div className="trains-list custom-scrollbar" variants={listVariants} initial="hidden" animate="visible">
-                {loading && <div className="loader">Szukanie pociągów...</div>}
+                {loading && <div className="loader">{t.title}...</div>}
                 {error && <div className="error-message">{error}</div>}
                 
                 {/* --- TUTAJ MAGIA ANIMATE PRESENCE --- */}
                 <AnimatePresence mode="popLayout">
-                    {!loading && !error && trains.map((t, idx) => {
-                        const hasRoute = t.route && t.route.length > 0;
-                        const isPremium = premiumCats.includes(t.categorySymbol);
+                    {!loading && !error && trains.map((train, idx) => {
+                        const hasRoute = train.route && train.route.length > 0;
+                        const isPremium = premiumCats.includes(train.categorySymbol);
                         // WAŻNE: Klucz MUSI być unikalny i stabilny, żeby AnimatePresence wiedziało co usunąć!
-                        const uniqueKey = t.trainOrderId || `${t.number}-${idx}`;
+                        const uniqueKey = train.trainOrderId || `${train.number}-${idx}`;
 
                         return (
                             <motion.div 
@@ -130,28 +136,28 @@ export default function TrainsPage() {
                                 initial="hidden"
                                 animate="visible"
                                 exit="exit"
-                                className={`train-card ${expandedTrain === t.trainOrderId ? 'active' : ''}`}
+                                className={`train-card ${expandedTrain === train.trainOrderId ? 'active' : ''}`}
                             >
-                                <div className="train-card-header" onClick={() => hasRoute && setExpandedTrain(expandedTrain === t.trainOrderId ? null : t.trainOrderId)}>
+                                <div className="train-card-header" onClick={() => hasRoute && setExpandedTrain(expandedTrain === train.trainOrderId ? null : train.trainOrderId)}>
                                     <div className="train-id-section">
-                                        <span className={`cat-badge ${isPremium ? `cat-${t.categorySymbol}-badge` : regPrefixes.some(p => t.categorySymbol.startsWith(p)) ? 'cat-REG-badge' : 'cat-OTHER-badge'}`}>
-                                            {t.categorySymbol}
+                                        <span className={`cat-badge ${isPremium ? `cat-${train.categorySymbol}-badge` : regPrefixes.some(p => train.categorySymbol.startsWith(p)) ? 'cat-REG-badge' : 'cat-OTHER-badge'}`}>
+                                            {train.categorySymbol}
                                         </span>
-                                        <span className="train-number">{t.number}</span>
-                                        {t.name && <span className="train-name">"{t.name}"</span>}
+                                        <span className="train-number">{train.number}</span>
+                                        {train.name && <span className="train-name">"{train.name}"</span>}
                                     </div>
-                                    <div className="train-relation-section">{t.relation}</div>
+                                    <div className="train-relation-section">{train.relation}</div>
                                     
                                     <div className="route-action-container">
-                                        <button className="track-map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?trainId=${t.trainOrderId}`); }}>
-                                            <span className="btn-content">📍 POKAŻ TRASĘ</span>
+                                        <button className="track-map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?trainId=${train.trainOrderId}`); }}>
+                                            <span className="btn-content">{t.show_route}</span>
                                         </button>
                                     </div>
-                                    {hasRoute && <span className="arrow" style={{transform: expandedTrain === t.trainOrderId ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.3s'}}>▼</span>}
+                                    {hasRoute && <span className="arrow" style={{transform: expandedTrain === train.trainOrderId ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.3s'}}>▼</span>}
                                 </div>
 
                                 <AnimatePresence>
-                                    {expandedTrain === t.trainOrderId && hasRoute && (
+                                    {expandedTrain === train.trainOrderId && hasRoute && (
                                         <motion.div
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: "auto", opacity: 1 }}
@@ -160,20 +166,20 @@ export default function TrainsPage() {
                                             style={{ overflow: "hidden" }}
                                         >
                                             <div className="train-route-details">
-                                                <h4>Pełna trasa przejazdu:</h4>
+                                                <h4>{t.full_route}</h4>
                                                 <table className="route-table">
-                                                    <thead><tr><th>Stacja</th><th>Przyjazd</th><th>Odjazd</th></tr></thead>
+                                                    <thead><tr><th>{t.station_header}</th><th></th><th>{t.arrival_header}</th><th>{t.departure_header}</th></tr></thead>
                                                     <tbody>
-                                                    {t.route.map((stop, sIdx) => {
+                                                    {train.route.map((stop, sIdx) => {
                                                         const now = new Date();
                                                         const currentTime = now.getHours() * 60 + now.getMinutes();
                                                         let stopArr = getMinutes(stop.arr);
                                                         let stopDep = getMinutes(stop.dep);
-                                                        if (sIdx !== 0 && sIdx !== t.route.length - 1) {
+                                                        if (sIdx !== 0 && sIdx !== train.route.length - 1) {
                                                             if (stopArr === null) stopArr = stopDep;
                                                             if (stopDep === null) stopDep = stopArr;
                                                         }
-                                                        const timeToCompareForPast = (sIdx === t.route.length - 1) ? stopArr : stopDep;
+                                                        const timeToCompareForPast = (sIdx === train.route.length - 1) ? stopArr : stopDep;
                                                         const isCurrentStation = stopArr !== null && stopDep !== null ? (currentTime >= stopArr && currentTime <= stopDep) : false;
                                                         const isPast = timeToCompareForPast !== null ? currentTime > timeToCompareForPast : false;
                                                         const isSearchMatch = (startStation && stop.name.toLowerCase().includes(startStation.toLowerCase())) ||
@@ -205,8 +211,8 @@ export default function TrainsPage() {
                 {!loading && !error && trains.length === 0 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="no-data">
                         {numSearch.length < 2 && nameSearch.length < 2 && startStation.length < 2 && endStation.length < 2 && categoryFilter === "" 
-                            ? "Wpisz co najmniej 2 znaki w dowolne pole, aby szukać." 
-                            : "Nie znaleziono pociągu."}
+                            ? t.search_prompt 
+                            : t.no_trains}
                     </motion.div>
                 )}
             </motion.div>

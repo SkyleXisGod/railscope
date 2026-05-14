@@ -2,6 +2,7 @@ import React, { useEffect, useState, memo, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents, Tooltip } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
+import { translations } from "../pages/constants/translations";
 import L from "leaflet";
 import axios from "axios";
 import "./MapPopup.css";
@@ -43,6 +44,10 @@ const getStopMins = (stop, index, totalStops) => {
 };
 
 const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, stationDepartures, onStationClick, loadingDepartures }) => {
+  const { user } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang]?.stations || translations.PL.stations;
+
   useMapEvents({
     popupclose: (e) => {
       const params = new URLSearchParams(window.location.search);
@@ -147,17 +152,21 @@ const getUpcomingDepartures = (payload) => {
                   <div className="popup-content-padding">
                     <div className="popup-station-header">
                       <span className="popup-station-icon">🏢</span>
-                      <span className="popup-station-name">{s.name}</span>
+                      <span className="popup-station-name">
+                        <span className="marquee-wrap">
+                          <span className="marquee-text">{s.name}</span>
+                        </span>
+                      </span>
                     </div>
 
                     {isSelected && (
                    <div className="popup-departures">
-                      <div className="departures-title">Najbliższe odjazdy</div>
+                      <div className="departures-title">{t.upcoming_departures}</div>
                       <div className="station-departures-list">
     {loadingDepartures ? (
       <div className="loader-container">
         <div className="loading-spinner"></div>
-        <p>Ładowanie...</p>
+        <p>{t.loading}</p>
       </div>
     ) : stationDepartures.length > 0 ? (
       stationDepartures.map((dep, index) => (
@@ -165,19 +174,19 @@ const getUpcomingDepartures = (payload) => {
           <div className={`dep-cat cat-${dep.cat}`}>{dep.cat}</div>
           <div className="dep-main-info">
             <span className="dep-train-name">{dep.train}</span>
-            <span className="dep-dest">{dep.dest}</span>
+            <span className="dep-dest"><span className="marquee-wrap"><span className="marquee-text">{dep.dest}</span></span></span>
           </div>
           <div className="dep-time">{dep.dep}</div>
         </div>
       ))
     ) : (
-      <p className="no-data">Brak pociągów</p>
+      <p className="no-data">{t.no_results}</p>
     )}
   </div>
                     </div>
                     )}
                     <div className="popup-station-footer">
-                      <span className="type-tag">{s.isRegional ? "REGIONALNA" : "DALEKOBIEŻNA"}</span>
+                      <span className="type-tag">{s.isRegional ? t.regio_station : t.long_distance_station}</span>
                       <span className="mini-coords">{parseFloat(s.lat).toFixed(4)}, {parseFloat(s.lon).toFixed(4)}</span>
                     </div>
                   </div>
@@ -245,6 +254,8 @@ function ZoomListener({ setZoomLevel }) {
 
 export default function MapView({ sidebarOpen }) {
   const { user } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang].stations;
   const [searchParams, setSearchParams] = useSearchParams();
   const stationId = searchParams.get("stationId");
   const trainId = searchParams.get("trainId");
@@ -527,7 +538,7 @@ useEffect(() => {
         <Pane name="train-pane" style={{ zIndex: 650 }}>
           {computedTrainPos && trackedTrain && isLive && (
             <Marker position={[computedTrainPos.lat, computedTrainPos.lon]} icon={trainIcon} pane="train-pane">
-              <Popup className="train-next-gen-popup" offset={[0, -10]}>
+              <Popup className={`train-next-gen-popup popup-accent-${trackedTrain.categorySymbol}`} offset={[0, -10]}>
                 <div className={`popup-main-container popup-accent-${trackedTrain.categorySymbol}`}>
                   <div className="popup-top-bar"></div> 
                   <div className="popup-content-padding">
@@ -555,7 +566,7 @@ useEffect(() => {
                     {prevStation && nextStation && (
                       <div className="timeline-container">
                          <div className="timeline-station">
-                             <div className="timeline-station-name">{prevStation.name}</div>
+                             <div className="timeline-station-name"><span className="marquee-wrap"><span className="marquee-text">{prevStation.name}</span></span></div>
                              <div className="timeline-time">{prevStation.dep}</div>
                          </div>
                          <div className="timeline-track">
@@ -563,7 +574,7 @@ useEffect(() => {
                              <div className="timeline-train-icon" style={{ left: `${computedTrainPos.progress * 100}%` }}>🚅</div>
                          </div>
                          <div className="timeline-station">
-                             <div className="timeline-station-name">{nextStation.name}</div>
+                             <div className="timeline-station-name"><span className="marquee-wrap"><span className="marquee-text">{nextStation.name}</span></span></div>
                              <div className="timeline-time">{nextStation.arr}</div>
                          </div>
                       </div>

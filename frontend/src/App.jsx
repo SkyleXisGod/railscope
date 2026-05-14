@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 import { AnimatePresence } from "framer-motion";
+import { translations } from "./pages/constants/translations";
 import Layout from "./components/Layout";
 import MapView from "./components/MapView";
 import StationsPage from "./pages/StationsPage";
@@ -24,6 +25,8 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const { user } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang]?.app || translations.PL.app;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,12 +56,12 @@ function AppContent() {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           sidebar={
             <div className="sidebar-menu">
-              <button className="sidebar-nav-item" onClick={() => go("/")}>📍 Mapa</button>
-              <button className="sidebar-nav-item" onClick={() => go("/pociagi")}>🚆 Pociągi</button>
-              <button className="sidebar-nav-item" onClick={() => go("/stacje")}>🚉 Stacje</button>
-              <button className="sidebar-nav-item" onClick={() => go("/statystyki")}>📊 Statystyki</button>
-              <button className="sidebar-nav-item" onClick={() => go("/ustawienia")}>⚙️ Ustawienia</button>
-              <button className="sidebar-nav-item" onClick={() => go("/profil")}>👤 Profil</button>
+              <button className="sidebar-nav-item" onClick={() => go("/")}>📍 {t.map}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/pociagi")}>🚆 {t.trains}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/stacje")}>🚉 {t.stations}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/statystyki")}>📊 {t.stats}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/ustawienia")}>⚙️ {t.settings}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/profil")}>👤 {t.profile}</button>
             </div>
           }
         >

@@ -80,7 +80,9 @@
 
 .train-next-gen-popup .leaflet-popup-content, .station-next-gen-popup .leaflet-popup-content {
     margin: 0 !important;
-    width: 260px !important; /* Sztywna szerokość dla czytelności */
+    min-width: 320px !important;
+    max-width: 360px !important;
+    width: 100% !important; /* Szersza, responsywna szerokość */
 }
 
 .station-tooltip {
@@ -113,12 +115,47 @@
     width: 100%;
 }
 
+.popup-main-container {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.train-next-gen-popup.popup-accent-IC .leaflet-popup-content-wrapper,
+.popup-accent-IC .popup-main-container {
+    border: 1px solid #f39c12 !important;
+    box-shadow: 0 0 25px rgba(243, 156, 18, 0.4) !important;
+}
+
+.train-next-gen-popup.popup-accent-EIP .leaflet-popup-content-wrapper,
+.popup-accent-EIP .popup-main-container {
+    border: 1px solid #9c27b0 !important;
+    box-shadow: 0 0 25px rgba(156, 39, 176, 0.35) !important;
+}
+
+.train-next-gen-popup.popup-accent-EIC .leaflet-popup-content-wrapper,
+.popup-accent-EIC .popup-main-container {
+    border: 1px solid #0d47a1 !important;
+    box-shadow: 0 0 25px rgba(13, 71, 161, 0.35) !important;
+}
+
+.train-next-gen-popup.popup-accent-TLK .leaflet-popup-content-wrapper,
+.popup-accent-TLK .popup-main-container {
+    border: 1px solid #2980b9 !important;
+    box-shadow: 0 0 25px rgba(41, 128, 185, 0.35) !important;
+}
+
+.popup-accent-REG .popup-main-container {
+    border: 1px solid #7f8c8d !important;
+    box-shadow: 0 0 25px rgba(127, 140, 141, 0.3) !important;
+}
+
 .popup-accent-IC .popup-top-bar, .popup-accent-TLK .popup-top-bar { 
   background: #f39c12; box-shadow: 0 2px 10px rgba(243, 156, 18, 0.4); 
 }
 
 .popup-accent-EIP .popup-top-bar, .popup-accent-EIC .popup-top-bar { 
-  background: #4a148c; box-shadow: 0 2px 10px rgba(74, 20, 140, 0.4); 
+  background: #9c27b0; box-shadow: 0 2px 10px rgba(156, 39, 176, 0.35); 
 }
 
 .popup-accent-REG .popup-top-bar { 
@@ -175,6 +212,7 @@
     color: #aaa;
     font-size: 0.85rem;
     margin-bottom: 4px;
+    min-height: 1.2rem;
 }
 
 .popup-route-text {
@@ -182,6 +220,37 @@
     font-size: 0.85rem;
     color: #ddd;
     margin-bottom: 12px;
+    min-height: 1.2rem;
+}
+
+.marquee-wrap {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    min-height: 1.2rem;
+}
+
+.marquee-text {
+    position: absolute;
+    left: 100%;
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 14s linear infinite;
+    font-size: inherit;
+    color: inherit;
+    will-change: transform, left;
+}
+
+@keyframes marquee {
+    0% {
+        left: 100%;
+        transform: translateX(0);
+    }
+    100% {
+        left: 0;
+        transform: translateX(-100%);
+    }
 }
 
 .popup-status-row {
@@ -342,16 +411,16 @@
 /* ------------------------------------------------- */
 
 .popup-departures {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .departures-title {
-    font-size: 0.65rem;
-    color: #888;
+    font-size: 0.7rem;
+    color: #aaa;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 800;
     letter-spacing: 1.5px;
 }
@@ -366,10 +435,38 @@
     display: flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.05);
-    padding: 6px 8px;
-    border-radius: 4px;
+    padding: 8px 10px;
+    border-radius: 6px;
     transition: background 0.2s;
-    border-left: 3px solid #444; /* Domyślny pasek z boku */
+    border-left: 4px solid #444; /* Domyślny pasek z boku */
+    min-width: 0;
+}
+
+.popup-station-name {
+    display: inline-block;
+    min-width: 0;
+}
+
+.popup-station-header .marquee-wrap,
+.timeline-station-name .marquee-wrap {
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    min-height: 1.2rem;
+}
+
+.popup-station-header .marquee-text,
+.timeline-station-name .marquee-text {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 14s linear infinite;
+    font-size: inherit;
+    color: inherit;
+    will-change: transform, left;
 }
 
 .departure-item:hover {
@@ -463,6 +560,15 @@
     margin-left: 10px;
     flex: 1;
     text-align: right;
+    min-width: 0;
+}
+
+.dep-dest .marquee-wrap {
+    max-width: 100%;
+}
+
+.dep-dest .marquee-text {
+    animation-duration: 14s;
 }
 
 .no-departures {
