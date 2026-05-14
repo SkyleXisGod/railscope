@@ -1,21 +1,94 @@
-import React, { useState } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; 
 import "./Topbar.css";
 import logo from "../assets/railscope-minature.png"; 
 
+const SCRAMBLE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const getScrambled = (target, reveal) => {
+  return target.split('').map((char, index) => {
+    if (char === ' ' || index < reveal) return char;
+    return SCRAMBLE_LETTERS[Math.floor(Math.random() * SCRAMBLE_LETTERS.length)];
+  }).join('');
+};
+
 export default function Topbar({ onToggleSidebar }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { user, logout } = useAuth(); // Pobieramy dane zalogowanego usera i funkcję logout
+  const [systemOnline, setSystemOnline] = useState(true);
+  const [displayStatus, setDisplayStatus] = useState('LIVE SYSTEM ONLINE');
+  const [statusPhase, setStatusPhase] = useState('idle');
+  const statusIntervalRef = useRef(null);
+  const statusTimeoutRef = useRef(null);
+  const currentTargetRef = useRef(displayStatus);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout(); // Czyści localStorage i stan w aplikacji
-    navigate("/auth"); // Wywala do logowania
+  const updateStatusLabel = (target) => {
+    if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+
+    setStatusPhase('fade');
+    statusTimeoutRef.current = setTimeout(() => {
+      let revealCount = 0;
+      let cycle = 0;
+      setStatusPhase('scramble');
+      const delay = 35;
+      const cyclesPerLetter = Math.max(8, Math.ceil(7500 / (target.length * delay)));
+      statusIntervalRef.current = setInterval(() => {
+        if (cycle > 0 && cycle % cyclesPerLetter === 0) {
+          revealCount += 1;
+        }
+        setDisplayStatus(getScrambled(target, revealCount));
+
+        cycle += 1;
+        if (revealCount >= target.length) {
+          clearInterval(statusIntervalRef.current);
+          setStatusPhase('idle');
+          setDisplayStatus(target);
+        }
+      }, delay);
+    }, 300);
   };
 
-  // Jeśli user nie jest jeszcze załadowany, nie renderujemy sekcji profilu
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/stations', { method: 'GET' });
+        setSystemOnline(response.ok);
+      } catch (err) {
+        setSystemOnline(false);
+      }
+    };
+
+    checkSystemStatus();
+    const interval = setInterval(checkSystemStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const target = systemOnline ? 'LIVE SYSTEM ONLINE' : 'LIVE SYSTEM OFFLINE';
+    if (target !== currentTargetRef.current) {
+      currentTargetRef.current = target;
+      updateStatusLabel(target);
+    }
+  }, [systemOnline]);
+
+  useEffect(() => {
+    return () => {
+      if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth");
+  };
+
   if (!user) return null;
+
+  const userRole = user?.role === 'PLUS' ? 'RailScope PLUS' : 'RailScope USER';
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
 
   return (
     <header className="topbar">
@@ -30,9 +103,9 @@ export default function Topbar({ onToggleSidebar }) {
       </div>
 
       <div className="topbar-right">
-        <div className="system-status">
-          <span className="status-dot"></span>
-          <span className="status-label">Live System Online</span>
+        <div className={`system-status ${systemOnline ? 'online' : 'offline'}`}>
+          <span className={`status-dot ${systemOnline ? 'active' : 'inactive'}`}></span>
+          <span className={`status-label ${statusPhase}`}>{displayStatus}</span>
         </div>
 
         <div className="user-section">
@@ -40,9 +113,8 @@ export default function Topbar({ onToggleSidebar }) {
             className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
           >
-            {/* Generujemy avatar na podstawie nazwy użytkownika */}
             <img 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                src={userAvatar} 
                 alt="Avatar" 
                 className="user-avatar" 
             />
@@ -53,8 +125,11 @@ export default function Topbar({ onToggleSidebar }) {
           {isUserMenuOpen && (
             <div className="user-dropdown">
               <div className="dropdown-info">
-                <p className="user-email">{user.email}</p>
-                <p className="role">Operator Systemu</p>
+                <div className="dropdown-avatar">
+                  <img src={userAvatar} alt="Profile" />
+                </div>
+                <p className="username-dropdown">{user.username}</p>
+                <p className="role">{userRole}</p>
               </div>
               <ul className="dropdown-menu">
                 <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>

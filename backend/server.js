@@ -32,6 +32,10 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
             theme TEXT DEFAULT '#00ffd5',
             accent_color TEXT DEFAULT '#00ffd5',
             animations TEXT DEFAULT 'block',
+            text_color TEXT DEFAULT '#FFFFFF',
+            text_outline INTEGER DEFAULT 0,
+            background_mode TEXT DEFAULT 'dark',
+            map_theme TEXT DEFAULT 'dark',
             FOREIGN KEY (user_id) REFERENCES users (id)
         )`, (err) => {
             if (err) console.error("Błąd tworzenia tabeli user_settings:", err.message);
@@ -45,6 +49,9 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
                 }
                 if (!names.includes('avatar')) {
                     db.run("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''");
+                }
+                if (!names.includes('premiumDate')) {
+                    db.run("ALTER TABLE users ADD COLUMN premiumDate TEXT DEFAULT NULL");
                 }
             }
         });
@@ -81,6 +88,16 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
                 if (!names.includes('text_outline')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN text_outline INTEGER DEFAULT 0", (err) => {
                         if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny text_outline:", err.message);
+                    });
+                }
+                if (!names.includes('background_mode')) {
+                    db.run("ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'dark'", (err) => {
+                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny background_mode:", err.message);
+                    });
+                }
+                if (!names.includes('map_theme')) {
+                    db.run("ALTER TABLE user_settings ADD COLUMN map_theme TEXT DEFAULT 'dark'", (err) => {
+                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny map_theme:", err.message);
                     });
                 }
             }
@@ -120,7 +137,7 @@ app.post('/api/login', (req, res) => {
         // Pobierz ustawienia
         db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
             if (err) console.error(err);
-            const defaultSettings = { language: 'PL', theme: '#00ffd5', accent_color: '#00ffd5', animations: 'block', text_color: '#FFFFFF', text_outline: 0 };
+            const defaultSettings = { language: 'PL', theme: '#00ffd5', accent_color: '#00ffd5', animations: 'block', text_color: '#FFFFFF', text_outline: 0, background_mode: 'dark', map_theme: 'dark' };
             const userSettings = settings || defaultSettings;
             // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
             const { password, ...userSafeData } = user;
@@ -209,15 +226,15 @@ app.post('/api/update-profile', async (req, res) => {
 
 // --- AKTUALIZACJA USTAWIEŃ ---
 app.post('/api/settings', (req, res) => {
-    const { userId, language, theme, accentColor, animations, textColor, textOutline } = req.body;
+    const { userId, language, theme, accentColor, animations, textColor, textOutline, backgroundMode, mapTheme } = req.body;
     
     if (!userId) {
         return res.status(400).json({ error: "Brak identyfikatora użytkownika" });
     }
     
-    const sql = `INSERT OR REPLACE INTO user_settings (user_id, language, theme, accent_color, animations, text_color, text_outline) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT OR REPLACE INTO user_settings (user_id, language, theme, accent_color, animations, text_color, text_outline, background_mode, map_theme) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     
-    db.run(sql, [userId, language || 'PL', theme || '#00ffd5', accentColor || '#00ffd5', animations || 'block', textColor || '#FFFFFF', textOutline ? 1 : 0], (err) => {
+    db.run(sql, [userId, language || 'PL', theme || '#00ffd5', accentColor || '#00ffd5', animations || 'block', textColor || '#FFFFFF', textOutline ? 1 : 0, backgroundMode || 'dark', mapTheme || 'dark'], (err) => {
         if (err) {
             console.error("Błąd zapisu ustawień:", err.message);
             return res.status(500).json({ error: "Błąd zapisu: " + err.message });
@@ -238,9 +255,27 @@ app.delete('/api/users/:id', (req, res) => {
 // Endpoint do "płatności" (emulacja upgrade'u)
 app.post('/api/upgrade', (req, res) => {
     const { id, role } = req.body; // role: 'PLUS' lub 'ADMIN'
-    db.run(`UPDATE users SET role = ? WHERE id = ?`, [role, id], (err) => {
+    const premiumDate = role === 'PLUS' ? new Date().toISOString().split('T')[0] : null;
+    db.run(`UPDATE users SET role = ?, premiumDate = ? WHERE id = ?`, [role, premiumDate, id], (err) => {
         if (err) return res.status(500).json({ error: "Błąd bazy" });
         res.json({ message: "Ranga zaktualizowana!" });
+    });
+});
+
+app.post('/api/cancel-premium', (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: 'Brak identyfikatora użytkownika.' });
+    }
+
+    db.run(`UPDATE users SET role = 'USER', premiumDate = NULL WHERE id = ?`, [userId], function(err) {
+        if (err) return res.status(500).json({ error: 'Błąd podczas anulowania subskrypcji.' });
+
+        db.get(`SELECT * FROM users WHERE id = ?`, [userId], (selectErr, updatedUser) => {
+            if (selectErr) return res.status(500).json({ error: 'Błąd odczytu użytkownika.' });
+            const { password, ...userSafeData } = updatedUser;
+            res.json({ user: { ...userSafeData } });
+        });
     });
 });
 

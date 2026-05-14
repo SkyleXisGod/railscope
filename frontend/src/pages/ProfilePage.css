@@ -1,63 +1,71 @@
 /* Specyficzne style tylko dla profilu (bazują na zmiennych z theme.css) */
 
+.profile-page {
+    padding-top: 1rem;
+}
+
+.page-title {
+    margin-bottom: 0.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
 .profile-header {
     display: flex;
     align-items: center;
     gap: 2rem;
     margin-bottom: 2rem;
     position: relative;
-    overflow: hidden;
-}
-
-/* Subtelny gradient w tle nagłówka wykorzystujący główny kolor */
-.profile-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background-color: var(--primary-color);
+    padding-top: 0;
 }
 
 .profile-avatar-wrapper {
     position: relative;
+    flex-shrink: 0;
 }
 
 .profile-avatar {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     object-fit: cover;
     background-color: var(--bg-input);
-    border: 4px solid var(--bg-card);
-    box-shadow: 0 0 0 2px var(--primary-color);
+    border: 5px solid var(--primary-color);
+    box-shadow: 0 0 30px rgba(0, 255, 213, 0.3);
+    display: block;
 }
 
 .profile-status-indicator {
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
+    bottom: 10px;
+    right: 10px;
+    width: 25px;
+    height: 25px;
     background-color: var(--success-color);
-    border: 3px solid var(--bg-card);
+    border: 4px solid var(--bg-card);
     border-radius: 50%;
 }
 
+.profile-header-info {
+    flex-grow: 1;
+}
+
 .profile-header-info h2 {
-    font-size: 1.8rem;
-    margin-bottom: 0.2rem;
+    font-size: 2rem;
+    margin: 0;
+    margin-bottom: 0.5rem;
     color: var(--text-primary);
 }
 
 .profile-status-text {
-    color: var(--success-color);
-    font-weight: 500;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
 .profile-header-actions {
-    margin-left: auto; /* Przesuwa przycisk do prawej krawędzi */
+    display: flex;
+    gap: 10px;
 }
 
 /* Grid podziału na kolumny */
@@ -66,21 +74,147 @@
     display: grid;
     grid-template-columns: 1.5fr 1fr;
     gap: 2rem;
+    margin-top: 2rem;
 }
 
 .profile-card {
-    background: rgba(26, 26, 26, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
     padding: 24px;
-    transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    transition: all var(--transition-speed) ease;
 }
 
 .profile-details {
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
 }
+
+.profile-form label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    transition: all var(--transition-speed) ease;
+}
+
+.profile-form input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.profile-message {
+    margin-top: 1rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(0, 255, 213, 0.1);
+    border: 1px solid var(--primary-color);
+    color: var(--text-primary);
+}
+
+/* Grupy informacji */
+.info-group {
+    margin-bottom: 0;
+}
+
+.info-group label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.4rem;
+}
+
+.info-group p {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    margin: 0;
+}
+
+.info-group.status-row p {
+    color: var(--primary-color);
+}
+
+.status-active {
+    color: var(--success-color) !important;
+}
+
+.status-inactive {
+    color: var(--danger-color) !important;
+}
+
+/* Premium Section */
+.premium-section {
+    grid-column: 1 / -1;
+}
+
+.premium-info {
+    margin-bottom: 1.5rem;
+}
+
+.premium-status {
+    font-size: 1.05rem;
+    color: var(--primary-color);
+    margin: 0 0 0.5rem 0;
+}
+
+.premium-benefits {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* RWD - Responsywność dla telefonów */
+@media (max-width: 768px) {
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 1rem;
+    }
+
+    .profile-header::before {
+        top: -15px;
+    }
+
+    .profile-header-info h2 {
+        font-size: 1.5rem;
+    }
+
+    .profile-header-actions {
+        width: 100%;
+    }
+
+    .profile-header-actions .btn {
+        width: 100%;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 .profile-form {
     display: flex;

@@ -5,8 +5,8 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #0f0f0f;
-    color: white;
+    background: var(--bg-main);
+    color: var(--text-primary);
     padding: 0 40px;
 }
 
@@ -19,11 +19,12 @@
     font-size: 3.5rem;
     margin: 0;
     text-shadow: 0 0 15px rgba(0, 255, 213, 0.2);
+    color: var(--text-primary);
 }
 
 .trains-subtitle {
     margin: -5px 0 20px 0;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 /* ========================================= */
@@ -34,11 +35,11 @@
     flex-direction: column;
     gap: 12px;
     max-width: 1000px;
-    background: #161616;
+    background: var(--bg-card);
     padding: 20px;
     border-radius: 15px;
-    border: 1px solid #333;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.15);
 }
 
 .search-row {
@@ -50,17 +51,17 @@
 .search-row input,
 .search-row select {
     flex: 1;
-    background: #0f0f0f;
-    border: 1px solid #444;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
     padding: 12px;
     border-radius: 8px;
-    color: white;
+    color: var(--text-primary);
     font-size: 0.9rem;
     transition: all 0.3s ease;
 }
 
 .search-row input:focus, .search-row select:focus {
-    border-color: #00ffd5;
+    border-color: var(--accent-color);
     outline: none;
     box-shadow: 0 0 10px rgba(0, 255, 213, 0.15);
 }
@@ -80,22 +81,22 @@
 }
 
 .train-card {
-    background: #161616;
+    background: var(--bg-card);
     border-radius: 12px;
     margin-bottom: 10px;
-    border: 1px solid #222;
+    border: 1px solid var(--border-color);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     overflow: hidden;
 }
 
 .train-card:hover {
-    border-color: #444;
+    border-color: var(--border-color);
     transform: translateY(-2px);
 }
 
 .train-card.active {
-    border-color: #00ffd5;
-    box-shadow: 0 5px 20px rgba(0, 255, 213, 0.05);
+    border-color: var(--accent-color);
+    box-shadow: 0 5px 20px rgba(0, 255, 213, 0.08);
 }
 
 .train-card-header {
@@ -116,20 +117,20 @@
 .train-number {
     font-family: 'JetBrains Mono', monospace;
     font-size: 1.1rem;
-    color: #ccc;
+    color: var(--text-secondary);
 }
 
 .train-name {
-    color: #f1c40f;
+    color: var(--accent-color);
     font-weight: bold;
     font-size: 1.1rem;
-    text-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
+    text-shadow: 0 0 10px rgba(0, 255, 213, 0.18);
 }
 
 .train-relation-section {
     flex: 1;
     text-align: right;
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 0.95rem;
     padding-right: 20px;
 }

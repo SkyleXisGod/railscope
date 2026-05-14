@@ -23,7 +23,7 @@ export default function Layout({
           <div className="sidebar-header">
             <img src={logo} className="sidebar-logo" />
           </div>
-          
+
           {sidebar}
           
         </div>

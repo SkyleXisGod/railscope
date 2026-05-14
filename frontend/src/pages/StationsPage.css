@@ -5,8 +5,8 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #0f0f0f;
-  color: white;
+  background: var(--bg-main);
+  color: var(--text-primary);
   padding: 0 40px;
   overflow: hidden;
 }
@@ -49,26 +49,26 @@
 .station-search-input {
   flex: 1;
   padding: 14px 20px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: white;
+  color: var(--text-primary);
   font-size: 1rem;
   transition: all 0.3s ease;
 }
 
 .station-search-input:focus {
   outline: none;
-  border-color: #00ffd5;
+  border-color: var(--accent-color);
   box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
 }
 
 .sort-btn {
   padding: 14px 20px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: #ccc;
+  color: var(--text-secondary);
   cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
@@ -77,8 +77,8 @@
 
 .sort-btn:hover,
 .sort-btn.active {
-  border-color: #00ffd5;
-  color: #00ffd5;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
   box-shadow: 0 0 15px rgba(0, 255, 213, 0.15);
 }
 
@@ -92,24 +92,24 @@
 }
 
 .station-item {
-  background: #161616;
+  background: var(--bg-card);
   border-radius: 12px;
   margin-bottom: 8px;
   border: 1px solid transparent;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Płynniejsze przejścia */
-  overflow: hidden; /* Zapobiega wylewaniu się animowanego tła */
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
 }
 
 .station-item:hover {
-  border-color: #333;
-  transform: translateX(5px); /* Delikatny ruch przy najeździe */
+  border-color: var(--border-color);
+  transform: translateX(5px);
 }
 
 .station-item.active {
-  border-color: #00ffd5;
-  background: #1a1a1a;
-  box-shadow: 0 5px 20px rgba(0, 255, 213, 0.05);
-  transform: translateX(0); /* Reset ruchu po kliknięciu */
+  border-color: var(--accent-color);
+  background: var(--bg-input);
+  box-shadow: 0 5px 20px rgba(0, 255, 213, 0.08);
+  transform: translateX(0);
 }
 
 .station-row {
@@ -152,9 +152,8 @@
 /* ========================================= */
 .station-details {
   padding: 20px 24px;
-  border-top: 1px solid #222;
-  background: #121212;
-  /* Usunięto radius dolny, ponieważ kontener główny jest ukrywany przez framer-motion */
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-input);
 }
 
 .control-btn {
@@ -450,22 +449,22 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f0f0f;
+  background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--border-color);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00ffd5;
+  background: var(--accent-color);
   box-shadow: 0 0 10px rgba(0, 255, 213, 0.5);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #333 #0f0f0f;
+  scrollbar-color: var(--border-color) var(--bg-main);
 }
 
 /* ========================================= */
@@ -508,15 +507,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skeleton-wrapper {
     width: 100%;
     padding: 20px;
-    background: #151515;
+    background: var(--bg-card);
     border-radius: 8px;
-    min-height: 250px; /* Zapewnia, że kontener ma stałą wysokość podczas ładowania */
+    min-height: 250px;
 }
 
 .skeleton-header {
     height: 30px;
     width: 100%;
-    background: #222;
+    background: var(--border-color);
     margin-bottom: 15px;
     border-radius: 4px;
     animation: skeleton-pulse 1.5s infinite;
@@ -525,16 +524,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skeleton-row {
     height: 45px;
     width: 100%;
-    background: #1a1a1a;
+    background: var(--bg-input);
     margin-bottom: 10px;
     border-radius: 4px;
     animation: skeleton-pulse 1.5s infinite;
 }
 
 @keyframes skeleton-pulse {
-    0% { opacity: 0.5; background: #1a1a1a; }
-    50% { opacity: 1; background: #252525; }
-    100% { opacity: 0.5; background: #1a1a1a; }
+    0% { opacity: 0.5; background: var(--bg-input); }
+    50% { opacity: 1; background: var(--border-color); }
+    100% { opacity: 0.5; background: var(--bg-input); }
 }
 
 /* UI Polishing */

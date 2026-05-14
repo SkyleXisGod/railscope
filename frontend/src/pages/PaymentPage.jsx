@@ -17,7 +17,7 @@ export default function PaymentPage() {
             });
             updateUser({ role: 'PLUS' });
             alert('Symulacja płatności przebiegła pomyślnie! Twoja ranga została zaktualizowana.');
-            navigate('/profile');
+            navigate('/profil');
         } catch (err) {
             console.error('Błąd podczas aktualizacji rangi:', err);
             alert('Nie udało się dokonać aktualizacji rangi. Spróbuj ponownie.');

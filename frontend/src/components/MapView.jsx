@@ -1,6 +1,7 @@
 import React, { useEffect, useState, memo, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Pane, Polyline, Marker, useMapEvents, Tooltip } from "react-leaflet";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 import L from "leaflet";
 import axios from "axios";
 import "./MapPopup.css";
@@ -243,6 +244,7 @@ function ZoomListener({ setZoomLevel }) {
 }
 
 export default function MapView({ sidebarOpen }) {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const stationId = searchParams.get("stationId");
   const trainId = searchParams.get("trainId");
@@ -465,6 +467,10 @@ useEffect(() => {
   });
 
   const firstStationOnRoute = trackedTrain?.route?.[0];
+  const mapTheme = user?.settings?.map_theme || user?.settings?.mapTheme || 'dark';
+  const tileUrl = mapTheme === 'light'
+    ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    : 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png';
 
   return (
     <div style={{ height: "100%", width: "100%", position: "relative" }}>
@@ -484,9 +490,9 @@ useEffect(() => {
         maxBoundsViscosity={0.8}
         maxBounds={POLAND_BOUNDS}
         preferCanvas={true} 
-        style={{ height: "100%", width: "100%", background: "#0b0b0b" }}
+        style={{ height: "100%", width: "100%", background: "var(--bg-main)" }}
       >
-        <TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
+        <TileLayer url={tileUrl} />
         <ZoomListener setZoomLevel={setCurrentZoom} />
         <MapController 
           selectedStation={selectedStation} 

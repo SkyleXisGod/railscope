@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-    const { user, updateUser, updateSettings } = useAuth();
+    const { user, updateUser } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({
         username: '',
@@ -16,6 +16,7 @@ const ProfilePage = () => {
     });
     const [message, setMessage] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -62,25 +63,26 @@ const ProfilePage = () => {
         }
     };
 
-    const handleThemeChange = async (color) => {
+    const handleCancelPremium = async () => {
+        if (!user) return;
+        if (!window.confirm('Czy na pewno chcesz anulować subskrypcję Premium?')) return;
+
+        setIsCancelling(true);
+        setMessage('');
         try {
-            await axios.post('http://localhost:8080/api/settings', {
-                userId: user.id,
-                theme: color,
-                language: user.settings?.language || 'PL',
-                animations: user.settings?.animations || 'block'
-            });
-            updateSettings({ theme: color });
-            setMessage('Motyw zapisany.');
+            const response = await axios.post('http://localhost:8080/api/cancel-premium', { userId: user.id });
+            const updatedUser = response.data.user;
+            updateUser(updatedUser);
+            setMessage('Subskrypcja Premium została anulowana.');
         } catch (err) {
-            setMessage('Błąd zapisu motywu.');
+            setMessage(err.response?.data?.error || 'Błąd podczas anulowania subskrypcji.');
+        } finally {
+            setIsCancelling(false);
         }
     };
 
     return (
         <div className="container profile-page">
-            <h1 className="page-title">Profil Użytkownika</h1>
-
             <div className="profile-grid profile-page-grid">
                 <div className="profile-card card">
                     <div className="profile-header">
@@ -108,6 +110,30 @@ const ProfilePage = () => {
                             <label>Dołączono</label>
                             <p>{user?.joinedDate || '2024-01-15'}</p>
                         </div>
+                        {user?.role === 'PLUS' && (
+                            <>
+                                <div className="info-group">
+                                    <label>Premium od</label>
+                                    <p>{user?.premiumDate || '2024-06-15'}</p>
+                                </div>
+                                <div className="info-group status-row">
+                                    <label>Status Premium</label>
+                                    <p className="status-active">✓ Aktywny</p>
+                                </div>
+                            </>
+                        )}
+                        {user?.role !== 'PLUS' && (
+                            <>
+                                <div className="info-group">
+                                    <label>Premium od</label>
+                                    <p><i>Subskrypcja nieaktywna</i></p>
+                                </div>
+                                <div className="info-group status-row">
+                                    <label>Status Premium</label>
+                                    <p className="status-inactive">✕ nieaktywny</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -131,17 +157,19 @@ const ProfilePage = () => {
                     {message && <div className="profile-message">{message}</div>}
                 </div>
 
-                <div className="profile-card card">
-                    <h3 className="section-title">Personalizacja</h3>
-                    <p className="settings-desc">Wybierz kolor akcentów i zapisz go w ustawieniach konta.</p>
-                    <div className="theme-buttons">
-                        {['#00ffd5', '#ff2b2b', '#ffcc00', '#7000ff'].map((color) => (
-                            <button type="button" key={color} className="btn theme-button" style={{ backgroundColor: color, color: '#fff' }} onClick={() => handleThemeChange(color)}>
-                                {color === '#00ffd5' ? 'Niebieski' : color === '#ff2b2b' ? 'Czerwony' : color === '#ffcc00' ? 'Żółty' : 'Fioletowy'}
-                            </button>
-                        ))}
+                {user?.role === 'PLUS' && (
+                    <div className="profile-card card premium-section">
+                        <h3 className="section-title">Subskrypcja Premium</h3>
+                        <div className="premium-info">
+                            <p className="premium-status">✓ Masz aktywną subskrypcję RailScope PLUS</p>
+                            <p className="premium-benefits">Pełny dostęp do wszystkich funkcji i analiz systemu.</p>
+                        </div>
+                        <button className="btn btn-danger" onClick={handleCancelPremium} disabled={isCancelling}>
+                            {isCancelling ? 'Anulowywanie...' : 'Anuluj subskrypcję'}
+                        </button>
                     </div>
-                </div>
+                )}
+
             </div>
         </div>
     );
