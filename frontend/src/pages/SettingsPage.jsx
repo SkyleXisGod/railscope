@@ -38,6 +38,7 @@ export default function SettingsPage() {
     const translations = {
         PL: {
             title: 'Ustawienia',
+            title_header: 'Wygląd i Motywy',    
             theme: 'Główny kolor (tło strony)',
             accent: 'Kolor akcentu (przyciski, ikony)',
             textColor: 'Kolor tekstu',
@@ -52,6 +53,7 @@ export default function SettingsPage() {
         },
         EN: {
             title: 'Settings',
+            title_header: 'Appearance & Themes',
             theme: 'Primary color (page background)',
             accent: 'Accent color (buttons, icons)',
             textColor: 'Text color',
@@ -172,7 +174,7 @@ export default function SettingsPage() {
                 <h1>{t.title}</h1>
 
                 <div className="settings-section">
-                    <h2 className="section-header">Wygląd i Motywy</h2>
+                    <h2 className="section-header">{t.title_header}</h2>
                     
                     <div className="setting-group">
                         <label>{t.theme}</label>

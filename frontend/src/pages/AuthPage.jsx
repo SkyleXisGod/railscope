@@ -34,7 +34,6 @@ export default function AuthPage() {
                 navigate('/');
             } else {
                 // Rejestracja pomyślna - przełącz na logowanie
-                alert("Konto utworzone pomyślnie! Teraz możesz się zalogować.");
                 setIsLogin(true);
                 setFormData({ ...formData, password: '' });
             }

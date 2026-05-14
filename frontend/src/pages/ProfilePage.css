@@ -306,6 +306,6 @@
     }
 
     .profile-grid {
-        grid-template-columns: 1fr; /* Jedna kolumna na telefonach */
+        grid-template-columns: 1fr; 
     }
 }
