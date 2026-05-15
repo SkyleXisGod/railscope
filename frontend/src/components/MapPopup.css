@@ -145,9 +145,22 @@
     box-shadow: 0 0 25px rgba(41, 128, 185, 0.35) !important;
 }
 
+.train-next-gen-popup.popup-accent-REG .leaflet-popup-content-wrapper,
 .popup-accent-REG .popup-main-container {
     border: 1px solid #7f8c8d !important;
     box-shadow: 0 0 25px rgba(127, 140, 141, 0.3) !important;
+}
+
+.train-next-gen-popup.popup-accent-SKM .leaflet-popup-content-wrapper,
+.popup-accent-SKM .popup-main-container {
+    border: 1px solid #e74c3c !important;
+    box-shadow: 0 0 25px rgba(231, 76, 60, 0.4) !important;
+}
+
+.train-next-gen-popup.popup-accent-S .leaflet-popup-content-wrapper,
+.popup-accent-S .popup-main-container {
+    border: 1px solid #16a085 !important;
+    box-shadow: 0 0 25px rgba(22, 160, 133, 0.4) !important;
 }
 
 .popup-accent-IC .popup-top-bar, .popup-accent-TLK .popup-top-bar { 
@@ -160,6 +173,14 @@
 
 .popup-accent-REG .popup-top-bar { 
   background: #7f8c8d; box-shadow: 0 2px 10px rgba(127, 140, 141, 0.4); 
+}
+
+.popup-accent-SKM .popup-top-bar { 
+  background: #e74c3c; box-shadow: 0 2px 10px rgba(231, 76, 60, 0.4); 
+}
+
+.popup-accent-S .popup-top-bar { 
+  background: #16a085; box-shadow: 0 2px 10px rgba(22, 160, 133, 0.4); 
 }
 
 .station-variant .popup-top-bar { 
@@ -233,22 +254,22 @@
 
 .marquee-text {
     position: absolute;
-    left: 100%;
+    top: 0;
+    left: 0;
     display: inline-block;
     white-space: nowrap;
-    animation: marquee 14s linear infinite;
+    transform: translateX(100%);
+    animation: marquee 7s linear infinite;
     font-size: inherit;
     color: inherit;
-    will-change: transform, left;
+    will-change: transform;
 }
 
 @keyframes marquee {
     0% {
-        left: 100%;
-        transform: translateX(0);
+        transform: translateX(100%);
     }
     100% {
-        left: 0;
         transform: translateX(-100%);
     }
 }
@@ -257,10 +278,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 6px 10px;
-    border-radius: 6px;
 }
 
 .status-dot {
@@ -311,19 +328,45 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 60px;
+    flex: 0 1 auto;
+    min-width: 70px;
     text-align: center;
+    padding: 0 2px;
 }
 
 .timeline-station-name {
     font-size: 0.65rem;
     color: #ccc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 60px;
     font-weight: bold;
+    width: 70px;
+    min-height: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-word;
+    line-height: 1.1;
+    padding: 2px 0;
 }
+
+.timeline-station-name .marquee-wrap {
+    width: 100%;
+    overflow: visible;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.timeline-station-name .marquee-text {
+    white-space: normal;
+    display: inline;
+    font-size: inherit;
+    color: inherit;
+}
+
+
+
+
+
 
 .timeline-time {
     font-family: 'Courier New', monospace;
@@ -447,7 +490,39 @@
     min-width: 0;
 }
 
-.popup-station-header .marquee-wrap,
+.popup-station-header .marquee-wrap {
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    min-height: 1.2rem;
+}
+
+.popup-station-header .marquee-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: inline-block;
+    white-space: nowrap;
+    transform: translateX(100%);
+    animation: marquee 14s linear infinite;
+    font-size: inherit;
+    color: inherit;
+    will-change: transform;
+}
+
+.timeline-station-name {
+    font-size: 0.65rem;
+    color: #ccc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+}
+
 .timeline-station-name .marquee-wrap {
     width: 100%;
     display: block;
@@ -456,17 +531,17 @@
     min-height: 1.2rem;
 }
 
-.popup-station-header .marquee-text,
 .timeline-station-name .marquee-text {
     position: absolute;
     top: 0;
-    left: 100%;
+    left: 0;
     display: inline-block;
     white-space: nowrap;
-    animation: marquee 14s linear infinite;
+    animation: marquee-timeline 12s linear infinite;
     font-size: inherit;
     color: inherit;
-    will-change: transform, left;
+    will-change: transform;
+    z-index: 2;
 }
 
 .departure-item:hover {

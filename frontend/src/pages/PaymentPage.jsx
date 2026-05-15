@@ -36,8 +36,8 @@ export default function PaymentPage() {
                 </div>
 
                 <div className="price-tag">
-                    <span className="amount">19.99</span>
-                    <span className="currency">{t.price}</span>
+                    <span className="amount">{t.price}</span>
+                    <span className="currency">{t.price_text}</span>
                 </div>
 
                 <ul className="benefits">
@@ -47,7 +47,7 @@ export default function PaymentPage() {
                 </ul>
 
                 <div className="warning-box">
-                    <strong>UWAGA:</strong> {t.warning}
+                    <strong>{t.warning_strong}</strong> {t.warning}
                 </div>
 
                 <button className="pay-btn" onClick={handleMockPayment}>

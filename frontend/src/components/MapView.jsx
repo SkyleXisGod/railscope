@@ -153,9 +153,7 @@ const getUpcomingDepartures = (payload) => {
                     <div className="popup-station-header">
                       <span className="popup-station-icon">🏢</span>
                       <span className="popup-station-name">
-                        <span className="marquee-wrap">
-                          <span className="marquee-text">{s.name}</span>
-                        </span>
+                        {s.name}
                       </span>
                     </div>
 
@@ -371,12 +369,18 @@ useEffect(() => {
     let newPos = null;
     const firstDep = calcMin(r[0].dep) + d;
     if (currentTotalMin < firstDep) {
-      newPos = { lat: r[0].lat, lon: r[0].lon, status: "stopped", progress: 0, nextStation: r[1] };
+      newPos = { 
+        lat: r[0].lat, lon: r[0].lon, status: "stopped", progress: 0, 
+        prevStation: null, nextStation: r[1] 
+      };
     }
 
     const lastArr = calcMin(r[r.length - 1].arr) + d;
     if (!newPos && currentTotalMin > lastArr) {
-      newPos = { lat: r[r.length-1].lat, lon: r[r.length-1].lon, status: "finished", progress: 1, nextStation: null };
+      newPos = { 
+        lat: r[r.length-1].lat, lon: r[r.length-1].lon, status: "finished", progress: 1, 
+        prevStation: r[r.length - 2] || null, nextStation: null 
+      };
     }
 
     if (!newPos) {
@@ -385,7 +389,10 @@ useEffect(() => {
         const depTime = calcMin(r[i].dep) + d;
 
         if (currentTotalMin >= arrTime && currentTotalMin <= depTime) {
-          newPos = { lat: r[i].lat, lon: r[i].lon, status: "stopped", progress: 0, nextStation: r[i+1] };
+          newPos = { 
+            lat: r[i].lat, lon: r[i].lon, status: "stopped", progress: 0, 
+            prevStation: i > 0 ? r[i - 1] : null, nextStation: r[i+1] || null 
+          };
           break;
         }
 
@@ -421,7 +428,10 @@ useEffect(() => {
               cLat = r[i].lat + (r[i+1].lat - r[i].lat) * progress;
               cLon = r[i].lon + (r[i+1].lon - r[i].lon) * progress;
             }
-            newPos = { lat: cLat, lon: cLon, status: "moving", progress, nextStation: r[i+1] };
+            newPos = { 
+              lat: cLat, lon: cLon, status: "moving", progress, 
+              prevStation: r[i], nextStation: r[i+1] || null 
+            };
             break;
           }
         }
@@ -457,11 +467,7 @@ useEffect(() => {
   }
 
   const nextStation = computedTrainPos?.nextStation;
-  let prevStation = null;
-  if (nextStation && trackedTrain?.route) {
-      const nextIdx = trackedTrain.route.findIndex(s => s.id === nextStation.id);
-      if (nextIdx > 0) prevStation = trackedTrain.route[nextIdx - 1];
-  }
+  const prevStation = computedTrainPos?.prevStation;
 
   const trainIcon = L.divIcon({
     className: 'custom-train-icon',
@@ -563,20 +569,28 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    {prevStation && nextStation && (
+                    {(prevStation || nextStation) && (
                       <div className="timeline-container">
-                         <div className="timeline-station">
-                             <div className="timeline-station-name"><span className="marquee-wrap"><span className="marquee-text">{prevStation.name}</span></span></div>
-                             <div className="timeline-time">{prevStation.dep}</div>
-                         </div>
+                         {prevStation && (
+                           <div className="timeline-station">
+                               <div className="timeline-station-name">
+                                  {prevStation.name}
+                               </div>
+                               <div className="timeline-time">{prevStation.dep}</div>
+                           </div>
+                         )}
                          <div className="timeline-track">
                              <div className="timeline-progress" style={{ width: `${computedTrainPos.progress * 100}%` }}></div>
                              <div className="timeline-train-icon" style={{ left: `${computedTrainPos.progress * 100}%` }}>🚅</div>
                          </div>
-                         <div className="timeline-station">
-                             <div className="timeline-station-name"><span className="marquee-wrap"><span className="marquee-text">{nextStation.name}</span></span></div>
-                             <div className="timeline-time">{nextStation.arr}</div>
-                         </div>
+                         {nextStation && (
+                           <div className="timeline-station">
+                               <div className="timeline-station-name">
+                                   {nextStation.name}
+                               </div>
+                               <div className="timeline-time">{nextStation.arr}</div>
+                           </div>
+                         )}
                       </div>
                     )}
                   </div>
