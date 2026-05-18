@@ -222,6 +222,16 @@
     padding: 8px 0;
 }
 
+.fa-bars {
+  display: inline-block; 
+  cursor: pointer;
+  transition: transform 0.3s ease; 
+}
+
+.fa-bars.active {
+  transform: rotate(90deg); 
+}
+
 .dropdown-menu li {
     padding: 12px 20px;
     display: flex;

@@ -44,8 +44,17 @@ export default function StationsPage() {
   // FUNKCJE LOGICZNE (NIE DOTYKANE)
   const calcMin = (timeStr) => {
     if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
-    const parts = timeStr.split(':');
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    const cleaned = String(timeStr).trim();
+    const isoMatch = cleaned.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+    if (isoMatch) {
+      const date = new Date(cleaned);
+      if (!isNaN(date.getTime())) {
+        return date.getHours() * 60 + date.getMinutes() + (date.getDate() - 1) * 1440;
+      }
+    }
+    const parts = cleaned.split(':');
+    if (parts.length < 2) return null;
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
   };
 
   const getStopMins = (stop, index, totalStops) => {

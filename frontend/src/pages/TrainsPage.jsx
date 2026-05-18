@@ -41,8 +41,36 @@ export default function TrainsPage() {
 
     const getMinutes = (timeStr) => {
         if (!timeStr || timeStr === "-") return null;
-        const [h, m] = timeStr.split(':').map(Number);
-        return h * 60 + m;
+        const cleaned = String(timeStr).trim();
+        const isoMatch = cleaned.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+        if (isoMatch) {
+            const date = new Date(cleaned);
+            if (!isNaN(date.getTime())) {
+                return date.getHours() * 60 + date.getMinutes() + (date.getDate() - 1) * 1440;
+            }
+        }
+        const [h, m] = cleaned.split(':').map(Number);
+        return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+    };
+
+    const normalizeRouteTimes = (route) => {
+        let lastTime = -Infinity;
+        return (route || []).map((stop) => {
+            const arr = getMinutes(stop.arr);
+            const dep = getMinutes(stop.dep);
+            let absArr = arr;
+            let absDep = dep;
+            if (absArr !== null) {
+                while (absArr <= lastTime) absArr += 1440;
+                lastTime = Math.max(lastTime, absArr);
+            }
+            if (absDep !== null) {
+                const base = Math.max(lastTime, absArr !== null ? absArr : lastTime);
+                while (absDep <= base) absDep += 1440;
+                lastTime = Math.max(lastTime, absDep);
+            }
+            return { ...stop, absArr, absDep };
+        });
     };
 
     useEffect(() => {
@@ -124,6 +152,7 @@ export default function TrainsPage() {
                 <AnimatePresence mode="popLayout">
                     {!loading && !error && trains.map((train, idx) => {
                         const hasRoute = train.route && train.route.length > 0;
+                        const normalizedRoute = normalizeRouteTimes(train.route);
                         const isPremium = premiumCats.includes(train.categorySymbol);
                         // WAŻNE: Klucz MUSI być unikalny i stabilny, żeby AnimatePresence wiedziało co usunąć!
                         const uniqueKey = train.trainOrderId || `${train.number}-${idx}`;
@@ -170,16 +199,16 @@ export default function TrainsPage() {
                                                 <table className="route-table">
                                                     <thead><tr><th>{t.station_header}</th><th></th><th>{t.arrival_header}</th><th>{t.departure_header}</th></tr></thead>
                                                     <tbody>
-                                                    {train.route.map((stop, sIdx) => {
+                                                    {normalizedRoute.map((stop, sIdx) => {
                                                         const now = new Date();
                                                         const currentTime = now.getHours() * 60 + now.getMinutes();
-                                                        let stopArr = getMinutes(stop.arr);
-                                                        let stopDep = getMinutes(stop.dep);
-                                                        if (sIdx !== 0 && sIdx !== train.route.length - 1) {
+                                                        let stopArr = stop.absArr != null ? stop.absArr : getMinutes(stop.arr);
+                                                        let stopDep = stop.absDep != null ? stop.absDep : getMinutes(stop.dep);
+                                                        if (sIdx !== 0 && sIdx !== normalizedRoute.length - 1) {
                                                             if (stopArr === null) stopArr = stopDep;
                                                             if (stopDep === null) stopDep = stopArr;
                                                         }
-                                                        const timeToCompareForPast = (sIdx === train.route.length - 1) ? stopArr : stopDep;
+                                                        const timeToCompareForPast = (sIdx === normalizedRoute.length - 1) ? stopArr : stopDep;
                                                         const isCurrentStation = stopArr !== null && stopDep !== null ? (currentTime >= stopArr && currentTime <= stopDep) : false;
                                                         const isPast = timeToCompareForPast !== null ? currentTime > timeToCompareForPast : false;
                                                         const isSearchMatch = (startStation && stop.name.toLowerCase().includes(startStation.toLowerCase())) ||

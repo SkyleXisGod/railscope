@@ -11,7 +11,7 @@ const OUTPUT_PATH = path.join(__dirname, 'data', 'cacheStations.json');
 
 function convertGtfsToCache() {
     try {
-        console.log("📂 Otwieram plik:", GTFS_PATH);
+        console.log("📂 Opening file:", GTFS_PATH);
         const data = fs.readFileSync(GTFS_PATH, 'utf8');
         const lines = data.split('\n');
         
@@ -34,9 +34,9 @@ function convertGtfsToCache() {
         }
 
         fs.writeFileSync(OUTPUT_PATH, JSON.stringify(stations, null, 2));
-        console.log(`✅ Sukces! Przetworzono ${stations.length} stacji.`);
+        console.log(`✅ Success! Processed ${stations.length} stations.`);
     } catch (err) {
-        console.error("❌ Błąd:", err.message);
+        console.error("❌ Error:", err.message);
     }
 }
 

@@ -14,11 +14,11 @@ app.post('/api/register', async (req, res) => {
 
     const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
     db.run(sql, [username, email, hashedPassword], function(err) {
-        if (err) return res.status(400).json({ error: "Użytkownik już istnieje" });
+        if (err) return res.status(400).json({ error: "User already exists" });
         
-        // Tworzenie domyślnych ustawień dla nowego usera
+        // Create default settings for new user
         db.run(`INSERT INTO user_settings (user_id) VALUES (?)`, [this.lastID]);
-        res.json({ message: "Zarejestrowano pomyślnie", userId: this.lastID });
+        res.json({ message: "Registered successfully", userId: this.lastID });
     });
 });
 
@@ -28,7 +28,7 @@ app.post('/api/login', (req, res) => {
     
     db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ error: "Błędne dane logowania" });
+            return res.status(401).json({ error: "Invalid login credentials" });
         }
         
         // Pobierz ustawienia użytkownika
@@ -44,10 +44,10 @@ app.post('/api/settings', (req, res) => {
     const sql = `UPDATE user_settings SET language = ?, theme = ?, accent_color = ? WHERE user_id = ?`;
     
     db.run(sql, [language, theme, accentColor, userId], (err) => {
-        if (err) return res.status(500).json({ error: "Błąd zapisu" });
-        res.json({ message: "Ustawienia zapisane" });
+        if (err) return res.status(500).json({ error: "Save error" });
+        res.json({ message: "Settings saved" });
     });
 });
 
 const PORT = 8080;
-app.listen(PORT, () => console.log(`Serwer RailScope śmiga na porcie ${PORT}`));
+app.listen(PORT, () => console.log(`RailScope server running on port ${PORT}`));

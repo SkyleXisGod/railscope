@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, 'railscope.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('Błąd połączenia z bazą:', err.message);
-    else console.log('Połączono z lokalną bazą SQLite.');
+    if (err) console.error('Database connection error:', err.message);
+    else console.log('Connected to local SQLite database.');
 });
 
 db.serialize(() => {

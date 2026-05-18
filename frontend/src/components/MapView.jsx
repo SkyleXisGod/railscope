@@ -30,9 +30,17 @@ const itemVariants = {
 
 const calcMin = (timeStr) => {
   if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
-  const parts = timeStr.split(':');
+  const cleaned = String(timeStr).trim();
+  const isoMatch = cleaned.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  if (isoMatch) {
+    const date = new Date(cleaned);
+    if (!isNaN(date.getTime())) {
+      return date.getHours() * 60 + date.getMinutes() + (date.getDate() - 1) * 1440;
+    }
+  }
+  const parts = cleaned.split(':');
   if (parts.length < 2) return null;
-  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
 };
 
 const getStopMins = (stop, index, totalStops) => {
@@ -41,6 +49,41 @@ const getStopMins = (stop, index, totalStops) => {
   if (index === totalStops - 1) return calcMin(stop.arr !== "-" ? stop.arr : stop.dep);
   const depMins = calcMin(stop.dep);
   return depMins !== null ? depMins : calcMin(stop.arr);
+};
+
+const normalizeRouteTimes = (route) => {
+  let lastTime = -Infinity;
+  return (route || []).map((stop) => {
+    const arr = calcMin(stop.arr);
+    const dep = calcMin(stop.dep);
+    let absArr = arr;
+    let absDep = dep;
+    if (absArr !== null) {
+      while (absArr <= lastTime) absArr += 1440;
+      lastTime = Math.max(lastTime, absArr);
+    }
+    if (absDep !== null) {
+      const base = Math.max(lastTime, absArr !== null ? absArr : lastTime);
+      while (absDep <= base) absDep += 1440;
+      lastTime = Math.max(lastTime, absDep);
+    }
+    return { ...stop, absArr, absDep };
+  });
+};
+
+const routeDistance = (a, b) => {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+};
+
+const routeCoordsFromStops = (route) => {
+  return (route || []).map((stop) => [stop.lat, stop.lon]).filter((pt) => pt[0] != null && pt[1] != null);
+};
+
+const shapeCoordsIsValid = (shapeCoords, stopCoords) => {
+  if (!shapeCoords || shapeCoords.length < 5 || !stopCoords || stopCoords.length < 2) return false;
+  const firstMatch = routeDistance(shapeCoords[0], stopCoords[0]);
+  const lastMatch = routeDistance(shapeCoords[shapeCoords.length - 1], stopCoords[stopCoords.length - 1]);
+  return firstMatch < 0.3 && lastMatch < 0.3 && shapeCoords.length >= Math.max(5, stopCoords.length - 2);
 };
 
 const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, stationDepartures, onStationClick, loadingDepartures }) => {
@@ -70,10 +113,9 @@ const getUpcomingDepartures = (payload) => {
   // 1. Obliczamy różnicę czasu dla każdego pociągu
   const processed = departures.map(t => {
     const timeStr = (t.dep && t.dep !== "-") ? t.dep : t.arr;
-    if (!timeStr || timeStr === "??:??") return { ...t, diff: 9999 };
+    const tMins = calcMin(timeStr);
+    if (tMins === null) return { ...t, diff: 9999 };
 
-    const [hours, mins] = timeStr.split(':').map(Number);
-    let tMins = hours * 60 + mins;
     let diff = tMins - currentMins;
     
     // Obsługa zawijania doby
@@ -337,12 +379,13 @@ useEffect(() => {
     if (trainId) {
       axios.get(`http://localhost:8080/api/trains/${encodeURIComponent(trainId)}`)
         .then(res => {
-          setTrackedTrain(res.data);
-          if (res.data.shapeCoords && res.data.shapeCoords.length > 0) {
-            setRouteCoords(res.data.shapeCoords);
-          } else if (res.data.route) {
-            setRouteCoords(res.data.route.map(s => [s.lat, s.lon]));
-          }
+          const normalizedRoute = normalizeRouteTimes(res.data.route || []);
+          const stopCoords = routeCoordsFromStops(normalizedRoute);
+          const shapeCoords = Array.isArray(res.data.shapeCoords) ? res.data.shapeCoords : [];
+          const routeCoords = shapeCoordsIsValid(shapeCoords, stopCoords) ? shapeCoords : stopCoords;
+
+          setTrackedTrain({ ...res.data, route: normalizedRoute });
+          setRouteCoords(routeCoords);
         })
         .catch(() => {
           setTrackedTrain(null);
@@ -362,12 +405,21 @@ useEffect(() => {
     }
 
     const now = new Date();
-    const currentTotalMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
     const d = trackedTrain.delay || 0;
     const r = trackedTrain.route;
+    const routeStart = (r[0].absDep ?? r[0].absArr ?? calcMin(r[0].dep) ?? calcMin(r[0].arr)) + d;
+    const routeEnd = (r[r.length - 1].absArr ?? r[r.length - 1].absDep ?? calcMin(r[r.length - 1].arr) ?? calcMin(r[r.length - 1].dep)) + d;
+    let currentTotalMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    if (routeEnd > 1440 && currentTotalMin < 720) {
+      currentTotalMin += 1440;
+    }
+
+    const validShapeCoords = shapeCoordsIsValid(Array.isArray(trackedTrain.shapeCoords) ? trackedTrain.shapeCoords : [], routeCoordsFromStops(r))
+      ? trackedTrain.shapeCoords
+      : null;
 
     let newPos = null;
-    const firstDep = calcMin(r[0].dep) + d;
+    const firstDep = routeStart;
     if (currentTotalMin < firstDep) {
       newPos = { 
         lat: r[0].lat, lon: r[0].lon, status: "stopped", progress: 0, 
@@ -375,7 +427,7 @@ useEffect(() => {
       };
     }
 
-    const lastArr = calcMin(r[r.length - 1].arr) + d;
+    const lastArr = routeEnd;
     if (!newPos && currentTotalMin > lastArr) {
       newPos = { 
         lat: r[r.length-1].lat, lon: r[r.length-1].lon, status: "finished", progress: 1, 
@@ -385,8 +437,8 @@ useEffect(() => {
 
     if (!newPos) {
       for (let i = 0; i < r.length; i++) {
-        const arrTime = calcMin(r[i].arr) + d;
-        const depTime = calcMin(r[i].dep) + d;
+        const arrTime = (r[i].absArr ?? calcMin(r[i].arr)) + d;
+        const depTime = (r[i].absDep ?? calcMin(r[i].dep)) + d;
 
         if (currentTotalMin >= arrTime && currentTotalMin <= depTime) {
           newPos = { 
@@ -397,8 +449,8 @@ useEffect(() => {
         }
 
         if (i < r.length - 1) {
-          let t1 = calcMin(r[i].dep) + d;
-          let t2 = calcMin(r[i+1].arr) + d;
+          let t1 = (r[i].absDep ?? calcMin(r[i].dep)) + d;
+          let t2 = (r[i+1].absArr ?? calcMin(r[i+1].arr)) + d;
           if (t2 < t1) t2 += 1440;
           let tCurr = currentTotalMin;
           if (tCurr < t1 - 120 && t2 > 1440) tCurr += 1440;
@@ -407,9 +459,9 @@ useEffect(() => {
             const progress = (tCurr - t1) / (t2 - t1);
             let cLat = r[i].lat, cLon = r[i].lon;
 
-            if (trackedTrain.shapeCoords && trackedTrain.shapeCoords.length > 0) {
+            if (validShapeCoords) {
               let minDist1 = Infinity, idx1 = 0, minDist2 = Infinity, idx2 = 0;
-              trackedTrain.shapeCoords.forEach((pt, idx) => {
+              validShapeCoords.forEach((pt, idx) => {
                 const d1 = Math.pow(pt[0] - r[i].lat, 2) + Math.pow(pt[1] - r[i].lon, 2);
                 if (d1 < minDist1) { minDist1 = d1; idx1 = idx; }
                 const d2 = Math.pow(pt[0] - r[i+1].lat, 2) + Math.pow(pt[1] - r[i+1].lon, 2);
@@ -418,8 +470,8 @@ useEffect(() => {
 
               if (idx1 <= idx2) {
                 const targetIdx = idx1 + Math.floor(progress * (idx2 - idx1));
-                cLat = trackedTrain.shapeCoords[targetIdx][0];
-                cLon = trackedTrain.shapeCoords[targetIdx][1];
+                cLat = validShapeCoords[targetIdx][0];
+                cLon = validShapeCoords[targetIdx][1];
               } else {
                 cLat = r[i].lat + (r[i+1].lat - r[i].lat) * progress;
                 cLon = r[i].lon + (r[i+1].lon - r[i].lon) * progress;

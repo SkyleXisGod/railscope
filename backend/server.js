@@ -5,16 +5,47 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
+import chalk from 'chalk';
+import sqlite3 from 'sqlite3'; 
+import bcrypt from 'bcrypt';   
+import { log } from "console";
 
-import sqlite3 from 'sqlite3'; // Dodaj to
-import bcrypt from 'bcrypt';   // Dodaj to
+// Simple colored logger helpers
+const logInfo = (emoji, text, num) => {
+    const tag = chalk.bgBlue.white(' INFO LOG ');
+    if (typeof num !== 'undefined') console.log(`${tag} ${emoji} ${text} : ${chalk.yellow(num)}`);
+    else console.log(`${tag} ${emoji} ${text}`);
+};
 
+const logWarn = (emoji, text) => {
+    const tag = chalk.bgYellow.black(' WARN LOG ');
+    console.warn(`${tag} ${emoji} ${text}`);
+};
+
+const logSuccess = (emoji, text, num) => {
+    const tag = chalk.bgGreen.black(' POSITIVE ');
+    if (typeof num !== 'undefined') console.log(`${tag} ${emoji} ${text} : ${chalk.cyan(num)}`);
+    else console.log(`${tag} ${emoji} ${text}`);
+};
+
+const logFeed = (emoji, text, data) => {
+    const tag = chalk.bgMagenta.white(' FEEDLOG ');
+    if (data !== undefined) console.log(`${tag} ${emoji} ${text} ${chalk.gray(JSON.stringify(data))}`);
+    else console.log(`${tag} ${emoji} ${text}`);
+};
+
+const logError = (emoji, text, err) => {
+    const tag = chalk.bgRed.white(' ERR! LOG ');
+    if (err) console.error(`${tag} ${emoji} ${text}`, err);
+    else console.error(`${tag} ${emoji} ${text}`);
+};
 // Inicjalizacja bazy danych (jeśli jej brakuje)
 const db = new sqlite3.Database('./railscope.db', (err) => {
-    if (err) console.error("Błąd połączenia z bazą:", err.message);
+    if (err) logError('❌', 'Database connection error:', err.message);
     else {
-        console.log("Połączono z bazą SQLite.");
+        logSuccess('✅', 'Connected to SQLite database.');
         // Tworzenie tabeli użytkowników, jeśli nie istnieje
+        logInfo('🛠️', ' Ensuring database tables exist...\n');
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
@@ -23,7 +54,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
             avatar TEXT DEFAULT '',
             role TEXT DEFAULT 'USER'
         )`, (err) => {
-            if (err) console.error("Błąd tworzenia tabeli users:", err.message);
+            if (err) logError('❌', 'Error creating users table:', err.message);
         });
         // Tworzenie tabeli ustawień użytkowników
         db.run(`CREATE TABLE IF NOT EXISTS user_settings (
@@ -38,7 +69,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
             map_theme TEXT DEFAULT 'dark',
             FOREIGN KEY (user_id) REFERENCES users (id)
         )`, (err) => {
-            if (err) console.error("Błąd tworzenia tabeli user_settings:", err.message);
+            if (err) logError('❌', 'Error creating user_settings table:', err.message);
         });
 
         db.all("PRAGMA table_info(users)", (err, columns) => {
@@ -62,42 +93,42 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
                 const names = columns.map(c => c.name);
                 if (!names.includes('language')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN language TEXT DEFAULT 'PL'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny language:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column language:', err.message);
                     });
                 }
                 if (!names.includes('theme')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN theme TEXT DEFAULT '#00ffd5'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny theme:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column theme:', err.message);
                     });
                 }
                 if (!names.includes('accent_color')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN accent_color TEXT DEFAULT '#00ffd5'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny accent_color:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column accent_color:', err.message);
                     });
                 }
                 if (!names.includes('animations')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN animations TEXT DEFAULT 'block'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny animations:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column animations:', err.message);
                     });
                 }
                 if (!names.includes('text_color')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN text_color TEXT DEFAULT '#FFFFFF'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny text_color:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column text_color:', err.message);
                     });
                 }
                 if (!names.includes('text_outline')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN text_outline INTEGER DEFAULT 0", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny text_outline:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column text_outline:', err.message);
                     });
                 }
                 if (!names.includes('background_mode')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN background_mode TEXT DEFAULT 'dark'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny background_mode:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column background_mode:', err.message);
                     });
                 }
                 if (!names.includes('map_theme')) {
                     db.run("ALTER TABLE user_settings ADD COLUMN map_theme TEXT DEFAULT 'dark'", (err) => {
-                        if (err && !err.message.includes('duplicate column name')) console.error("Błąd dodawania kolumny map_theme:", err.message);
+                        if (err && !err.message.includes('duplicate column name')) logError('❌', 'Error adding column map_theme:', err.message);
                     });
                 }
             }
@@ -128,15 +159,15 @@ app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
     db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-        if (err) return res.status(500).json({ error: "Błąd bazy danych" });
-        if (!user) return res.status(401).json({ error: "Nie znaleziono użytkownika" });
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (!user) return res.status(401).json({ error: "User not found" });
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.status(401).json({ error: "Błędne hasło" });
+        if (!match) return res.status(401).json({ error: "Incorrect password" });
 
         // Pobierz ustawienia
         db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
-            if (err) console.error(err);
+            if (err) logWarn('⚠️', 'Error fetching user settings:', err.message);
             const defaultSettings = { language: 'PL', theme: '#00ffd5', accent_color: '#00ffd5', animations: 'block', text_color: '#FFFFFF', text_outline: 0, background_mode: 'dark', map_theme: 'dark' };
             const userSettings = settings || defaultSettings;
             // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
@@ -156,28 +187,28 @@ app.post('/api/register', async (req, res) => {
         
         db.run(query, [username, email, hashedPassword], function(err) {
             if (err) {
-                // Np. gdy email już istnieje (UNIQUE constraint)
-                return res.status(400).json({ error: "Użytkownik o takim adresie e-mail już istnieje." });
+                // e.g. email already exists (UNIQUE constraint)
+                return res.status(400).json({ error: "User with this email already exists." });
             }
             const userId = this.lastID;
             db.run(`INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)`, [userId], (settingsErr) => {
-                if (settingsErr) console.error("Błąd tworzenia ustawień użytkownika:", settingsErr.message);
+                if (settingsErr) logError('❌', 'Error creating user settings:', settingsErr.message);
             });
-            res.status(201).json({ message: "Konto utworzone pomyślnie!" });
+            res.status(201).json({ message: "Account created successfully." });
         });
     } catch (error) {
-        console.error("Błąd rejestracji:", error);
-        res.status(500).json({ error: "Błąd serwera podczas rejestracji." });
+        logError('❌', 'Registration error:', error);
+        res.status(500).json({ error: "Server error during registration." });
     }
 });
 
 app.post('/api/update-profile', async (req, res) => {
     const { userId, username, email, currentPassword, newPassword, avatar } = req.body;
-    if (!userId) return res.status(400).json({ error: 'Brak identyfikatora użytkownika.' });
+    if (!userId) return res.status(400).json({ error: 'Missing user identifier.' });
 
     db.get(`SELECT * FROM users WHERE id = ?`, [userId], async (err, user) => {
-        if (err) return res.status(500).json({ error: 'Błąd bazy danych.' });
-        if (!user) return res.status(404).json({ error: 'Nie znaleziono użytkownika.' });
+        if (err) return res.status(500).json({ error: 'Database error.' });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
 
         const updates = [];
         const values = [];
@@ -196,10 +227,10 @@ app.post('/api/update-profile', async (req, res) => {
         }
         if (newPassword) {
             if (!currentPassword) {
-                return res.status(400).json({ error: 'Podaj aktualne hasło, aby zmienić hasło.' });
+                return res.status(400).json({ error: 'Provide current password to change password.' });
             }
             const match = await bcrypt.compare(currentPassword, user.password);
-            if (!match) return res.status(401).json({ error: 'Nieprawidłowe obecne hasło.' });
+            if (!match) return res.status(401).json({ error: 'Incorrect current password.' });
             const hashed = await bcrypt.hash(newPassword, 10);
             updates.push('password = ?');
             values.push(hashed);
@@ -213,10 +244,10 @@ app.post('/api/update-profile', async (req, res) => {
         values.push(userId);
         db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function(updateErr) {
             if (updateErr) {
-                return res.status(500).json({ error: 'Błąd aktualizacji profilu.' });
+                return res.status(500).json({ error: 'Profile update error.' });
             }
             db.get(`SELECT * FROM users WHERE id = ?`, [userId], (selectErr, updatedUser) => {
-                if (selectErr) return res.status(500).json({ error: 'Błąd odczytu użytkownika.' });
+                if (selectErr) return res.status(500).json({ error: 'Error reading user.' });
                 const { password, ...userSafeData } = updatedUser;
                 res.json({ user: { ...userSafeData } });
             });
@@ -229,17 +260,17 @@ app.post('/api/settings', (req, res) => {
     const { userId, language, theme, accentColor, animations, textColor, textOutline, backgroundMode, mapTheme } = req.body;
     
     if (!userId) {
-        return res.status(400).json({ error: "Brak identyfikatora użytkownika" });
+        return res.status(400).json({ error: "Missing user identifier" });
     }
     
     const sql = `INSERT OR REPLACE INTO user_settings (user_id, language, theme, accent_color, animations, text_color, text_outline, background_mode, map_theme) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     
     db.run(sql, [userId, language || 'PL', theme || '#00ffd5', accentColor || '#00ffd5', animations || 'block', textColor || '#FFFFFF', textOutline ? 1 : 0, backgroundMode || 'dark', mapTheme || 'dark'], (err) => {
         if (err) {
-            console.error("Błąd zapisu ustawień:", err.message);
-            return res.status(500).json({ error: "Błąd zapisu: " + err.message });
+            logError('❌', 'Error saving settings:', err.message);
+            return res.status(500).json({ error: "Save error: " + err.message });
         }
-        res.json({ message: "Ustawienia zapisane" });
+        res.json({ message: "Settings saved" });
     });
 });
 
@@ -248,7 +279,7 @@ app.delete('/api/users/:id', (req, res) => {
     const { id } = req.params;
     db.run(`DELETE FROM users WHERE id = ?`, [id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Konto usunięte" });
+        res.json({ message: "Account deleted" });
     });
 });
 
@@ -257,22 +288,22 @@ app.post('/api/upgrade', (req, res) => {
     const { id, role } = req.body; // role: 'PLUS' lub 'ADMIN'
     const premiumDate = role === 'PLUS' ? new Date().toISOString().split('T')[0] : null;
     db.run(`UPDATE users SET role = ?, premiumDate = ? WHERE id = ?`, [role, premiumDate, id], (err) => {
-        if (err) return res.status(500).json({ error: "Błąd bazy" });
-        res.json({ message: "Ranga zaktualizowana!" });
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json({ message: "Role updated" });
     });
 });
 
 app.post('/api/cancel-premium', (req, res) => {
     const { userId } = req.body;
     if (!userId) {
-        return res.status(400).json({ error: 'Brak identyfikatora użytkownika.' });
+        return res.status(400).json({ error: 'Missing user identifier.' });
     }
 
     db.run(`UPDATE users SET role = 'USER', premiumDate = NULL WHERE id = ?`, [userId], function(err) {
-        if (err) return res.status(500).json({ error: 'Błąd podczas anulowania subskrypcji.' });
+        if (err) return res.status(500).json({ error: 'Error cancelling subscription.' });
 
         db.get(`SELECT * FROM users WHERE id = ?`, [userId], (selectErr, updatedUser) => {
-            if (selectErr) return res.status(500).json({ error: 'Błąd odczytu użytkownika.' });
+            if (selectErr) return res.status(500).json({ error: 'Error reading user.' });
             const { password, ...userSafeData } = updatedUser;
             res.json({ user: { ...userSafeData } });
         });
@@ -282,7 +313,7 @@ app.post('/api/cancel-premium', (req, res) => {
 app.get("/api/statistics", (req, res) => {
     res.json({
         sessionRequests: plkApiRequestsCount,
-        message: "PLK API nie posiada własnego endpointu do sprawdzania limitów. Zwracamy liczbę zapytań wykonanych z Twojego backendu od jego ostatniego restartu."
+        message: "PLK API does not provide a limit-check endpoint. Returning the number of requests made by this backend since last restart."
     });
 });
 
@@ -308,15 +339,56 @@ const cleanNum = (n) => {
     return String(n).split('/')[0].replace(/\D/g, '');
 };
 
+const parseTimeString = (time) => {
+    if (!time || time === "-" || time === "??:??") return null;
+    const hhmm = /^([0-9]{1,2}):([0-9]{2})$/;
+    const match = String(time).trim().match(hhmm);
+    if (match) {
+        return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+    }
+    const date = new Date(time);
+    if (!isNaN(date.getTime())) {
+        return date.getHours() * 60 + date.getMinutes() + (date.getDate() - 1) * 1440;
+    }
+    return null;
+};
+
+const normalizeRouteTimes = (route) => {
+    let lastAbs = -Infinity;
+    return route.map((stop) => {
+        const arr = parseTimeString(stop.arr);
+        const dep = parseTimeString(stop.dep);
+        let absArr = arr;
+        let absDep = dep;
+
+        if (absArr !== null) {
+            while (absArr <= lastAbs) absArr += 1440;
+            lastAbs = Math.max(lastAbs, absArr);
+        }
+
+        if (absDep !== null) {
+            const base = Math.max(lastAbs, absArr !== null ? absArr : lastAbs);
+            while (absDep <= base) absDep += 1440;
+            lastAbs = Math.max(lastAbs, absDep);
+        }
+
+        return {
+            ...stop,
+            arrAbs: absArr,
+            depAbs: absDep
+        };
+    });
+};
+
 const loadGTFS = () => {
-    console.log("🛠️ Ładowanie danych GTFS...");
+    logInfo('🛠️', ' Loading GTFS data...');
 
     const GTFS_DIR = path.join(__dirname, "..", "gtfs");
     const tripsPath = path.join(GTFS_DIR, "trips.txt");
     const shapesPath = path.join(GTFS_DIR, "shapes.txt");
 
     if (!fs.existsSync(tripsPath) || !fs.existsSync(shapesPath)) {
-        console.error("❌ BŁĄD: Nie znaleziono plików GTFS w lokalizacji:", GTFS_DIR);
+        logError('❌', `GTFS files not found at ${GTFS_DIR}`);
         return;
     }
 
@@ -347,7 +419,7 @@ const loadGTFS = () => {
             tempShapes[id].sort((a, b) => a.seq - b.seq);
             shapeCoordsMap.set(id, tempShapes[id].map(p => [p.lat, p.lon]));
         }
-        console.log(`✅ Kształty wczytane: ${shapeCoordsMap.size}`);
+        logSuccess('✅', 'Shapes loaded', shapeCoordsMap.size);
     }
 
     if (fs.existsSync(tripsPath)) {
@@ -401,12 +473,12 @@ const loadGTFS = () => {
                 trainToShapeMap.get(v).add(shapeId);
             });
         }
-        console.log(`✅ Powiązania tras wczytane: ${trainToShapeMap.size}`);
+        logSuccess('✅', 'Train->shape relations loaded', trainToShapeMap.size);
     }
 };
 
 const buildIndexes = () => {
-    console.log("🛠️ Budowanie indeksów RailScope...");
+    logInfo('🛠️', ' Building RailScope indexes...');
     trainInfoMap.clear();
     trainNumberMap.clear();
     allTrainsList = [];
@@ -429,8 +501,8 @@ const buildIndexes = () => {
                     isRegional: false 
                 });
             });
-            console.log(`📍 Stacje GŁÓWNE załadowane: ${stations.length}`);
-        } catch (e) { console.error("Błąd głównego cache:", e); }
+            logSuccess('📍', 'Main stations loaded', stations.length);
+            } catch (e) { logError('❌', 'Main stations cache error:', e); }
     }
 
     if (fs.existsSync(FULL_STATIONS_CACHE)) {
@@ -451,8 +523,8 @@ const buildIndexes = () => {
                     regCount++;
                 }
             });
-            console.log(`📚 Stacje REGIONALNE (nowe) załadowane: ${regCount}`);
-        } catch (e) { console.error("Błąd wczytywania pełnej bazy:", e); }
+            logSuccess('📚', 'Regional stations (new) loaded', regCount);
+        } catch (e) { logError('❌', 'Full stations DB load error:', e); }
     }
 
     if (fs.existsSync(CATEGORIES_CACHE)) {
@@ -460,7 +532,7 @@ const buildIndexes = () => {
             const data = JSON.parse(fs.readFileSync(CATEGORIES_CACHE, "utf8"));
             const list = data.commercialCategories || [];
             list.forEach(c => { categoryNames[c.code] = c.name; });
-        } catch (e) { console.error("Błąd kategorii:", e); }
+        } catch (e) { logError('❌', 'Categories load error:', e); }
     }
 
     if (fs.existsSync(SCHEDULES_CACHE)) {
@@ -472,7 +544,7 @@ const buildIndexes = () => {
                 const firstId = s.stations?.[0]?.stationId;
                 const lastId = s.stations?.[s.stations.length - 1]?.stationId;
                 
-                const routeStops = s.stations?.map(st => {
+                const routeStops = normalizeRouteTimes((s.stations?.map(st => {
                     const plat = st.departurePlatform || st.arrivalPlatform || "";
                     const track = st.departureTrack || st.arrivalTrack || "";
                     const platformDisplay = (plat || track) 
@@ -490,7 +562,7 @@ const buildIndexes = () => {
                         dep: st.departureTime || st.arrivalDepartureTime || "-",
                         platform: platformDisplay
                     };
-                }) || [];
+                }) || []));
 
                 const rel = (firstId && lastId) 
                     ? `${stationNamesDict[String(firstId)] || '???'} ➔ ${stationNamesDict[String(lastId)] || '???'}`
@@ -515,14 +587,15 @@ const buildIndexes = () => {
                     }
                 }
             });
-            console.log(`🚀 Indeks rozkładów gotowy. Pociągów w bazie: ${allTrainsList.length}`);
-        } catch (e) { console.error("Błąd rozkładów:", e); }
+            logSuccess('🚀', 'Schedules index ready', allTrainsList.length);
+        } catch (e) { logError('❌', 'Schedules/index error:', e); }
     }
 };
 
 const PLK_API_KEY = process.env.PLK_API_KEY || "bg1dOGfvZFyhQwsdLxUnX0InmHEEB7sx2962bwWtQd7OfZaP9H-fR5ShgUYyRYsGlqL4I3yczbTVY7BvOQnDCA";
 const BASE_URL = "https://pdp-api.plk-sa.pl/api/v1";
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
+const MAX_SHAPE_JOIN_DISTANCE = 0.25; // degrees, prevents wrong long jumps between disconnected shape fragments
 
 const downloadInitialData = async () => {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -552,7 +625,7 @@ const downloadInitialData = async () => {
             buildIndexes();
         }
     } catch (err) { 
-        console.error("Błąd podczas startowego pobierania:", err.message);
+        logError('❌', 'Error during initial data download:', err.message);
         loadGTFS();
         buildIndexes(); 
     }
@@ -560,10 +633,10 @@ const downloadInitialData = async () => {
 
 downloadInitialData().then(() => {
     app.listen(PORT, () => {
-        console.log(`🚀 Backend gotowy na http://localhost:${PORT}`);
+        logSuccess('🚀', `Backend ready at http://localhost:${PORT}`);
     });
 }).catch(err => {
-    console.error("Błąd krytyczny podczas startu serwera:", err);
+    logError('❌', 'Critical server start error:', err);
 });
 
 app.get("/api/stations", (req, res) => res.json(stations));
@@ -618,7 +691,7 @@ app.get("/api/timetable/:id", async (req, res) => {
         }).filter(t => t.relation !== "Relacja nieznana")
 
         res.json(enriched);
-    } catch (err) { res.status(500).json({ error: "Błąd PLK" }); }
+    } catch (err) { logError('❌', 'PLK API error:', err.message); res.status(500).json({ error: "PLK API error" }); }
 });
 
 app.get("/api/trains/search", (req, res) => {
@@ -739,23 +812,26 @@ app.get("/api/trains/:id", (req, res) => {
                         if (d4 < bestDist) { bestDist = d4; bestMatchIdx = idx; appendTo = 'start'; reverseShape = true; }
                     });
                     
-                    if (bestMatchIdx !== -1) {
-                        let match = shapes.splice(bestMatchIdx, 1)[0];
-                        if (reverseShape) match.reverse();
-                        if (appendTo === 'end') {
-                            chain = chain.concat(match);
-                        } else {
-                            chain = match.concat(chain);
+                    if (bestMatchIdx === -1 || bestDist > MAX_SHAPE_JOIN_DISTANCE) {
+                        if (bestMatchIdx !== -1) {
+                            logWarn('⚠️', `Shape chain stopped: endpoint gap too large (${bestDist.toFixed(3)} deg)`);
                         }
-                    } else {
                         break;
+                    }
+
+                    let match = shapes.splice(bestMatchIdx, 1)[0];
+                    if (reverseShape) match.reverse();
+                    if (appendTo === 'end') {
+                        chain = chain.concat(match);
+                    } else {
+                        chain = match.concat(chain);
                     }
                 }
                 finalCoords = chain;
             }
         }
 
-        console.log(`Szukam pociągu: "${opNum}" | Próby: [${possibleNumbers.join(', ')}] | Wynik ShapeID: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'Brak'}`);
+        logInfo('🔎', `Searching train ${opNum} | Attempts: [${possibleNumbers.join(', ')}] | ShapeIDs: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'None'}`);
 
         res.json({
             ...train,
@@ -818,7 +894,7 @@ app.get("/api/stats", async (req, res) => {
                     };
                 }
             });
-        } catch (e) { console.error("Błąd pobierania live delay:", e.message); }
+        } catch (e) { logWarn('⚠️', 'Live delay fetch error:', e.message); }
 
         const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"];
         const icCount = trains.filter(t => premiumCats.includes(t.categorySymbol)).length;
@@ -854,6 +930,7 @@ app.get("/api/stats", async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ error: "Błąd serwera" });
+        logError('❌', 'Server error in /api/stats:', error.message || error);
+        res.status(500).json({ error: "Server error" });
     }
 });
