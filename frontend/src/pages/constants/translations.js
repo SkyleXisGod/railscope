@@ -137,6 +137,19 @@ export const translations = {
             success: 'Symulacja płatności przebiegła pomyślnie! Twoja ranga została zaktualizowana.',
             error: 'Nie udało się dokonać aktualizacji rangi. Spróbuj ponownie.'
         },
+        games: {
+            games_title: "Strefa 4 fun 🎮",
+            games_subtitle: "Zrelaksuj się w przerwie od sprawdzania pociągów!",
+            game_memory_title: "Kolejowe Memory",
+            game_memory_desc: "Ćwicz pamięć! Znajdź pary takich samych pociągów.",
+            game_flappy_title: "Flappy Train",
+            game_flappy_desc: "Omijaj semafory jako mały pociąg (Wkrótce).",
+            btn_play: "Graj",
+            btn_back: "Wróć do menu",
+            moves: "Liczba ruchów:",
+            congratulations: "Gratulacje! Wygrałeś! 🎉",
+            coming_soon: "Mechanika gry już wkrótce!"
+            },
         settings: {
             title: 'Ustawienia',
             title_header: 'Wygląd i Motywy',    
@@ -162,6 +175,7 @@ export const translations = {
             stats: 'Statystyki',
             settings: 'Ustawienia',
             profile: 'Profil',
+            games_title: 'Gry',
             my_profile: 'Mój Profil',
             logout: 'Wyloguj'
         },
@@ -307,6 +321,19 @@ export const translations = {
             success: 'Payment simulation completed successfully! Your rank has been updated.',
             error: 'Failed to update rank. Try again.'
         },
+        games: {
+            games_title: "4 Fun Zone 🎮",
+            games_subtitle: "Relax during your train breaks!",
+            game_memory_title: "Railway Memory",
+            game_memory_desc: "Train your brain! Find matching pairs of trains.",
+            game_flappy_title: "Flappy Train",
+            game_flappy_desc: "Dodge the signals as a tiny train (Coming soon).",
+            btn_play: "Play",
+            btn_back: "Back to menu",
+            moves: "Moves:",
+            congratulations: "Congratulations! You won! 🎉",
+            coming_soon: "Game mechanics coming soon!"
+            },
         settings: {
             title: 'Settings',
             title_header: 'Appearance & Themes',
@@ -332,6 +359,7 @@ export const translations = {
             stats: 'Stats',
             settings: 'Settings',
             profile: 'Profile',
+            games_title: 'Games',
             my_profile: 'My Profile',
             logout: 'Log out'
         },

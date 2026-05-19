@@ -1,0 +1,215 @@
+/* Główne kontenery */
+.games-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  /* Kompatybilność z motywami z repozytorium */
+  color: var(--text-color, #333);
+  background-color: var(--background-color, transparent);
+  min-height: 100vh;
+  transition: all 0.3s ease;
+}
+
+.games-menu {
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+}
+
+.games-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 3.5rem;
+  margin: 0;
+  text-shadow: 0 0 15px rgba(0, 255, 213, 0.2); /* Seksowny glow */
+}
+
+.games-subtitle {
+  margin: -5px 0 20px 0;
+  color: #ccc;
+}
+
+/* Siatka gier */
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.game-card {
+  background-color: var(--card-bg-color, #ffffff);
+  border: 1px solid var(--border-color, #eaeaea);
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* W trybie dark mode box-shadow może wymagać przyciemnienia */
+html[data-theme='dark'] .game-card {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.game-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.game-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+}
+
+.game-card p {
+  text-align: center;
+  flex-grow: 1;
+  color: var(--text-muted-color, #555);
+}
+
+/* Przyciski */
+.play-button, .back-button {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.play-button:hover, .back-button:hover {
+  filter: brightness(0.9);
+}
+
+.play-button:active, .back-button:active {
+  transform: scale(0.95);
+}
+
+.back-button {
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+.game-container {
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+}
+
+.game-moves {
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* --- KOSMETYKA GRY: Kolejowe Memory --- */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.memory-card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+
+.memory-card.flipped .memory-card-inner {
+  transform: rotateY(180deg);
+}
+
+.memory-card-front, .memory-card-back {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  backface-visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  user-select: none;
+}
+
+.memory-card-front {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+}
+
+.memory-card-back {
+  background-color: var(--card-bg-color, #fff);
+  transform: rotateY(180deg);
+  border: 2px solid var(--primary-color, #007bff);
+}
+
+.game-won {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: var(--success-color, #28a745);
+  color: white;
+  border-radius: 8px;
+  animation: popIn 0.5s ease-out;
+}
+
+/* --- KOSMETYKA: Flappy Train Placeholder --- */
+.flappy-placeholder {
+  height: 300px;
+  background-color: var(--card-bg-color, #fff);
+  border: 2px dashed var(--border-color, #ccc);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.bouncing-train {
+  font-size: 4rem;
+  animation: bounce 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-30px); }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Responsywność dla telefonów */
+@media (max-width: 500px) {
+  .memory-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  .memory-card-front, .memory-card-back {
+    font-size: 1.8rem;
+  }
+  .games-page-container {
+    padding: 1rem;
+  }
+}

@@ -14,6 +14,7 @@ import AuthPage from "./pages/AuthPage";
 import GlobalLoader from "./components/GlobalLoader";
 import ProfilePage from "./pages/ProfilePage";
 import PaymentPage from "./pages/PaymentPage";
+import GamesPage from "./pages/GamesPage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -59,6 +60,7 @@ function AppContent() {
               <button className="sidebar-nav-item" onClick={() => go("/")}>📍 {t.map}</button>
               <button className="sidebar-nav-item" onClick={() => go("/pociagi")}>🚆 {t.trains}</button>
               <button className="sidebar-nav-item" onClick={() => go("/stacje")}>🚉 {t.stations}</button>
+              <button className="sidebar-nav-item" onClick={() => go("/games")}>🎮 {t.games_title}</button>
               <button className="sidebar-nav-item" onClick={() => go("/statystyki")}>📊 {t.stats}</button>
               <button className="sidebar-nav-item" onClick={() => go("/ustawienia")}>⚙️ {t.settings}</button>
               <button className="sidebar-nav-item" onClick={() => go("/profil")}>👤 {t.profile}</button>
@@ -74,6 +76,7 @@ function AppContent() {
               <Route path="/ustawienia" element={<PrivateRoute><PageWrapper><SettingsPage /></PageWrapper></PrivateRoute>} />
               <Route path="/profil" element={<PrivateRoute><PageWrapper><ProfilePage /></PageWrapper></PrivateRoute>} />
               <Route path="/pay" element={<PrivateRoute><PageWrapper><PaymentPage /></PageWrapper></PrivateRoute>} />
+              <Route path="/games" element={<PrivateRoute><PageWrapper><GamesPage /></PageWrapper></PrivateRoute>} />
               <Route path="*" element={<Navigate to="/auth" />} />
             </Routes>
           </AnimatePresence>
