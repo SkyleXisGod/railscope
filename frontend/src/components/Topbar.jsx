@@ -56,7 +56,7 @@ export default function Topbar({ onToggleSidebar }) {
   useEffect(() => {
     const checkSystemStatus = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/stations', { method: 'GET' });
+        const response = await fetch('http://localhost:8080/api/health', { method: 'GET' });
         setSystemOnline(response.ok);
       } catch (err) {
         setSystemOnline(false);
@@ -64,7 +64,7 @@ export default function Topbar({ onToggleSidebar }) {
     };
 
     checkSystemStatus();
-    const interval = setInterval(checkSystemStatus, 5000);
+    const interval = setInterval(checkSystemStatus, 10000);
     return () => clearInterval(interval);
   }, []);
 

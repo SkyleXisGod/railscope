@@ -2,8 +2,10 @@
 /* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
 /* ========================================= */
 .stats-container {
-    height: 100vh;
-    padding: 40px;
+    min-height: calc(100vh - 55px);
+    margin: 0 auto;
+    max-width: 1400px;
+    padding: 40px 24px;
     background: var(--bg-main);
     color: var(--text-primary);
     overflow-y: auto;
@@ -71,7 +73,51 @@
     color: var(--text-secondary);
 }
 
-.wide { grid-column: span 2; }
+.wide, .wide-card { grid-column: span 2; }
+
+.metric-list,
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.detail-list.scrollable {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.metric-row,
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #222;
+}
+
+.detail-row-double {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.detail-row-double h4 {
+    margin: 0 0 10px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.detail-item strong,
+.metric-row strong {
+    font-size: 0.95rem;
+}
 
 /* ========================================= */
 /* 3. WARTOŚCI I TYPOGRAFIA                  */

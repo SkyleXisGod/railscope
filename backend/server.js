@@ -9,6 +9,21 @@ import chalk from 'chalk';
 import sqlite3 from 'sqlite3'; 
 import bcrypt from 'bcrypt';   
 import { log } from "console";
+import net from 'net'; // Built-in Node module, no npm install needed
+
+// Create a connection to our independent log window
+let logSocket = null;
+const connectLogTerminal = () => {
+    logSocket = net.connect({ port: 9123 }, () => {
+        console.log(chalk.bgGray.white(' LOG ROUTER ') + ' 🔗 Connected to external HTTP log window.');
+    });
+
+    // If the secondary window isn't open yet, don't crash, just retry later
+    logSocket.on('error', () => {
+        logSocket = null; 
+    });
+};
+connectLogTerminal();
 
 // Simple colored logger helpers
 const logInfo = (emoji, text, num) => {
@@ -155,15 +170,51 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request/response logger so every HTTP request is visible in the backend logs
+app.use((req, res, next) => {
+    const inboundMsg = `➡️ HTTP ${req.method} ${req.originalUrl}`;
+    
+    // Send to external terminal if connected; otherwise keep main terminal clean
+    if (logSocket) {
+        logSocket.write(inboundMsg + '\n');
+    }
+
+    res.on('finish', () => {
+        const outboundMsg = `⬅️ HTTP ${req.method} ${req.originalUrl} ${res.statusCode}`;
+        if (logSocket) {
+            logSocket.write(outboundMsg + '\n');
+        }
+    });
+    next();
+});
+
+// Global handlers to ensure uncaught errors appear in nodemon console
+process.on('uncaughtException', (err) => {
+    logError('💥', 'Uncaught Exception', err && err.stack ? err.stack : err);
+});
+process.on('unhandledRejection', (reason) => {
+    logError('💥', 'Unhandled Rejection', reason);
+});
+
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
     db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        if (!user) return res.status(401).json({ error: "User not found" });
+        if (err) {
+            logError('❌', `DB error during login for ${email}`, err.message || err);
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        if (!user) {
+            logWarn('⚠️', `Nieudana próba logowania: ${email} - użytkownik nie znaleziony`);
+            return res.status(401).json({ error: "User not found" });
+        }
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.status(401).json({ error: "Incorrect password" });
+        if (!match) {
+            logWarn('⚠️', `Nieudana próba logowania: ${email} - niepoprawne hasło`);
+            return res.status(401).json({ error: "Incorrect password" });
+        }
 
         // Pobierz ustawienia
         db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
@@ -173,6 +224,7 @@ app.post('/api/login', (req, res) => {
             // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
             const { password, ...userSafeData } = user;
             if (!userSafeData.role) userSafeData.role = 'USER';
+            logSuccess('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
         });
     });
@@ -194,6 +246,7 @@ app.post('/api/register', async (req, res) => {
             db.run(`INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)`, [userId], (settingsErr) => {
                 if (settingsErr) logError('❌', 'Error creating user settings:', settingsErr.message);
             });
+            logSuccess('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
             res.status(201).json({ message: "Account created successfully." });
         });
     } catch (error) {
@@ -341,13 +394,18 @@ const cleanNum = (n) => {
 
 const parseTimeString = (time) => {
     if (!time || time === "-" || time === "??:??") return null;
-    const hhmm = /^([0-9]{1,2}):([0-9]{2})$/;
-    const match = String(time).trim().match(hhmm);
+    const value = String(time).trim();
+    const hhmmss = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/;
+    const match = value.match(hhmmss);
     if (match) {
-        return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        const hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
+            return hours * 60 + minutes;
+        }
     }
-    const date = new Date(time);
-    if (!isNaN(date.getTime())) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
         return date.getHours() * 60 + date.getMinutes() + (date.getDate() - 1) * 1440;
     }
     return null;
@@ -381,6 +439,7 @@ const normalizeRouteTimes = (route) => {
 };
 
 const loadGTFS = () => {
+    console.clear();
     logInfo('🛠️', ' Loading GTFS data...');
 
     const GTFS_DIR = path.join(__dirname, "..", "gtfs");
@@ -639,7 +698,13 @@ downloadInitialData().then(() => {
     logError('❌', 'Critical server start error:', err);
 });
 
-app.get("/api/stations", (req, res) => res.json(stations));
+app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", uptime: Math.floor((Date.now() - serverStartTime) / 1000) });
+});
+
+app.get("/api/stations", (req, res) => {
+        res.json(stations)
+    });
 
 app.get("/api/timetable/:id", async (req, res) => {
     const { id } = req.params;
@@ -690,6 +755,7 @@ app.get("/api/timetable/:id", async (req, res) => {
             };
         }).filter(t => t.relation !== "Relacja nieznana")
 
+        logFeed('📊', `Someone looked up station ID ${id}. Total trains: ${enriched.length}`);
         res.json(enriched);
     } catch (err) { logError('❌', 'PLK API error:', err.message); res.status(500).json({ error: "PLK API error" }); }
 });
@@ -750,6 +816,7 @@ app.get("/api/trains/search", (req, res) => {
     const uniqueResults = Array.from(new Map(results.map(item => [item.trainOrderId, item])).values());
     uniqueResults.sort((a, b) => a.number.localeCompare(b.number));
 
+    logFeed('🔍', `Train search | Number: ${number || '-'} | Name: ${name || '-'} | Category: ${category || '-'} | Start: ${start || '-'} | End: ${end || '-'} | Experimental: ${experimental === "true" ? 'Yes' : 'No'} | Results: ${uniqueResults.length}`);
     res.json(uniqueResults.slice(0, 50));
 });
 
@@ -831,7 +898,7 @@ app.get("/api/trains/:id", (req, res) => {
             }
         }
 
-        logInfo('🔎', `Searching train ${opNum} | Attempts: [${possibleNumbers.join(', ')}] | ShapeIDs: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'None'}`);
+        logFeed('🔎', `Searching train ${opNum} | Attempts: [${possibleNumbers.join(', ')}] | ShapeIDs: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'None'}`);
 
         res.json({
             ...train,
@@ -850,11 +917,14 @@ app.get("/api/stations/:id", (req, res) => {
         const station = stationsData.find(s => String(s.id) === String(stationId));
         
         if (station) {
+            logFeed('📍', `Station lookup: ID ${stationId} - ${station.name}`);
             res.json(station);
         } else {
+            logError('❌', `Station ID ${stationId} not found in cache.`);
             res.status(404).send("Station not found");
         }
     } catch (err) {
+        logError('❌', 'Error reading stations cache:', err.message);
         res.status(500).send("Error reading stations cache");
     }
 });
@@ -864,22 +934,79 @@ app.get("/api/stats", async (req, res) => {
         const trains = allTrainsList;
         const totalTrains = trains.length;
  
-        const majorStations = ["465", "10", "1011"]; 
+        const majorStations = ["60103", "30601", "80416", "38653", "5900"];
         let maxDelay = { value: 0, name: "Brak danych", number: "-" };
         let totalDelay = 0;
         let trainsWithDelayData = 0;
+
+        let liveTrains = [];
+        let totalLive = 0;
+        const parseStationDelay = (station) => {
+            if (!station) return 0;
+            const candidates = [];
+            if (typeof station.arrivalDelayMinutes === 'number') candidates.push(station.arrivalDelayMinutes);
+            if (typeof station.departureDelayMinutes === 'number') candidates.push(station.departureDelayMinutes);
+            if (typeof station.delay === 'number') candidates.push(station.delay);
+            if (typeof station.delayMinutes === 'number') candidates.push(station.delayMinutes);
+            if (typeof station.delayMinute === 'number') candidates.push(station.delayMinute);
+            if (typeof station.arrivalDelayMinutes === 'string') {
+                const parsed = parseInt(station.arrivalDelayMinutes, 10);
+                if (!isNaN(parsed)) candidates.push(parsed);
+            }
+            if (typeof station.departureDelayMinutes === 'string') {
+                const parsed = parseInt(station.departureDelayMinutes, 10);
+                if (!isNaN(parsed)) candidates.push(parsed);
+            }
+            if (typeof station.delay === 'string') {
+                const parsed = parseInt(station.delay, 10);
+                if (!isNaN(parsed)) candidates.push(parsed);
+            }
+            if (typeof station.delayMinutes === 'string') {
+                const parsed = parseInt(station.delayMinutes, 10);
+                if (!isNaN(parsed)) candidates.push(parsed);
+            }
+            if (typeof station.delayMinute === 'string') {
+                const parsed = parseInt(station.delayMinute, 10);
+                if (!isNaN(parsed)) candidates.push(parsed);
+            }
+
+            const plannedArrival = station.plannedArrival || station.plannedArrivalTime || null;
+            const actualArrival = station.actualArrival || null;
+            if (!candidates.length && plannedArrival && actualArrival) {
+                const planned = parseTimeString(plannedArrival);
+                const actual = parseTimeString(actualArrival);
+                if (planned !== null && actual !== null) {
+                    candidates.push(actual - planned);
+                }
+            }
+
+            const plannedDeparture = station.plannedDeparture || station.plannedDepartureTime || null;
+            const actualDeparture = station.actualDeparture || null;
+            if (!candidates.length && plannedDeparture && actualDeparture) {
+                const planned = parseTimeString(plannedDeparture);
+                const actual = parseTimeString(actualDeparture);
+                if (planned !== null && actual !== null) {
+                    candidates.push(actual - planned);
+                }
+            }
+
+            return Math.max(0, ...candidates.filter(Number.isFinite));
+        };
+        const getTrainDelay = (train) => {
+            return Math.max(...(train.stations || []).map(parseStationDelay), 0);
+        };
 
         try {
             const today = new Date().toISOString().split('T')[0];
             const opsRes = await axios.get(`${BASE_URL}/operations`, {
                 headers: plkHeaders,
-                params: { stations: majorStations.join(','), operatingDate: today, pageSize: 100 }
+                params: { stations: majorStations.join(','), operatingDate: today, withPlanned: true, pageSize: 1000 }
             });
 
-            const liveTrains = opsRes.data.trains || [];
+            liveTrains = opsRes.data.trains || [];
+            totalLive = liveTrains.length;
             liveTrains.forEach(t => {
-                const currentDelay = Math.max(...(t.stations || []).map(s => s.delay || 0), 0);
-                
+                const currentDelay = getTrainDelay(t);
                 if (currentDelay > 0) {
                     totalDelay += currentDelay;
                     trainsWithDelayData++;
@@ -890,7 +1017,7 @@ app.get("/api/stats", async (req, res) => {
                     maxDelay = {
                         value: currentDelay,
                         name: staticInfo.name || t.trainCategory || "Pociąg",
-                        number: t.trainNumber
+                        number: t.trainNumber || t.trainOrderId || 'N/A'
                     };
                 }
             });
@@ -898,36 +1025,186 @@ app.get("/api/stats", async (req, res) => {
 
         const premiumCats = ["IC", "EIP", "EIC", "TLK", "EC", "EN", "NJ"];
         const icCount = trains.filter(t => premiumCats.includes(t.categorySymbol)).length;
-        
+        const busCount = trains.filter(t => t.categorySymbol.includes("BUS") || t.categorySymbol === "ZKA").length;
+
+        const routeTrains = trains.filter(t => t.route && t.route.length > 0);
         const uniqueDestinations = new Set();
-        trains.forEach(t => {
-            if (t.route && t.route.length > 0) {
-                uniqueDestinations.add(t.route[t.route.length - 1].name);
+        const uniqueOrigins = new Set();
+        const categoryBreakdown = {};
+        const routeLengths = [];
+        const routeDurations = [];
+        const startHourCounts = Array.from({ length: 24 }, (_, i) => ({ hour: `${i.toString().padStart(2, '0')}:00`, count: 0 }));
+
+        routeTrains.forEach(t => {
+            const firstStop = t.route[0];
+            const lastStop = t.route[t.route.length - 1];
+            const originName = firstStop.name || 'Unknown';
+            const destName = lastStop.name || 'Unknown';
+
+            uniqueOrigins.add(originName);
+            uniqueDestinations.add(destName);
+
+            const category = t.categorySymbol || 'OTHER';
+            categoryBreakdown[category] = (categoryBreakdown[category] || 0) + 1;
+
+            routeLengths.push(t.route.length);
+            const routeTimes = t.route
+                .map(stop => stop.depAbs ?? stop.arrAbs)
+                .filter(time => Number.isFinite(time));
+            const earliest = routeTimes.length ? Math.min(...routeTimes) : null;
+            const latest = routeTimes.length ? Math.max(...routeTimes) : null;
+            const firstStopTime = Number.isFinite(firstStop.depAbs)
+                ? firstStop.depAbs
+                : Number.isFinite(firstStop.arrAbs)
+                    ? firstStop.arrAbs
+                    : earliest;
+            const lastStopTime = Number.isFinite(lastStop.arrAbs)
+                ? lastStop.arrAbs
+                : Number.isFinite(lastStop.depAbs)
+                    ? lastStop.depAbs
+                    : latest;
+
+            let routeDuration = null;
+            if (Number.isFinite(firstStopTime) && Number.isFinite(lastStopTime) && lastStopTime >= firstStopTime) {
+                routeDuration = lastStopTime - firstStopTime;
+            } else if (Number.isFinite(earliest) && Number.isFinite(latest) && latest >= earliest) {
+                routeDuration = latest - earliest;
+            }
+
+            if (routeDuration !== null && routeDuration <= 2880) {
+                routeDurations.push(routeDuration);
+            }
+            if (Number.isFinite(firstStopTime)) {
+                const hourIndex = Math.floor((firstStopTime / 60) % 24);
+                startHourCounts[hourIndex].count += 1;
             }
         });
+
+        const sortedRouteLengths = [...routeLengths].sort((a, b) => a - b);
+        const sortedDurations = [...routeDurations].sort((a, b) => a - b);
+        const median = (arr) => {
+            if (!arr.length) return 0;
+            const mid = Math.floor(arr.length / 2);
+            return arr.length % 2 === 0 ? (arr[mid - 1] + arr[mid]) / 2 : arr[mid];
+        };
+
+        const routeStopBuckets = [
+            { label: '1-5', count: 0 },
+            { label: '6-10', count: 0 },
+            { label: '11-15', count: 0 },
+            { label: '16-20', count: 0 },
+            { label: '21+', count: 0 }
+        ];
+        routeLengths.forEach(len => {
+            if (len <= 5) routeStopBuckets[0].count += 1;
+            else if (len <= 10) routeStopBuckets[1].count += 1;
+            else if (len <= 15) routeStopBuckets[2].count += 1;
+            else if (len <= 20) routeStopBuckets[3].count += 1;
+            else routeStopBuckets[4].count += 1;
+        });
+
+        const durationBuckets = [
+            { label: '< 2h', count: 0 },
+            { label: '2-4h', count: 0 },
+            { label: '4-6h', count: 0 },
+            { label: '6h+', count: 0 }
+        ];
+        routeDurations.forEach(value => {
+            if (value < 120) durationBuckets[0].count += 1;
+            else if (value < 240) durationBuckets[1].count += 1;
+            else if (value < 360) durationBuckets[2].count += 1;
+            else durationBuckets[3].count += 1;
+        });
+
+        const getTopCounts = (map, limit = 5) => {
+            return Object.entries(map)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, limit)
+                .map(([name, count]) => ({ name, count }));
+        };
+
+        const destCountMap = {};
+        routeTrains.forEach(t => {
+            const destName = t.route[t.route.length - 1].name || 'Unknown';
+            destCountMap[destName] = (destCountMap[destName] || 0) + 1;
+        });
+
+        const originCountMap = {};
+        routeTrains.forEach(t => {
+            const originName = t.route[0].name || 'Unknown';
+            originCountMap[originName] = (originCountMap[originName] || 0) + 1;
+        });
+
+        const topDestinationList = getTopCounts(destCountMap, 5);
+        const topOriginList = getTopCounts(originCountMap, 5);
+
+        const delayBuckets = [
+            { label: '0 min', count: 0 },
+            { label: '1-5 min', count: 0 },
+            { label: '6-15 min', count: 0 },
+            { label: '16-30 min', count: 0 },
+            { label: '30+ min', count: 0 }
+        ];
+
+        liveTrains.forEach(t => {
+            const currentDelay = getTrainDelay(t);
+            if (currentDelay <= 0) delayBuckets[0].count += 1;
+            else if (currentDelay <= 5) delayBuckets[1].count += 1;
+            else if (currentDelay <= 15) delayBuckets[2].count += 1;
+            else if (currentDelay <= 30) delayBuckets[3].count += 1;
+            else delayBuckets[4].count += 1;
+        });
+
+        const topDelayedTrains = liveTrains
+            .map(t => ({
+                number: t.trainNumber || t.trainOrderId || 'N/A',
+                category: t.trainCategory || 'Unknown',
+                delay: getTrainDelay(t)
+            }))
+            .filter(t => t.delay > 0)
+            .sort((a, b) => b.delay - a.delay)
+            .slice(0, 5);
 
         const uptimeMs = Date.now() - serverStartTime;
         const hours = Math.floor((uptimeMs / (1000 * 60 * 60)));
         const minutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
 
+        logFeed('📈', 'Statistics requested');
         res.json({
             system: {
                 uptime: `${hours}h ${minutes}m`,
+                serverStartTimestamp: new Date(serverStartTime).toISOString(),
                 apiRequests: plkApiRequestsCount,
-                totalStations: Object.keys(stationNamesDict).length, 
+                totalStations: Object.keys(stationNamesDict).length,
                 activeTrains: totalTrains
             },
             traffic: {
-                punctuality: trainsWithDelayData > 0 ? `${(100 - (trainsWithDelayData/liveTrains.length*100)).toFixed(1)}%` : "98.5%",
-                averageDelay: trainsWithDelayData > 0 ? `${Math.round(totalDelay / trainsWithDelayData)} min` : "~2 min",
-                biggestDelay: maxDelay, 
-                destinations: uniqueDestinations.size
+                punctuality: totalLive > 0 ? `${(100 - (trainsWithDelayData / totalLive * 100)).toFixed(1)}%` : '-',
+                averageDelay: trainsWithDelayData > 0 ? `${Math.round(totalDelay / trainsWithDelayData)} min` : '-',
+                biggestDelay: maxDelay,
+                destinations: uniqueDestinations.size,
+                origins: uniqueOrigins.size,
+                liveDelayBuckets: delayBuckets
             },
             distribution: {
                 IC: icCount,
-                REG: totalTrains - icCount,
-                BUS: trains.filter(t => t.categorySymbol.includes("BUS") || t.categorySymbol === "ZKA").length
-            }
+                REG: totalTrains - icCount - busCount,
+                BUS: busCount
+            },
+            categoryBreakdown,
+            hourlyTraffic: startHourCounts,
+            routeStats: {
+                averageStops: routeLengths.length ? (routeLengths.reduce((sum, value) => sum + value, 0) / routeLengths.length).toFixed(1) : 0,
+                medianStops: median(sortedRouteLengths),
+                minStops: sortedRouteLengths[0] || 0,
+                maxStops: sortedRouteLengths[sortedRouteLengths.length - 1] || 0,
+                averageDuration: routeDurations.length ? Math.round(routeDurations.reduce((sum, value) => sum + value, 0) / routeDurations.length) : 0,
+                durationBuckets,
+                stopBuckets: routeStopBuckets
+            },
+            topDestinations: topDestinationList,
+            topOrigins: topOriginList,
+            topDelayedTrains
         });
     } catch (error) {
         logError('❌', 'Server error in /api/stats:', error.message || error);
