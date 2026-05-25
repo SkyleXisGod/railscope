@@ -406,6 +406,7 @@ useEffect(() => {
 
     const now = new Date();
     const d = trackedTrain.delay || 0;
+    console.log(`Calculating position for train ${trackedTrain.trainName || trackedTrain.displayNumber || ''} with delay ${d} mins at ${now.toLocaleTimeString()}`);
     const r = trackedTrain.route;
     const routeStart = (r[0].absDep ?? r[0].absArr ?? calcMin(r[0].dep) ?? calcMin(r[0].arr)) + d;
     const routeEnd = (r[r.length - 1].absArr ?? r[r.length - 1].absDep ?? calcMin(r[r.length - 1].arr) ?? calcMin(r[r.length - 1].dep)) + d;

@@ -15,11 +15,11 @@ import net from 'net'; // Built-in Node module, no npm install needed
 let logSocket = null;
 const connectLogTerminal = () => {
     logSocket = net.connect({ port: 9123 }, () => {
-        console.log(chalk.bgGray.white(' LOG ROUTER ') + ' 🔗 Connected to external HTTP log window.');
+        console.log(chalk.bgGray.white(' EXTERNAL ') + ' 🔗 Connected to external HTTP log window.');
     });
 
-    // If the secondary window isn't open yet, don't crash, just retry later
     logSocket.on('error', () => {
+        console.error(chalk.bgRed.white(' ERR! LOG ') + ' 🔗 Error connecting to external HTTP log window. Turn on ' + chalk.cyan('window-log.js') + ' and restart ' + chalk.cyan('server.js') + '.');
         logSocket = null; 
     });
 };
@@ -44,7 +44,7 @@ const logSuccess = (emoji, text, num) => {
 };
 
 const logFeed = (emoji, text, data) => {
-    const tag = chalk.bgMagenta.white(' FEEDLOG ');
+    const tag = chalk.bgMagenta.white(' FEED LOG ');
     if (data !== undefined) console.log(`${tag} ${emoji} ${text} ${chalk.gray(JSON.stringify(data))}`);
     else console.log(`${tag} ${emoji} ${text}`);
 };
@@ -60,7 +60,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
     else {
         logSuccess('✅', 'Connected to SQLite database.');
         // Tworzenie tabeli użytkowników, jeśli nie istnieje
-        logInfo('🛠️', ' Ensuring database tables exist...\n');
+        logInfo('🛠️', ' Ensuring database tables exist...');
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
@@ -224,7 +224,7 @@ app.post('/api/login', (req, res) => {
             // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
             const { password, ...userSafeData } = user;
             if (!userSafeData.role) userSafeData.role = 'USER';
-            logSuccess('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
+            logFeed('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
         });
     });
@@ -246,7 +246,7 @@ app.post('/api/register', async (req, res) => {
             db.run(`INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)`, [userId], (settingsErr) => {
                 if (settingsErr) logError('❌', 'Error creating user settings:', settingsErr.message);
             });
-            logSuccess('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
+            logFeed('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
             res.status(201).json({ message: "Account created successfully." });
         });
     } catch (error) {
@@ -297,6 +297,7 @@ app.post('/api/update-profile', async (req, res) => {
         values.push(userId);
         db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function(updateErr) {
             if (updateErr) {
+                logError('❌', 'Error updating profile:', updateErr.message);
                 return res.status(500).json({ error: 'Profile update error.' });
             }
             db.get(`SELECT * FROM users WHERE id = ?`, [userId], (selectErr, updatedUser) => {
@@ -651,8 +652,8 @@ const buildIndexes = () => {
     }
 };
 
-const PLK_API_KEY = process.env.PLK_API_KEY || "bg1dOGfvZFyhQwsdLxUnX0InmHEEB7sx2962bwWtQd7OfZaP9H-fR5ShgUYyRYsGlqL4I3yczbTVY7BvOQnDCA";
-const BASE_URL = "https://pdp-api.plk-sa.pl/api/v1";
+const PLK_API_KEY = process.env.PLK_API_KEY;
+const BASE_URL = process.env.PLK_BASE_URL;
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
 const MAX_SHAPE_JOIN_DISTANCE = 0.25; // degrees, prevents wrong long jumps between disconnected shape fragments
 
@@ -897,7 +898,8 @@ app.get("/api/trains/:id", (req, res) => {
                 finalCoords = chain;
             }
         }
-
+        
+        
         logFeed('🔎', `Searching train ${opNum} | Attempts: [${possibleNumbers.join(', ')}] | ShapeIDs: ${shapeIds ? Array.from(shapeIds).join(' + ') : 'None'}`);
 
         res.json({

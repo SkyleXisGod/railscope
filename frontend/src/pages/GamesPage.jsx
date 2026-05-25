@@ -24,16 +24,6 @@ const GamesPage = () => {
     }
   };
 
-  const resetGame = () => {
-  setFlipped([]);
-  setSolved([]);
-  setMoves(0);
-  setCards([...emojis, ...emojis]
-    .sort(() => Math.random() - 0.5)
-    .map((emoji, index) => ({ id: index, emoji }))
-  );
-};
-
   return (
     <div className="games-page-container">
       {activeGame ? (
@@ -87,6 +77,16 @@ const MemoryGame = ({ t, onBack }) => {
     setCards(shuffled);
   }, []);
 
+    const resetGame = () => {
+      setFlipped([]);
+      setSolved([]);
+      setMoves(0);
+      setCards([...emojis, ...emojis]
+        .sort(() => Math.random() - 0.5)
+        .map((emoji, index) => ({ id: index, emoji }))
+      );
+    };
+
   const handleCardClick = (index) => {
     if (flipped.length === 2 || flipped.includes(index) || solved.includes(index)) return;
     
@@ -130,7 +130,7 @@ const MemoryGame = ({ t, onBack }) => {
       </div>
       {solved.length === cards.length && cards.length > 0 && (
         <div className="game-won">
-            <h3>{t('congratulations')}</h3>
+            <h3>{t.congratulations}</h3>
             <button className="play-button" onClick={resetGame}>Zagraj ponownie</button>
         </div>
         )}

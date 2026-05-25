@@ -4,7 +4,6 @@ AR_BUS,AR,ZKA AR,Arriva (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 IC_EC,IC,EC,EuroCity,2,9D740F,FFFFFF
 IC_EIC,IC,EIC,Express InterCity,2,898989,000000
 IC_EIP,IC,EIP,Express InterCity Premium,2,002664,FFFFFF
-IC_EN,IC,EN,EuroNight,2,000000,FFFFFF
 IC_IC,IC,IC,InterCity,2,F25E18,000000
 IC_IC_BUS,IC,ZKA IC,InterCity (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 IC_MP,IC,MP,Międzynarodowy Pospieszny,2,4F4F4F,FFFFFF
@@ -12,6 +11,7 @@ IC_TLK,IC,TLK,Twoje Linie Kolejowe,2,8505A3,FFFFFF
 IC_TLK_BUS,IC,ZKA TLK,Twoje Linie Kolejowe (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KD_D1,KD,D1,Wrocław — Legnica — Bolesławiec — Lubań,2,00A65A,FFFFFF
 KD_D10,KD,D10,Wrocław — Legnica — Zgorzelec — Görlitz,2,6AC206,000000
+KD_D10_BUS,KD,ZKA D10,Wrocław — Legnica — Zgorzelec — Görlitz (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KD_D11,KD,D11,Wrocław — Legnica — Lubin — Głogów,2,7996D2,000000
 KD_D12,KD,D12,Wrocław — Legnica — Głogów — Zielona Góra,2,744191,FFFFFF
 KD_D13,KD,D13,Legnica — Chojnów — Chocianów,2,6B8B2A,FFFFFF
@@ -19,6 +19,7 @@ KD_D14,KD,D14,Wrocław — Legnica — Żary — Forst,2,007E66,FFFFFF
 KD_D2,KD,D2,Wrocław — Ścinawa — Głogów,2,E7BB00,000000
 KD_D20,KD,D20,Wrocław — Ścinawa — Głogów — Zielona Góra,2,F9E019,000000
 KD_D3,KD,D3,Wrocław — Żmigród — Rawicz,2,C56C37,000000
+KD_D30,KD,D30,Wrocław — Żmigród — Rawicz — Leszno,2,CE9361,000000
 KD_D31_BUS,KD,D31,Rawicz — Bojanowo — Góra Śląska,3,A65600,FFFFFF
 KD_D4,KD,D4,Wrocław — Sobótka — Świdnica — Bielawa,2,F07E02,000000
 KD_D40,KD,D40,Wrocław — Jaworzyna Śl. — Świdnica — Bielawa,2,FFC365,000000
@@ -28,8 +29,8 @@ KD_D6,KD,D6,Wrocław — Wałbrzych — Jelenia Góra,2,342C81,FFFFFF
 KD_D60,KD,D60,Wrocław — Jelenia Góra — Szklarska Poręba,2,B0A4E2,000000
 KD_D60_BUS,KD,ZKA D60,Wrocław — Jelenia Góra — Szklarska Poręba (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KD_D61,KD,D61,Szklarska Poręba — Harrachov — Liberec,2,62B0B9,000000
-KD_D61_BUS,KD,ZKA D61,Szklarska Poręba — Harrachov — Liberec (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KD_D62,KD,D62,Karpacz — Jelenia Góra — Görlitz / Świeradów-Zdrój,2,0092CB,FFFFFF
+KD_D62_BUS,KD,ZKA D62,Karpacz — Jelenia Góra — Görlitz / Świeradów-Zdrój (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KD_D64,KD,D64,Wrocław — Jaworzyna Śląska — Świdnica — Głuszyca,2,90E0DE,000000
 KD_D66,KD,D66,Sędzisław — Královec — Trutnov,2,7081C8,000000
 KD_D6_BUS,KD,ZKA D6,Wrocław — Wałbrzych — Jelenia Góra (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
@@ -49,10 +50,13 @@ KD_D91_BUS,KD,ZKA D91,Legnica — Świdnica — Kłodzko (Zastępcza Komunikacja
 KD_D92_BUS,KD,D92,Kłodzko — Lądek-Zdrój — Stronie Śląskie,3,8D1E0D,FFFFFF
 KD_D96,KD,D96,Wałbrzych — Kłodzko — Kudowa-Zdrój,2,AC20A4,FFFFFF
 KD_D96_BUS,KD,ZKA D96,Wałbrzych — Kłodzko — Kudowa-Zdrój (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
+KML,KML,KMŁ,Koleje Małopolskie,2,FDC300,000000
+KML_BUS,KML,ZKA KMŁ,Koleje Małopolskie (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 KML_K5P,KML,K5P,Kraków Główny — Skawina — Sucha Beskidzka — Zakopane (Przyspieszony),2,F29EC4,000000
 KML_K71,KML,K71,Jasło — Gorlice — Stróże,2,28235B,FFFFFF
 KML_K71P,KML,K71P,Jasło — Gorlice — Stróże (Przyspieszony),2,28235B,FFFFFF
 KML_K7P,KML,K7P,Kraków Główny — Tarnów — Nowy Sącz — Krynica-Zdrój (Przyspieszony),2,008C36,FFFFFF
+KML_M7,KML,M7,Muszyna — Plaveč (— Poprad-Tatry),2,ACCF83,000000
 KML_SKA1,KML,SKA1,Kraków Lotnisko — Kraków Główny — Wieliczka Rynek-Kopalnia,2,00B1EB,000000
 KML_SKA2,KML,SKA2,Sędziszów — Kraków Główny — Skawina — Oświęcim,2,E82F89,FFFFFF
 KML_SKA2_BUS,KML,ZKA SKA2,Sędziszów — Kraków Główny — Skawina — Oświęcim (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
@@ -64,6 +68,7 @@ KM_R2_BUS,KM,Z2,Warszawa — Łuków (Zastępcza Komunikacja Autobusowa),3,88000
 KM_R3,KM,R3,Warszawa — Kutno,2,008800,FFFFFF
 KM_R31,KM,R31,Kutno — Sierpc,2,008800,FFFFFF
 KM_R31_BUS,KM,Z31,Kutno — Sierpc (Zastępcza Komunikacja Autobusowa),3,880000,FFFFFF
+KM_R3_BUS,KM,Z3,Warszawa — Kutno (Zastępcza Komunikacja Autobusowa),3,880000,FFFFFF
 KM_R6,KM,R6,Warszawa — Małkinia,2,008800,FFFFFF
 KM_R60,KM,R60,Warszawa — Małkinia,2,008800,FFFFFF
 KM_R60_BUS,KM,Z60,Warszawa — Małkinia (Zastępcza Komunikacja Autobusowa),3,880000,FFFFFF
@@ -78,7 +83,9 @@ KM_R81,KM,R81,Dęblin — Radom,2,008800,FFFFFF
 KM_R82,KM,R82,Radom — Drzewca,2,008800,FFFFFF
 KM_R9,KM,R9,Warszawa — Działdowo,2,008800,FFFFFF
 KM_R90,KM,R90,Warszawa — Działdowo,2,008800,FFFFFF
+KM_R90_BUS,KM,Z90,Warszawa — Działdowo (Zastępcza Komunikacja Autobusowa),3,880000,FFFFFF
 KM_R91,KM,R91,Nasielsk — Sierpc,2,008800,FFFFFF
+KM_R9_BUS,KM,Z9,Warszawa — Działdowo (Zastępcza Komunikacja Autobusowa),3,880000,FFFFFF
 KM_RE1,KM,RE1,Warszawa — Skierniewice (Przyspieszony),2,005A00,FFFFFF
 KM_RE2,KM,RE2,Warszawa — Łuków (Przyspieszony),2,005A00,FFFFFF
 KM_RE21,KM,RE21,Warszawa — Czeremcha (Przyspieszony),2,005A00,FFFFFF
@@ -164,6 +171,7 @@ PR_K52P,PR,K52P,Kraków Główny — Wadowice — Bielsko-Biała (Przyspieszony)
 PR_K63,PR,K63,Kraków Główny — Kraków Nowa Huta — Podłęże,2,4464AC,FFFFFF
 PR_K63_BUS,PR,ZKA K63,Kraków Główny — Kraków Nowa Huta — Podłęże (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 PR_K7,PR,K7,Kraków Główny — Tarnów — Nowy Sącz — Krynica-Zdrój,2,008C36,FFFFFF
+PR_K71,PR,K71,Jasło — Gorlice — Stróże,2,28235B,FFFFFF
 PR_K7P,PR,K7P,Kraków Główny — Tarnów — Nowy Sącz — Krynica-Zdrój (Przyspieszony),2,008C36,FFFFFF
 PR_PKM1,PR,PKM1,Gniezno — Poznań — Kościan,2,3A76C2,FFFFFF
 PR_PKM4,PR,PKM4,Wronki — Poznań — Środa Wlkp.,2,823D8C,FFFFFF
