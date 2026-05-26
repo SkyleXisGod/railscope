@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { translations } from "./constants/translations";
 import { TrainMemory } from './games/TrainMemory';
 import { FlappyTrain } from './games/FlappyTrain';
+import { SnakeGame } from './games/SnakeGame';
 import './GamesPage.css';
 
 const GamesPage = () => {
