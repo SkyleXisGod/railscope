@@ -23,6 +23,11 @@ export default function SettingsPage() {
     const [mapTheme, setMapTheme] = useState(user?.settings?.map_theme || user?.settings?.mapTheme || DEFAULT_SETTINGS.mapTheme);
     const [animations, setAnimations] = useState(user?.settings?.animations !== 'none');
 
+    // EASTER EGG STATE: Kontrola widoczności sekretnych języków w select
+    const [showSecretLanguages, setShowSecretLanguages] = useState(
+        user?.settings?.language === 'PIRATE' || user?.settings?.language === 'WINGDINGS'
+    );
+
     useEffect(() => {
         if (user?.settings) {
             setLang(user.settings.language || 'PL');
@@ -33,10 +38,14 @@ export default function SettingsPage() {
             setBackgroundMode(user.settings.background_mode || user.settings.backgroundMode || DEFAULT_SETTINGS.backgroundMode);
             setMapTheme(user.settings.map_theme || user.settings.mapTheme || DEFAULT_SETTINGS.mapTheme);
             setAnimations(user.settings.animations !== 'none');
+            
+            if (user.settings.language === 'PIRATE' || user.settings.language === 'WINGDINGS') {
+                setShowSecretLanguages(true);
+            }
         }
     }, [user]);
 
-    const t = translations[lang].settings;
+    const t = translations[lang]?.settings || translations['EN'].settings;
 
     const applyThemeImmediately = (settings) => {
         const newTheme = settings.theme ?? theme;
@@ -45,7 +54,6 @@ export default function SettingsPage() {
         const newBgMode = settings.backgroundMode ?? backgroundMode;
         const newMapTheme = settings.mapTheme ?? mapTheme;
 
-        // Apply CSS variables immediately
         const bgMain = newBgMode === 'light' ? '#f3f7fb' : '#0f121a';
         const bgCard = newBgMode === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20,24,33,0.95)';
         const bgInput = newBgMode === 'light' ? '#f5f8ff' : '#1f2430';
@@ -68,7 +76,6 @@ export default function SettingsPage() {
     const saveSettings = async (settings) => {
         if (!user) return;
         
-        // Apply theme immediately
         applyThemeImmediately(settings);
 
         const payload = {
@@ -125,13 +132,17 @@ export default function SettingsPage() {
         }
     };
 
-    const handleDeleteAccount = async () => {
-        if (window.confirm("UWAGA: Operacja nieodwracalna. Usunąć konto?")) {
+    const handleSecretTrigger = async () => {
+        if (!showSecretLanguages) {
+            setShowSecretLanguages(true);
+
             try {
-                await axios.delete(`http://localhost:8080/api/users/${user.id}`);
-                window.location.reload();
+                await axios.post('http://localhost:8080/api/secret-unlock', {
+                    userId: user?.id,
+                    message: "🔓 GASTER & PIRATES UNLOCKED. DARK... DARKER... YET DARKER..."
+                });
             } catch (err) {
-                alert("Błąd podczas usuwania konta.");
+                console.error('Nie udało się powiadomić serwera o sekrecie:', err);
             }
         }
     };
@@ -235,7 +246,11 @@ export default function SettingsPage() {
                     <h2 className="section-header">{t.preferences}</h2>
                     
                     <div className="setting-group">
-                        <label>{t.language}</label>
+                        <label>
+                            {t.language} 
+                            <span className="secret-trigger" onClick={handleSecretTrigger}>.</span>
+                        </label>
+                        
                         <select
                             value={lang}
                             onChange={(e) => {
@@ -243,8 +258,24 @@ export default function SettingsPage() {
                                 saveSettings({ language: e.target.value });
                             }}
                         >
-                            <option value="PL">Polski</option>
-                            <option value="EN">English</option>
+                            <option value="PL">🇵🇱 Polski</option>
+                            <option value="EN">🇺🇸 English</option>
+                            <option value="DE">🇩🇪 Deutsch</option>
+                            <option value="RU">🇷🇺 Русский</option>
+                            <option value="IT">🇮🇹 Italiano</option>
+                            <option value="ES">🇪🇸 Español</option>
+                            <option value="US_FREEDOM">🇺🇸 Freedom Speak (USA)</option>
+                            <option value="JP">🇯🇵 日本語</option>
+                
+                            {showSecretLanguages && (
+                                <>
+                                    <option value="PIRATE">🏴‍☠️ Pirate Speak (Arr!)</option>
+                                    <option value="WINGDINGS">🤙 🕭✋☠☝👎✋☠☝💧 (W.D. Gaster)</option>
+                                    <option value="DRES">🤙 Seba język </option>
+                                    <option value="OLD_PL">🇵🇱 Staropolski</option>
+                                    <option value="MINECRAFT">🎮 Minecraft</option>
+                                </>
+                            )}
                         </select>
                     </div>
 

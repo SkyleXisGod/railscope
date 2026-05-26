@@ -4,6 +4,7 @@ AR_BUS,AR,ZKA AR,Arriva (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 IC_EC,IC,EC,EuroCity,2,9D740F,FFFFFF
 IC_EIC,IC,EIC,Express InterCity,2,898989,000000
 IC_EIP,IC,EIP,Express InterCity Premium,2,002664,FFFFFF
+IC_EN,IC,EN,EuroNight,2,000000,FFFFFF
 IC_IC,IC,IC,InterCity,2,F25E18,000000
 IC_IC_BUS,IC,ZKA IC,InterCity (Zastępcza Komunikacja Autobusowa),3,DE4E4E,FFFFFF
 IC_MP,IC,MP,Międzynarodowy Pospieszny,2,4F4F4F,FFFFFF

@@ -371,6 +371,14 @@ app.get("/api/statistics", (req, res) => {
     });
 });
 
+app.post('/api/secret-unlock', (req, res) => {
+    const { userId, message } = req.body;
+    
+    logFeed('🐣',`Użytkownik ID: ${userId || 'Niezalogowany'} odblokował sekret: ${message || 'Brak wiadomości'}`);
+
+    res.status(200).json({ success: true });
+});
+
 const PORT = 8080;
 const DATA_DIR = path.join(__dirname, "data");
 const STATIONS_CACHE = path.join(DATA_DIR, "cacheStations.json");

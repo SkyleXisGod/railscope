@@ -140,6 +140,22 @@
     border-color: var(--primary-color);
 }
 
+.secret-trigger {
+    cursor: default;
+    color: transparent; 
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 0 5px;
+    font-weight: bold;
+}
+
+.secret-trigger:hover {
+    color: #00ffd5;
+    cursor: pointer;
+    text-shadow: 0 0 8px #00ffd5;
+    transform: scale(1.4);
+}
+
 @media (max-width: 768px) {
     .settings-card {
         padding: 20px;
@@ -153,3 +169,4 @@
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
