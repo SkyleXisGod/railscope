@@ -3,10 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { translations } from "./constants/translations";
 import { TrainMemory } from './games/TrainMemory';
 import { FlappyTrain } from './games/FlappyTrain';
-import {
-  SnakeGame, SimonSignals, WagonCatcher, TrainClicker, ConductorMath, TrainMaze,
-  TycoonDispatcher, TrainReaction, TicketInspector, FuelManagement
-} from './games/OtherGames';
 import './GamesPage.css';
 
 const GamesPage = () => {

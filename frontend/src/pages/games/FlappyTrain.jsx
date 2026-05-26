@@ -1,32 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export const FlappyTrain = ({ t, onBack }) => {
-  const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  
+export default function FlappyTrainGame({ t, onBack }) {
   const canvasRef = useRef(null);
-  const stateRef = useRef({
-    trainY: 150, velocity: 0, pipes: [], frame: 0, score: 0, gameOver: false, hasStarted: false
-  });
-
-  const jump = () => {
-    if (stateRef.current.gameOver) { resetGame(); return; }
-    if (!stateRef.current.hasStarted) { stateRef.current.hasStarted = true; setHasStarted(true); }
-    stateRef.current.velocity = -5.5;
-  };
-
-  const resetGame = () => {
-    stateRef.current = { trainY: 150, velocity: 0, pipes: [], frame: 0, score: 0, gameOver: false, hasStarted: true };
-    setGameOver(false);
-    setScore(0);
-  };
+  const [gameState, setGameState] = useState('START'); // START, PLAYING, GAMEOVER
+  const [score, setScore] = useState(0);
+  const stateRef = useRef({ gameState: 'START', score: 0, trainY: 150, velocity: 0, pipes: [] });
 
   useEffect(() => {
-    const handleKeyDown = (e) => { if (e.code === 'Space') { e.preventDefault(); jump(); } };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+    stateRef.current.gameState = gameState;
+  }, [gameState]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -34,79 +16,152 @@ export const FlappyTrain = ({ t, onBack }) => {
     const ctx = canvas.getContext('2d');
     let animationId;
 
-    const gameLoop = () => {
-      const state = stateRef.current;
-      ctx.fillStyle = '#1e1e24';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#444';
-      ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
-
-      if (state.hasStarted && !state.gameOver) {
-        state.velocity += 0.25;
-        state.trainY += state.velocity;
-        state.frame++;
-
-        if (state.frame % 100 === 0) {
-          const gap = 110;
-          const minHeight = 40;
-          const maxHeight = canvas.height - gap - minHeight;
-          const height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-          state.pipes.push({ x: canvas.width, top: height, bottom: canvas.height - height - gap, passed: false });
-        }
-
-        for (let i = state.pipes.length - 1; i >= 0; i--) {
-          const p = state.pipes[i];
-          p.x -= 2;
-          ctx.fillStyle = '#ff3333';
-          ctx.fillRect(p.x, 0, 40, p.top);
-          ctx.fillStyle = '#33ff33';
-          ctx.fillRect(p.x, canvas.height - p.bottom, 40, p.bottom);
-
-          if (!p.passed && p.x < 80) {
-            p.passed = true;
-            state.score++;
-            setScore(state.score);
-          }
-          if (80 + 30 > p.x && 80 < p.x + 40 && (state.trainY < p.top || state.trainY + 24 > canvas.height - p.bottom)) {
-            state.gameOver = true;
-            setGameOver(true);
-          }
-          if (p.x + 40 < 0) state.pipes.splice(i, 1);
-        }
-        if (state.trainY > canvas.height - 30 || state.trainY < 0) {
-          state.gameOver = true;
-          setGameOver(true);
-        }
-      }
-
-      ctx.font = '24px Arial';
-      ctx.fillText(' Romano 🚂', 80, state.trainY + 20);
-
-      if (!state.hasStarted) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(t.click_to_start || "Kliknij lub użyj Spacji", canvas.width / 2, canvas.height / 2);
-      }
-      animationId = requestAnimationFrame(gameLoop);
+    const resetGameData = () => {
+      stateRef.current = {
+        gameState: 'PLAYING',
+        score: 0,
+        trainY: 150,
+        velocity: 0,
+        pipes: [
+          { x: 500, top: 100, bottom: 120, passed: false },
+          { x: 750, top: 140, bottom: 100, passed: false }
+        ]
+      };
+      setScore(0);
+      setGameState('PLAYING');
     };
 
-    gameLoop();
-    return () => cancelAnimationFrame(animationId);
-  }, [t.click_to_start]);
+    const jump = () => {
+      if (stateRef.current.gameState === 'PLAYING') {
+        stateRef.current.velocity = -6;
+      } else if (stateRef.current.gameState === 'START' || stateRef.current.gameState === 'GAMEOVER') {
+        resetGameData();
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    const updateLoop = () => {
+      const state = stateRef.current;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Tło - tory kolejowe na dole
+      ctx.fillStyle = '#1a1a24';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#333344';
+      ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+      if (state.gameState === 'PLAYING') {
+        state.velocity += 0.35; // grawitacja
+        state.trainY += state.velocity;
+
+        if (state.trainY > canvas.height - 40 || state.trainY < 0) {
+          setGameState('GAMEOVER');
+        }
+
+        // Aktualizacja i rysowanie przeszkód (semaforów)
+        state.pipes.forEach((pipe) => {
+          pipe.x -= 2.5;
+
+          // Rysowanie górnego semafora
+          ctx.fillStyle = '#444455';
+          ctx.fillRect(pipe.x, 0, 40, pipe.top);
+          ctx.fillStyle = '#ff3333';
+          ctx.beginPath();
+          ctx.arc(pipe.x + 20, pipe.top - 15, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Rysowanie dolnego semafora
+          ctx.fillStyle = '#444455';
+          ctx.fillRect(pipe.x, canvas.height - pipe.bottom, 40, pipe.bottom);
+          ctx.fillStyle = '#33ff33';
+          ctx.beginPath();
+          ctx.arc(pipe.x + 20, canvas.height - pipe.bottom + 15, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Detekcja kolizji
+          if (pipe.x < 80 && pipe.x + 40 > 50) {
+            if (state.trainY < pipe.top || state.trainY + 24 > canvas.height - pipe.bottom) {
+              setGameState('GAMEOVER');
+            }
+          }
+
+          // Punktacja
+          if (!pipe.passed && pipe.x < 50) {
+            pipe.passed = true;
+            state.score += 1;
+            setScore(state.score);
+          }
+        });
+
+        // Usuwanie starych i dodawanie nowych semaforów
+        if (state.pipes[0] && state.pipes[0].x < -40) {
+          state.pipes.shift();
+          const top = Math.random() * 120 + 40;
+          const bottom = Math.random() * 120 + 40;
+          state.pipes.push({ x: canvas.width, top, bottom, passed: false });
+        }
+      }
+
+      // Rysowanie pociągu (Gracz)
+      ctx.font = '24px serif';
+      ctx.fillText('🚂', 50, state.trainY + 20);
+
+      if (state.gameState === 'START') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ffca';
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.click_to_start || "Naciśnij Spację, aby wystartować", canvas.width / 2, canvas.height / 2);
+      } else if (state.gameState === 'GAMEOVER') {
+        ctx.fillStyle = 'rgba(139, 0, 0, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.game_over || "Koniec Gry!", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = '16px sans-serif';
+        ctx.fillText(t.play_again || "Naciśnij Spację, aby zagrać ponownie", canvas.width / 2, canvas.height / 2 + 20);
+      }
+
+      animationId = requestAnimationFrame(updateLoop);
+    };
+
+    animationId = requestAnimationFrame(updateLoop);
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [gameState, t]);
 
   return (
-    <div className="game-container">
+    <div className="game-container math-game-wrapper">
       <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>{t.game_flappy_title}</h2>
-      <p className="game-stat">{t.score} {score}</p>
-      <canvas ref={canvasRef} width={400} height={400} className="game-canvas-board" onClick={jump} />
-      {gameOver && (
-        <div className="game-won" style={{ backgroundColor: '#dc3545' }}>
-          <h3>{t.game_over}</h3>
-          <button className="play-button" onClick={resetGame}>{t.play_again}</button>
-        </div>
-      )}
+      <h2 className="game-title-accent">{t.game_flappy_title || "Flappy Train"}</h2>
+      <p className="game-stat">{t.score || "Wynik:"} <span className="stat-highlight">{score}</span></p>
+      <div style={{ textAlign: 'center', marginTop: '15px' }}>
+        <canvas 
+          ref={canvasRef} 
+          width={640} 
+          height={360} 
+          style={{ background: '#111', borderRadius: '12px', border: '3px solid #333', maxWidth: '100%', cursor: 'pointer' }}
+          onClick={() => {
+            if (gameState === 'START' || gameState === 'GAMEOVER') {
+              setGameState('PLAYING');
+            } else {
+              stateRef.current.velocity = -6;
+            }
+          }}
+        />
+      </div>
     </div>
   );
-};
+}
