@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from "./constants/translations";
-import axios from 'axios';
+import { TrainMemory } from './games/TrainMemory';
+import { FlappyTrain } from './games/FlappyTrain';
+import {
+  SnakeGame, SimonSignals, WagonCatcher, TrainClicker, ConductorMath, TrainMaze,
+  TycoonDispatcher, TrainReaction, TicketInspector, FuelManagement
+} from './games/OtherGames';
 import './GamesPage.css';
 
 const GamesPage = () => {
@@ -13,141 +16,70 @@ const GamesPage = () => {
 
   const [activeGame, setActiveGame] = useState(null);
 
+  const text = {
+    games_title: t?.games_title || "Strefa Gier RailScope 🎮",
+    games_subtitle: t?.games_subtitle || "Wybierz maszynę i ruszaj do zabawy!",
+    btn_back: t?.btn_back || "Powrót",
+    btn_play: t?.btn_play || "Graj",
+    moves: t?.moves || "Ruchy:",
+    congratulations: t?.congratulations || "Gratulacje! Wygrałeś! 🎉",
+    play_again: t?.play_again || "Zagraj ponownie",
+    score: t?.score || "Wynik:",
+    game_over: t?.game_over || "Koniec Gry!",
+    level: t?.level || "Poziom:",
+  };
+
+  const gamesList = [
+    { id: 'memory', icon: '🧠', title: t?.game_memory_title || "Kolejowe Memory", desc: t?.game_memory_desc || "Znajdź pary wagonów." },
+    { id: 'flappy', icon: '🐦', title: t?.game_flappy_title || "Flappy Train", desc: t?.game_flappy_desc || "Omijaj semafory." },
+    { id: 'snake', icon: '🐍', title: t?.game_snake_title || "Kolejowy Snake", desc: t?.game_snake_desc || "Zbieraj pasażerów." },
+    { id: 'simon', icon: '🚦', title: t?.game_simon_title || "Cyfrowe Semafory", desc: t?.game_simon_desc || "Powtarzaj błyski sygnałów." },
+    { id: 'catcher', icon: '🪣', title: t?.game_catcher_title || "Zajezdnia", desc: t?.game_catcher_desc || "Łap odczepione wagoniki." },
+    { id: 'clicker', icon: '💰', title: t?.game_clicker_title || "Potentat", desc: t?.game_clicker_desc || "Kupuj pociągi towarowe." },
+    { id: 'math', icon: '🎫', title: t?.game_math_title || "Szybki Konduktor", desc: t?.game_math_desc || "Mnożenie biletów na czas." },
+    { id: 'maze', icon: '🗺️', title: t?.game_maze_title || "Zagubiony Pociąg", desc: t?.game_maze_desc || "Przeprowadź skład przez tory." },
+    { id: 'dispatcher', icon: '🎛️', title: t?.game_dispatcher_title || "Dyspozytor", desc: t?.game_dispatcher_desc || "Kontroluj stacje i zwrotnice." },
+    { id: 'reaction', icon: '⚡', title: t?.game_reaction_title || "Refleks", desc: t?.game_reaction_desc || "Zareaguj natychmiast na sygnał." },
+    { id: 'inspector', icon: '🕵️', title: t?.game_inspector_title || "Rewizor", desc: t?.game_inspector_desc || "Sprawdzaj ważność biletów." },
+    { id: 'fuel', icon: '🪨', title: t?.game_fuel_title || "Kotłownia", desc: t?.game_fuel_desc || "Zarządzaj zasobami pary." },
+  ];
+
   const renderGame = () => {
     switch (activeGame) {
-      case 'memory':
-        return <MemoryGame t={t} onBack={() => setActiveGame(null)} />;
-      case 'flappy':
-        return <FlappyTrainPlaceholder t={t} onBack={() => setActiveGame(null)} />;
-      default:
-        return null;
+      case 'memory': return <TrainMemory t={text} onBack={() => setActiveGame(null)} />;
+      case 'flappy': return <FlappyTrain t={text} onBack={() => setActiveGame(null)} />;
+      case 'snake': return <SnakeGame t={text} onBack={() => setActiveGame(null)} />;
+      case 'simon': return <SimonSignals t={text} onBack={() => setActiveGame(null)} />;
+      case 'catcher': return <WagonCatcher t={text} onBack={() => setActiveGame(null)} />;
+      case 'clicker': return <TrainClicker t={text} onBack={() => setActiveGame(null)} />;
+      case 'math': return <ConductorMath t={text} onBack={() => setActiveGame(null)} />;
+      case 'maze': return <TrainMaze t={text} onBack={() => setActiveGame(null)} />;
+      case 'dispatcher': return <TycoonDispatcher t={text} onBack={() => setActiveGame(null)} />;
+      case 'reaction': return <TrainReaction t={text} onBack={() => setActiveGame(null)} />;
+      case 'inspector': return <TicketInspector t={text} onBack={() => setActiveGame(null)} />;
+      case 'fuel': return <FuelManagement t={text} onBack={() => setActiveGame(null)} />;
+      default: return null;
     }
   };
 
   return (
     <div className="games-page-container">
-      {activeGame ? (
-        renderGame()
-      ) : (
+      {activeGame ? renderGame() : (
         <div className="games-menu">
-          <h1 className="games-title">{t.games_title}</h1>
-          <p className="games-subtitle">{t.games_subtitle}</p>
-          
-          <div className="games-grid">
-            {/* Karta Gry 1: Kolejowe Memory */}
-            <div className="game-card">
-              <div className="game-icon">🚂</div>
-              <h3>{t.game_memory_title}</h3>
-              <p>{t.game_memory_desc}</p>
-              <button className="play-button" onClick={() => setActiveGame('memory')}>
-                {t.btn_play}
-              </button>
-            </div>
-
-            {/* Karta Gry 2: Flappy Train */}
-            <div className="game-card">
-              <div className="game-icon">🚃</div>
-              <h3>{t.game_flappy_title}</h3>
-              <p>{t.game_flappy_desc}</p>
-              <button className="play-button" onClick={() => setActiveGame('flappy')}>
-                {t.btn_play}
-              </button>
-            </div>
+          <h1 className="games-title">{text.games_title}</h1>
+          <p className="games-subtitle">{text.games_subtitle}</p>
+          <div className="games-grid-6">
+            {gamesList.map(game => (
+              <div className="game-card-mini" key={game.id}>
+                <div className="game-icon-mini">{game.icon}</div>
+                <h3>{game.title}</h3>
+                <p>{game.desc}</p>
+                <button className="play-button-mini" onClick={() => setActiveGame(game.id)}>{text.btn_play}</button>
+              </div>
+            ))}
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-// --- KOMPONENT: Kolejowe Memory ---
-const MemoryGame = ({ t, onBack }) => {
-  const [cards, setCards] = useState([]);
-  const [flipped, setFlipped] = useState([]);
-  const [solved, setSolved] = useState([]);
-  const [moves, setMoves] = useState(0);
-
-  const emojis = ['🚂', '🚋', '🚄', '🚅', '🚈', '🚇', '🚆', '🚞'];
-
-  useEffect(() => {
-    // Tasowanie kart po załadowaniu
-    const shuffled = [...emojis, ...emojis]
-      .sort(() => Math.random() - 0.5)
-      .map((emoji, index) => ({ id: index, emoji }));
-    setCards(shuffled);
-  }, []);
-
-    const resetGame = () => {
-      setFlipped([]);
-      setSolved([]);
-      setMoves(0);
-      setCards([...emojis, ...emojis]
-        .sort(() => Math.random() - 0.5)
-        .map((emoji, index) => ({ id: index, emoji }))
-      );
-    };
-
-  const handleCardClick = (index) => {
-    if (flipped.length === 2 || flipped.includes(index) || solved.includes(index)) return;
-    
-    const newFlipped = [...flipped, index];
-    setFlipped(newFlipped);
-
-    if (newFlipped.length === 2) {
-      setMoves(m => m + 1);
-      const isMatch = cards[newFlipped[0]].emoji === cards[newFlipped[1]].emoji;
-      if (isMatch) {
-        setSolved([...solved, ...newFlipped]);
-        setFlipped([]);
-      } else {
-        setTimeout(() => setFlipped([]), 1000);
-      }
-    }
-  };
-
-  return (
-    <div className="game-container">
-      <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>{t.game_memory_title}</h2>
-      <p className="game-moves">{t.moves} {moves}</p>
-      
-      <div className="memory-grid">
-        {cards.map((card, index) => {
-          const isFlipped = flipped.includes(index) || solved.includes(index);
-          return (
-            <div 
-              key={card.id} 
-              className={`memory-card ${isFlipped ? 'flipped' : ''}`}
-              onClick={() => handleCardClick(index)}
-            >
-              <div className="memory-card-inner">
-                <div className="memory-card-front">❓</div>
-                <div className="memory-card-back">{card.emoji}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {solved.length === cards.length && cards.length > 0 && (
-        <div className="game-won">
-            <h3>{t.congratulations}</h3>
-            <button className="play-button" onClick={resetGame}>Zagraj ponownie</button>
-        </div>
-        )}
-    </div>
-  );
-};
-
-// --- KOMPONENT: Flappy Train Placeholder ---
-const FlappyTrainPlaceholder = ({ t, onBack }) => {
-  return (
-    <div className="game-container">
-      <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>{t.game_flappy_title}</h2>
-      <div className="flappy-placeholder">
-        <div className="bouncing-train">🚂</div>
-        <p>{t.coming_soon}</p>
-      </div>
     </div>
   );
 };
