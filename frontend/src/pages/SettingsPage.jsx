@@ -258,22 +258,19 @@ export default function SettingsPage() {
                                 saveSettings({ language: e.target.value });
                             }}
                         >
-                            <option value="PL">🇵🇱 Polski</option>
-                            <option value="EN">🇺🇸 English</option>
-                            <option value="DE">🇩🇪 Deutsch</option>
-                            <option value="RU">🇷🇺 Русский</option>
-                            <option value="IT">🇮🇹 Italiano</option>
-                            <option value="ES">🇪🇸 Español</option>
-                            <option value="US_FREEDOM">🇺🇸 Freedom Speak (USA)</option>
-                            <option value="JP">🇯🇵 日本語</option>
+                            <option value="PL"> 🇵🇱 Polski</option>
+                            <option value="EN"> 🇬🇧 English</option>
+                            <option value="DE"> 🇩🇪 Deutsch</option>
+                            <option value="RU"> 🇷🇺 Русский</option>
+                            <option value="IT"> 🇮🇹 Italiano</option>
+                            <option value="ES"> 🇪🇸 Español</option>
+                            <option value="JP"> 🇯🇵 日本語</option>
                 
                             {showSecretLanguages && (
                                 <>
-                                    <option value="PIRATE">🏴‍☠️ Pirate Speak (Arr!)</option>
-                                    <option value="WINGDINGS">🤙 🕭✋☠☝👎✋☠☝💧 (W.D. Gaster)</option>
-                                    <option value="DRES">🤙 Seba język </option>
-                                    <option value="OLD_PL">🇵🇱 Staropolski</option>
-                                    <option value="MINECRAFT">🎮 Minecraft</option>
+                                    <option value="US_FREEDOM"> 🇺🇸 Freedom Speak (USA)</option>
+                                    <option value="OLD_PL"> 🇵🇱 Staropolski</option>
+                                    <option value="PIRATE"> 🏴‍☠️ Pirate Speak (Arr!)</option>
                                 </>
                             )}
                         </select>
