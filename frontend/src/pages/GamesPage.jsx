@@ -22,6 +22,8 @@ import RadioGame from './games/RadioGame';
 import BridgeGame from './games/BridgeGame';
 import MaintenanceGame from './games/MaintenanceGame';
 import CargoGame from './games/CargoGame';
+import SpeedCheckGame from './games/SpeedCheckGame';
+import CargoWeightGame from './games/CargoWeightGame';
 
 const GAMES_LIST = [
   { id: 'wagoncatcher', key: 'game_wagoncatcher', emoji: '📦', ready: true }, 
@@ -41,7 +43,9 @@ const GAMES_LIST = [
   { id: 'signal', key: 'game_signal', emoji: '📻', ready: true },
   { id: 'switch', key: 'game_switch', emoji: '🎚️', ready: true },
   { id: 'radio', key: 'game_radio', emoji: '📳', ready: true },
-  { id: 'maintenance', key: 'game_maintenance', emoji: '🔧', ready: true }
+  { id: 'maintenance', key: 'game_maintenance', emoji: '🔧', ready: true },
+  { id: 'speedcheck', key: 'game_speedcheck', emoji: '📸', ready: true },
+  { id: 'cargoweight', key: 'game_cargoweight', emoji: '⚖️', ready: true }
 ];
 
 export default function GamesPage() {
@@ -76,6 +80,8 @@ export default function GamesPage() {
       case 'bridge': return <BridgeGame {...props} />;
       case 'maintenance': return <MaintenanceGame {...props} />;
       case 'cargo': return <CargoGame {...props} />;
+      case 'speedcheck': return <SpeedCheckGame {...props} />;
+      case 'cargoweight': return <CargoWeightGame {...props} />;
       default: return null;
     }
   };
