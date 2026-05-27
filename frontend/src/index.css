@@ -63,6 +63,7 @@ body {
     transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, border-color var(--transition-speed) ease;
 }
 
+
 /* ==========================================================================
    GLOBALNE KLASY DLA WSZYSTKICH STRON (Używaj ich w każdym pliku .jsx)
    ========================================================================== */

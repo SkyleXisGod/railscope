@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+
 export default function BrakeGame({ t, onBack }) {
   const [speed, setSpeed] = useState(0);
   const [obstacleDistance, setObstacleDistance] = useState(1000);
   const [isBraking, setIsBraking] = useState(false);
-  const [gameState, setGameState] = useState('idle');
+  const [gameState, setGameState] = useState('idle'); // idle, running, stopped, crashed
 
   const startTrain = () => {
     setSpeed(Math.floor(Math.random() * 100) + 50);
@@ -34,23 +35,69 @@ export default function BrakeGame({ t, onBack }) {
   }, [gameState, speed, isBraking]);
 
   return (
-    <div className="game-container brake-theme">
-      <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>KABINA MASZYNISTY</h2>
-      <div className="dashboard-panel">
-        <div className="speedometer"><h3>{speed} km/h</h3><p>PRĘDKOŚĆ</p></div>
-        <div className="radar"><h3>{obstacleDistance.toFixed(0)} m</h3><p>DO STACJI</p></div>
-      </div>
-      <div className="lever-container">
-        <div className={`lever ${isBraking ? 'pulled' : ''}`} onClick={() => { if(gameState === 'running') setIsBraking(true); }}>
-          <div className="lever-handle"></div>
-          <div className="lever-shaft"></div>
+    <div className="game-card-wrapper">
+      <button className="back-button" onClick={onBack}>&larr; {t.btn_back || 'Powrót'}</button>
+
+      <div className="game-main-card">
+        <div className="game-top-header">
+          <h2>🎛️ Kabina Maszynisty (Hebel Hamulca)</h2>
         </div>
-        <p>HEBEL HAMULCA</p>
+
+        <div className="game-viewport-area">
+          {gameState === 'idle' && (
+            <div className="game-overlay-screen">
+              <h3>Symulator Hamowania</h3>
+              <p className="game-explanation-text">
+                Pociąg pędzi w stronę stacji końcowej! Wyczuj odpowiedni moment i zaciągnij bezpiecznik hamulca, by zatrzymać skład idealnie przed peronem. Dojechanie z prędkością &gt; 0 skończy się katastrofą.
+              </p>
+              <button className="btn-arcade-play" onClick={startTrain}>RUSZAJ W TRASĘ 🚂</button>
+            </div>
+          )}
+
+          {gameState === 'running' && (
+            <>
+              <div className="driver-cabin-panel">
+                <div className="cabin-gauge speed-mode">
+                  <h4>{speed} km/h</h4>
+                  <p>PRĘDKOŚĆ</p>
+                </div>
+                <div className="cabin-gauge distance-mode">
+                  <h4>{obstacleDistance.toFixed(0)} m</h4>
+                  <p>DYSTANS DO STACJI</p>
+                </div>
+              </div>
+
+              <div className="brake-lever-wrapper">
+                <div 
+                  className={`brake-lever-body ${isBraking ? 'pulled-state' : ''}`}
+                  onClick={() => setIsBraking(true)}
+                >
+                  <div className="brake-lever-handle"></div>
+                </div>
+                <p>ZACIĄGNIJ HAMULEC AWARYJNY</p>
+              </div>
+            </>
+          )}
+
+          {gameState === 'crashed' && (
+            <div className="game-overlay-screen game-over-theme">
+              <h3>💥 KATASTROFA!</h3>
+              <p className="game-explanation-text">Nie zdążyłeś wyhamować pociągu i uderzyłeś w stację końcową!</p>
+              <button className="btn-arcade-play" onClick={startTrain}>Spróbuj Ponownie 🔄</button>
+            </div>
+          )}
+
+          {gameState === 'stopped' && (
+            <div className="game-overlay-screen success-theme">
+              <h3>🎉 SUKCES!</h3>
+              <p className="game-explanation-text">
+                Wspaniały manewr! Pociąg zatrzymał się bezpiecznie na stacji. Pozostały dystans: <strong>{obstacleDistance.toFixed(1)} m</strong>.
+              </p>
+              <button className="btn-arcade-play" onClick={startTrain}>Kolejny Przejazd 🔄</button>
+            </div>
+          )}
+        </div>
       </div>
-      {gameState === 'idle' && <button className="play-button" onClick={startTrain}>RUSZAJ W TRASĘ</button>}
-      {gameState === 'crashed' && <h2 style={{color:'red'}}>💥 KATASTROFA! 💥 <br/><button className="play-button-mini" onClick={startTrain}>RESTART</button></h2>}
-      {gameState === 'stopped' && <h2 style={{color:'#00ffca'}}>✔️ ZATRZYMAŁEŚ SIĘ! ✔️ <br/><button className="play-button-mini" onClick={startTrain}>ZAGRAJ PONOWNIE</button></h2>}
     </div>
   );
 }

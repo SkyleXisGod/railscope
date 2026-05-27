@@ -1,18 +1,3 @@
-.topbar {
-    height: 70px;
-    background: #111;
-    border-bottom: 1px solid #222;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 25px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1100;
-}
-
 .topbar-left {
     display: flex;
     align-items: center;
@@ -220,16 +205,6 @@
     list-style: none;
     margin: 0;
     padding: 8px 0;
-}
-
-.fa-bars {
-  display: inline-block; 
-  cursor: pointer;
-  transition: transform 0.3s ease; 
-}
-
-.fa-bars.active {
-  transform: rotate(90deg); 
 }
 
 .dropdown-menu li {

@@ -1,101 +1,179 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '../GamesPage.css';
 
-const GRAVITY = 6;
-const JUMP = -50;
-const OBSTACLE_WIDTH = 50;
-const OBSTACLE_SPEED = 5;
+const GRAVITY = 0.4;
+const JUMP = -7;
+const OBSTACLE_SPEED = 4;
+const OBSTACLE_WIDTH = 60;
 
 export default function FlappyTrain({ t, onBack }) {
-  const [trainPos, setTrainPos] = useState(250);
+  const [gameState, setGameState] = useState('idle'); // idle, playing, gameover
+  const [trainY, setTrainY] = useState(200);
+  const [velocity, setVelocity] = useState(0);
   const [obstacles, setObstacles] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
 
-  useEffect(() => {
-    let timeId;
-    if (gameStarted && !gameOver) {
-      timeId = setInterval(() => {
-        // Grawitacja
-        setTrainPos(pos => {
-          const newPos = pos + GRAVITY;
-          if (newPos > 450 || newPos < 0) {
-            setGameOver(true);
-            return pos;
-          }
-          return newPos;
-        });
+  const requestRef = useRef();
+  const lastSpawnRef = useRef(0);
 
-        // Przeszkody
-        setObstacles(obs => {
-          let newObs = obs.map(ob => ({ ...ob, left: ob.left - OBSTACLE_SPEED }));
-          if (newObs.length > 0 && newObs[0].left < -OBSTACLE_WIDTH) {
-            newObs.shift();
-            setScore(s => s + 1);
-          }
-          if (newObs.length === 0 || newObs[newObs.length - 1].left < 300) {
-            const height = Math.floor(Math.random() * 200) + 50;
-            newObs.push({ left: 600, height });
-          }
-          return newObs;
-        });
-      }, 30);
-    }
-    return () => clearInterval(timeId);
-  }, [gameStarted, gameOver]);
-
-  // Detekcja kolizji
-  useEffect(() => {
-    if (!gameOver) {
-      obstacles.forEach(ob => {
-        const trainRight = 100 + 40; 
-        const trainBottom = trainPos + 40;
-        const obRight = ob.left + OBSTACLE_WIDTH;
-        
-        const hitTop = trainPos < ob.height;
-        const hitBottom = trainBottom > ob.height + 150; 
-        
-        if (ob.left < trainRight && obRight > 100 && (hitTop || hitBottom)) {
-          setGameOver(true);
-        }
-      });
-    }
-  }, [trainPos, obstacles, gameOver]);
-
-  const jump = () => {
-    if (!gameStarted) {
-      setGameStarted(true);
-      setTrainPos(250);
-      setObstacles([]);
-      setScore(0);
-      setGameOver(false);
-    } else if (!gameOver) {
-      setTrainPos(pos => Math.max(0, pos + JUMP));
+  const handleJump = () => {
+    if (gameState === 'playing') {
+      setVelocity(JUMP);
     }
   };
 
+  const startGame = () => {
+    setTrainY(200);
+    setVelocity(0);
+    setObstacles([]);
+    setScore(0);
+    lastSpawnRef.current = performance.now();
+    setGameState('playing');
+  };
+
+  const updateGame = (time) => {
+    if (gameState !== 'playing') return;
+
+    // Grawitacja i ruch pociągu
+    setTrainY((y) => {
+      const nextY = y + velocity;
+      if (nextY > 400 || nextY < 0) {
+        setGameState('gameover');
+        return y;
+      }
+      return nextY;
+    });
+    setVelocity((v) => v + GRAVITY);
+
+    // Generator przeszkód
+    if (time - lastSpawnRef.current > 1800) {
+      const gapPosition = Math.floor(Math.random() * 180) + 50; // wysokość szczeliny
+      setObstacles((obs) => [
+        ...obs,
+        { id: Math.random(), left: 800, gapTop: gapPosition, gapBottom: gapPosition + 130 }
+      ]);
+      lastSpawnRef.current = time;
+    }
+
+    // Ruch przeszkód i kolizje
+    setObstacles((prevObs) => {
+      const updated = [];
+      for (let ob of prevObs) {
+        const nextLeft = ob.left - OBSTACLE_SPEED;
+
+        // Sprawdzenie kolizji (pociąg jest na stałej pozycji X ok 100px od lewej)
+        if (nextLeft < 150 && nextLeft + OBSTACLE_WIDTH > 100) {
+          // Pociąg jest w osi przeszkody, sprawdzamy czy uderzył w barierę góra/dół
+          if (trainY < ob.gapTop || trainY + 30 > ob.gapBottom) {
+            setGameState('gameover');
+          }
+        }
+
+        if (nextLeft < 100 && !ob.passed) {
+          ob.passed = true;
+          setScore(s => s + 1);
+        }
+
+        if (nextLeft > -OBSTACLE_WIDTH) {
+          updated.push({ ...ob, left: nextLeft });
+        }
+      }
+      return updated;
+    });
+
+    requestRef.current = requestAnimationFrame(updateGame);
+  };
+
+  useEffect(() => {
+    if (gameState === 'playing') {
+      requestRef.current = requestAnimationFrame(updateGame);
+    }
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [gameState, trainY, velocity]);
+
   return (
-    <div className="game-container flappy-theme" onClick={jump}>
-      <button className="back-button" onClick={(e) => { e.stopPropagation(); onBack(); }}>&larr; {t.btn_back}</button>
-      <h2>{t.game_flappy_title}</h2>
-      <p>{t.score} {score}</p>
-      
-      <div className="flappy-area">
-        {!gameStarted && !gameOver && <div className="flappy-msg">{t.click_to_start}</div>}
-        {gameOver && (
-          <div className="flappy-msg over">
-            <h3>{t.game_over}</h3>
-            <button className="play-button" onClick={(e) => { e.stopPropagation(); setGameStarted(false); setGameOver(false); setScore(0); setTrainPos(250); setObstacles([]); }}>{t.play_again}</button>
-          </div>
-        )}
-        <div className="flappy-train" style={{ top: trainPos }}>🚂</div>
-        {obstacles.map((ob, i) => (
-          <React.Fragment key={i}>
-            <div className="flappy-pipe top" style={{ left: ob.left, height: ob.height, width: OBSTACLE_WIDTH }}></div>
-            <div className="flappy-pipe bottom" style={{ left: ob.left, top: ob.height + 150, bottom: 0, width: OBSTACLE_WIDTH }}></div>
-          </React.Fragment>
-        ))}
+    <div className="game-card-wrapper" onClick={handleJump}>
+      <button className="back-button" onClick={(e) => { e.stopPropagation(); onBack(); }}>
+        &larr; {t.btn_back || 'Powrót'}
+      </button>
+
+      <div className="game-main-card" onClick={(e) => e.stopPropagation()}>
+        <div className="game-top-header">
+          <h2>🚂 {t.game_flappy_title || 'Flappy Train'}</h2>
+          {gameState === 'playing' && (
+            <div className="game-hud-stats">
+              <span className="hud-score">🏆 {t.score || 'Punkty'}: <strong>{score}</strong></span>
+            </div>
+          )}
+        </div>
+
+        <div className="game-viewport-area" onClick={handleJump} style={{ cursor: 'pointer' }}>
+          {gameState === 'idle' && (
+            <div className="game-overlay-screen">
+              <h3>Szybki Przelot</h3>
+              <p className="game-explanation-text">
+                Utrzymuj pociąg w powietrzu! Klikaj w dowolne miejsce ekranu gry, aby skakać i omijać gigantyczne słupy trakcyjne.
+              </p>
+              <button className="btn-arcade-play" onClick={startGame}>START 🚀</button>
+            </div>
+          )}
+
+          {gameState === 'playing' && (
+            <>
+              {/* Lokomotywa */}
+              <div style={{
+                position: 'absolute',
+                left: '100px',
+                top: `${trainY}px`,
+                fontSize: '35px',
+                zIndex: 5,
+                userSelect: 'none',
+                transform: `rotate(${velocity * 2}deg)`,
+                transition: 'transform 0.05s linear'
+              }}>
+                🚂
+              </div>
+
+              {/* Przeszkody */}
+              {obstacles.map((ob) => (
+                <React.Fragment key={ob.id}>
+                  {/* Górna rura */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${ob.left}px`,
+                    top: 0,
+                    width: `${OBSTACLE_WIDTH}px`,
+                    height: `${ob.gapTop}px`,
+                    background: 'linear-gradient(90deg, #2c3e50 0%, #34495e 100%)',
+                    borderLeft: '2px solid #e74c3c',
+                    borderRight: '2px solid #e74c3c',
+                    borderBottom: '4px solid #e74c3c'
+                  }} />
+                  {/* Dolna rura */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${ob.left}px`,
+                    top: `${ob.gapBottom}px`,
+                    width: `${OBSTACLE_WIDTH}px`,
+                    bottom: 0,
+                    background: 'linear-gradient(90deg, #2c3e50 0%, #34495e 100%)',
+                    borderLeft: '2px solid #e74c3c',
+                    borderRight: '2px solid #e74c3c',
+                    borderTop: '4px solid #e74c3c'
+                  }} />
+                </React.Fragment>
+              ))}
+            </>
+          )}
+
+          {gameState === 'gameover' && (
+            <div className="game-overlay-screen game-over-theme">
+              <h3>🛑 WYKOLEJENIE!</h3>
+              <p className="game-explanation-text">Pociąg uderzył w infrastrukturę.</p>
+              <p className="game-explanation-text">Twój ostateczny wynik to: <strong>{score}</strong> punktów.</p>
+              <button className="btn-arcade-play" onClick={startGame}>Zagraj Ponownie 🔄</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

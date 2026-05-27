@@ -140,7 +140,7 @@
 /* ========================================= */
 .train-route-details {
     padding: 20px 24px;
-    background: #121212;
+    background: var(--bg-main);
     border-top: 1px solid #333;
 }
 
@@ -149,6 +149,11 @@
     border-collapse: collapse;
     margin-top: 15px;
     position: relative;
+}
+
+.arrow {
+    margin-left: 8px;
+    user-select: none;
 }
 
 .route-table th {

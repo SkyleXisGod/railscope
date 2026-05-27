@@ -204,7 +204,8 @@ export const translations = {
             language: 'Język / Language',
             danger: 'Usuń konto',
             save: 'Zapisz',
-            reset: 'Przywróć domyślne'
+            reset: 'Przywróć domyślne',
+            coming_soon: '(WKRÓTCE)'
         },
         app: {
             map: 'Mapa',
@@ -373,6 +374,8 @@ export const translations = {
             speed: "Speed:",
             cash: "Funds:",
             click_to_start: "Click or press Space to start",
+            game_wagoncatcher_title: "WagonCatcher",
+            game_wagoncatcher_desc: "Catch falling wagons.",
             game_memory_title: "Railway Memory",
             game_memory_desc: "Find matching pairs of trains.",
             game_flappy_title: "Flappy Train",
@@ -426,7 +429,8 @@ export const translations = {
             language: 'Language',
             danger: 'Delete account',
             save: 'Save',
-            reset: 'Reset to default'
+            reset: 'Reset to default',
+            coming_soon: '(COMING SOON)'
         },
         app: {
             map: 'Map',
@@ -656,7 +660,8 @@ export const translations = {
             language: 'Язык / Language',
             danger: 'Удалить аккаунт',
             save: 'Сохранить',
-            reset: 'Сбросить настройки'
+            reset: 'Сбросить настройки',
+            coming_soon: '(СКОРО)'
         },
         app: {
             map: 'Карта',
@@ -886,7 +891,8 @@ export const translations = {
             language: 'Lingua / Language',
             danger: 'Elimina account',
             save: 'Salva',
-            reset: 'Ripristina predefiniti'
+            reset: 'Ripristina predefiniti',
+            coming_soon: '(PROSSIMAMENTE)'
         },
         app: {
             map: 'Mappa',
@@ -1116,7 +1122,8 @@ export const translations = {
             language: 'Idioma / Language',
             danger: 'Eliminar cuenta',
             save: 'Guardar',
-            reset: 'Restablecer predeterminados'
+            reset: 'Restablecer predeterminados',
+            coming_soon: '(PRÓXIMAMENTE)'   
         },
         app: {
             map: 'Mapa',
@@ -1346,7 +1353,8 @@ export const translations = {
             language: 'Język / Language',
             danger: 'Skasuj konto',
             save: 'Zapisz',
-            reset: 'Przywróć fabryczne'
+            reset: 'Przywróć fabryczne',
+            coming_soon: '(NIEDŁUGO)'
         },
         app: {
             map: 'Mapa',
@@ -1806,7 +1814,8 @@ export const translations = {
             language: 'Patriot Dialect / Language',
             danger: 'Self-Destruct Account',
             save: 'Lock & Load',
-            reset: 'Revert to Factory Settings'
+            reset: 'Revert to Factory Settings',
+            coming_soon: '(SOON TO BE ANNOUNCED)'
         },
         app: {
             map: 'Satellite Radar',
@@ -2026,7 +2035,8 @@ export const translations = {
             language: 'Sprache',
             danger: 'Konto löschen',
             save: 'Speichern',
-            reset: 'Auf Standard zurücksetzen'
+            reset: 'Auf Standard zurücksetzen',
+            coming_soon: '(Demnächst verfügbar)'
         },
         app: {
             map: 'Karte',
@@ -2248,7 +2258,8 @@ export const translations = {
             language: '言語設定',
             danger: 'アカウントを削除',
             save: '設定を保存',
-            reset: '初期設定に戻す'
+            reset: '初期設定に戻す',
+            coming_soon: '(近日公開予定)'
         },
         app: {
             map: '運行地図',
@@ -2470,7 +2481,8 @@ export const translations = {
             language: 'Speech',
             danger: 'Scuttle Account (Delete)',
             save: 'Lock in chest',
-            reset: 'Throw overboard (Reset)'
+            reset: 'Throw overboard (Reset)',
+            coming_soon: '(COMING SOON)'
         },
         app: {
             map: 'Sea Chart',

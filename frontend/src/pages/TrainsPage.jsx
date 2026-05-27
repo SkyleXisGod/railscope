@@ -148,19 +148,17 @@ export default function TrainsPage() {
                 {loading && <div className="loader">{t.title}...</div>}
                 {error && <div className="error-message">{error}</div>}
                 
-                {/* --- TUTAJ MAGIA ANIMATE PRESENCE --- */}
                 <AnimatePresence mode="popLayout">
                     {!loading && !error && trains.map((train, idx) => {
                         const hasRoute = train.route && train.route.length > 0;
                         const normalizedRoute = normalizeRouteTimes(train.route);
                         const isPremium = premiumCats.includes(train.categorySymbol);
-                        // WAŻNE: Klucz MUSI być unikalny i stabilny, żeby AnimatePresence wiedziało co usunąć!
                         const uniqueKey = train.trainOrderId || `${train.number}-${idx}`;
 
                         return (
                             <motion.div 
                                 key={uniqueKey} 
-                                layout // Pomaga w płynnym przesuwaniu pozostałych pociągów
+                                layout 
                                 variants={itemVariants}
                                 initial="hidden"
                                 animate="visible"

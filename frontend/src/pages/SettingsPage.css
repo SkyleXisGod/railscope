@@ -170,3 +170,13 @@
     }
 }
 
+.disabled-group label {
+    cursor: not-allowed !important; /* Zmienia kursor na czerwoną przekreśloną linię / zakaz */
+    user-select: none; /* Blokuje podświetlanie tekstu przy próbie kliknięcia */
+}
+
+.disabled-group input[type="checkbox"] {
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+

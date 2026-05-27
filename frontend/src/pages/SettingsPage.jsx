@@ -18,7 +18,6 @@ export default function SettingsPage() {
     const [theme, setTheme] = useState(user?.settings?.theme || DEFAULT_SETTINGS.theme);
     const [accentColor, setAccentColor] = useState(user?.settings?.accent_color || user?.settings?.accentColor || DEFAULT_SETTINGS.accentColor);
     const [textColor, setTextColor] = useState(user?.settings?.text_color || user?.settings?.textColor || DEFAULT_SETTINGS.textColor);
-    const [textOutline, setTextOutline] = useState((user?.settings?.text_outline ?? user?.settings?.textOutline) ? true : false);
     const [backgroundMode, setBackgroundMode] = useState(user?.settings?.background_mode || user?.settings?.backgroundMode || DEFAULT_SETTINGS.backgroundMode);
     const [mapTheme, setMapTheme] = useState(user?.settings?.map_theme || user?.settings?.mapTheme || DEFAULT_SETTINGS.mapTheme);
     const [animations, setAnimations] = useState(user?.settings?.animations !== 'none');
@@ -30,16 +29,20 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (user?.settings) {
+            const currentBgMode = user.settings.background_mode || user.settings.backgroundMode || DEFAULT_SETTINGS.backgroundMode;
+            
+            // Jeśli tryb to jasny, automatycznie wymuszamy czarny tekst, w przeciwnym wypadku bierzemy z bazy
+            const currentTextColor = currentBgMode === 'light' ? '#000000' : (user.settings.text_color || user.settings.textColor || DEFAULT_SETTINGS.textColor);
+            const currentAnimations = user.settings.animations;
             setLang(user.settings.language || 'PL');
             setTheme(user.settings.theme || DEFAULT_SETTINGS.theme);
             setAccentColor(user.settings.accent_color || user.settings.accentColor || DEFAULT_SETTINGS.accentColor);
-            setTextColor(user.settings.text_color || user.settings.textColor || DEFAULT_SETTINGS.textColor);
-            setTextOutline((user.settings.text_outline ?? user.settings.textOutline) ? true : false);
-            setBackgroundMode(user.settings.background_mode || user.settings.backgroundMode || DEFAULT_SETTINGS.backgroundMode);
+            setTextColor(currentTextColor);
+            setBackgroundMode(currentBgMode);
             setMapTheme(user.settings.map_theme || user.settings.mapTheme || DEFAULT_SETTINGS.mapTheme);
             setAnimations(user.settings.animations !== 'none');
             
-            if (user.settings.language === 'PIRATE' || user.settings.language === 'WINGDINGS') {
+            if (user.settings.language === 'PIRATE') {
                 setShowSecretLanguages(true);
             }
         }
@@ -53,6 +56,15 @@ export default function SettingsPage() {
         const newText = settings.textColor ?? textColor;
         const newBgMode = settings.backgroundMode ?? backgroundMode;
         const newMapTheme = settings.mapTheme ?? mapTheme;
+        
+        const animSetting = settings.animations !== undefined ? settings.animations : (animations ? 'block' : 'none');
+        const areAnimationsDisabled = animSetting === 'none' || animSetting === false;
+
+        if (areAnimationsDisabled) {
+            document.body.classList.add('no-animations');
+        } else {
+            document.body.classList.remove('no-animations');
+        }
 
         const bgMain = newBgMode === 'light' ? '#f3f7fb' : '#0f121a';
         const bgCard = newBgMode === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20,24,33,0.95)';
@@ -85,7 +97,7 @@ export default function SettingsPage() {
             accentColor: settings.accentColor ?? accentColor,
             animations: settings.animations ?? (animations ? 'block' : 'none'),
             textColor: settings.textColor ?? textColor,
-            textOutline: settings.textOutline !== undefined ? settings.textOutline : (textOutline ? 1 : 0),
+            textOutline: user?.settings?.text_outline ?? user?.settings?.textOutline ?? 0, // zachowanie starego pola bez zmian
             backgroundMode: settings.backgroundMode ?? backgroundMode,
             mapTheme: settings.mapTheme ?? mapTheme
         };
@@ -100,8 +112,6 @@ export default function SettingsPage() {
                 animations: payload.animations,
                 text_color: payload.textColor,
                 textColor: payload.textColor,
-                text_outline: payload.textOutline ? 1 : 0,
-                textOutline: payload.textOutline ? 1 : 0,
                 background_mode: payload.backgroundMode,
                 backgroundMode: payload.backgroundMode,
                 map_theme: payload.mapTheme,
@@ -119,15 +129,13 @@ export default function SettingsPage() {
             setTextColor(DEFAULT_SETTINGS.textColor);
             setBackgroundMode(DEFAULT_SETTINGS.backgroundMode);
             setMapTheme(DEFAULT_SETTINGS.mapTheme);
-            setTextOutline(false);
             
             saveSettings({
                 theme: DEFAULT_SETTINGS.theme,
                 accentColor: DEFAULT_SETTINGS.accentColor,
                 textColor: DEFAULT_SETTINGS.textColor,
                 backgroundMode: DEFAULT_SETTINGS.backgroundMode,
-                mapTheme: DEFAULT_SETTINGS.mapTheme,
-                textOutline: 0
+                mapTheme: DEFAULT_SETTINGS.mapTheme
             });
         }
     };
@@ -144,6 +152,19 @@ export default function SettingsPage() {
             } catch (err) {
                 console.error('Nie udało się powiadomić serwera o sekrecie:', err);
             }
+        }
+    };
+
+    // Obsługa zmiany trybu tła z automatycznym przełączaniem tekstu na czarny w trybie jasnym
+    const handleBackgroundChange = (newMode) => {
+        setBackgroundMode(newMode);
+        
+        if (newMode === 'light') {
+            setTextColor('#000000');
+            saveSettings({ backgroundMode: newMode, textColor: '#000000' });
+        } else {
+            setTextColor(DEFAULT_SETTINGS.textColor);
+            saveSettings({ backgroundMode: newMode, textColor: DEFAULT_SETTINGS.textColor });
         }
     };
 
@@ -186,6 +207,7 @@ export default function SettingsPage() {
                         <input
                             type="color"
                             value={textColor}
+                            disabled={backgroundMode === 'light'} /* Zablokowane w trybie jasnym, bo tekst MUSI być wtedy czarny */
                             onChange={(e) => {
                                 setTextColor(e.target.value);
                                 saveSettings({ textColor: e.target.value });
@@ -194,29 +216,11 @@ export default function SettingsPage() {
                         />
                     </div>
 
-                    <div className="setting-group checkbox-group">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={textOutline}
-                                onChange={(e) => {
-                                    const next = e.target.checked;
-                                    setTextOutline(next);
-                                    saveSettings({ textOutline: next ? 1 : 0 });
-                                }}
-                            />
-                            {t.textOutline}
-                        </label>
-                    </div>
-
                     <div className="setting-group">
                         <label>{t.background}</label>
                         <select
                             value={backgroundMode}
-                            onChange={(e) => {
-                                setBackgroundMode(e.target.value);
-                                saveSettings({ backgroundMode: e.target.value });
-                            }}
+                            onChange={(e) => handleBackgroundChange(e.target.value)}
                         >
                             <option value="dark">{t.dark_theme}</option>
                             <option value="light">{t.light_theme}</option>
@@ -276,18 +280,21 @@ export default function SettingsPage() {
                         </select>
                     </div>
 
-                    <div className="setting-group checkbox-group">
-                        <label>
+                    <div className="setting-group checkbox-group disabled-group">
+                        <label style={{ opacity: 0.5, cursor: 'not-allowed' }}>
                             <input
                                 type="checkbox"
                                 checked={animations}
+                                disabled={true} /* <--- Blokada klikania w checkbox */
                                 onChange={(e) => {
+                                    // Kod wewnątrz się nie wykona, dopóki jest disabled, 
+                                    // ale zostawiamy go lub możemy zakomentować
                                     const next = e.target.checked;
                                     setAnimations(next);
                                     saveSettings({ animations: next ? 'block' : 'none' });
                                 }}
                             />
-                            {t.performance}
+                            {t.performance} <span style={{ fontSize: '0.8rem', color: 'var(--accent-color)', marginLeft: '8px' }}>{t.coming_soon}</span>
                         </label>
                     </div>
                 </div>

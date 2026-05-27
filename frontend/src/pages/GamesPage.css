@@ -1,9 +1,12 @@
+/* ==========================================================================
+   1. STRONA GŁÓWNA GIER (GAMES PAGE & GRID)
+   ========================================================================== */
 .games-page {
-  padding: 20px;
-  background-color: #121212;
-  color: white;
+  padding: 30px 20px;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
 }
 
 .games-page.fullscreen {
@@ -11,150 +14,541 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #0b0d11;
 }
 
 .games-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+}
+
+.games-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+}
+
+.games-header p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 25px;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 10px;
 }
 
-.game-card {
-  background: #1e1e1e;
-  border-radius: 10px;
-  padding: 20px;
+/* ARCADE KARTY GIER */
+.game-arcade-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 30px 20px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  border: 1px solid #333;
-}
-
-.game-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 255, 202, 0.2);
-  border-color: #00ffca;
-}
-
-.play-btn {
-  background: #00ffca;
-  color: #000;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-weight: bold;
-  margin-top: 15px;
-  cursor: pointer;
-}
-
-.game-container {
-  width: 100%;
-  max-width: 800px;
-  min-height: 500px;
-  background: #1e1e1e;
-  border-radius: 15px;
-  padding: 20px;
   position: relative;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              border-color 0.25s ease, 
+              box-shadow 0.25s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.game-arcade-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--primary-color);
+  box-shadow: 0 12px 25px rgba(52, 152, 219, 0.25),
+              inset 0 0 10px rgba(52, 152, 219, 0.1);
+}
+
+/* Kolorowe akcenty dla ikon gier */
+.game-card-emoji {
+  font-size: 3.5rem;
+  margin-bottom: 15px;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.game-arcade-card:hover .game-card-emoji {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.game-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 5px 0;
+}
+
+.game-card-status {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* Wyróżnienie gier, które już działają */
+.game-arcade-card.active-game-mode {
+  border-bottom: 3px solid var(--primary-color);
+}
+.game-arcade-card.active-game-mode .game-card-status {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   2. UNIWERSALNE STYLIZACJE KARTY GRY I WIDOKU (VIEWPORT)
+   ========================================================================== */
+.game-card-wrapper {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.back-button {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: transparent;
-  color: #00ffca;
-  border: 1px solid #00ffca;
-  padding: 5px 15px;
-  border-radius: 5px;
+.game-card-wrapper .back-button {
+  align-self: flex-start;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 15px;
+  transition: all var(--transition-speed) ease;
+}
+
+.game-card-wrapper .back-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.game-main-card {
+  width: 100%;
+  max-width: 800px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.game-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+.game-top-header h2 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.game-hud-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 1.1rem;
+}
+
+.hud-score strong {
+  color: var(--primary-color);
+}
+
+.hud-timer strong {
+  color: var(--accent-color);
+}
+
+/* GŁÓWNY EKRAN ROZGRYWKI (CZARNA KABINA/PLANSZA) */
+.game-viewport-area {
+  width: 100%;
+  height: 450px;
+  background: linear-gradient(180deg, #07090e 0%, #151922 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+.memory {
+  height: 600px !important;
+}
+
+/* NAKŁADKI: START / GAME OVER / PLACEHOLDER */
+.game-overlay-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 18, 26, 0.95);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
   z-index: 10;
 }
 
-.play-button, .play-button-mini {
-  background: #00ffca;
-  color: #000;
-  border: none;
-  padding: 15px 30px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-top: 20px;
+.game-overlay-screen h3 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: var(--text-primary);
 }
 
-.furnace-theme { background-color: #1a1e1a; border: 5px solid #2d332d; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); color: #00ffca; font-family: 'Courier New', Courier, monospace; }
-.chernobyl-title { color: #00ffca; text-shadow: 0 0 10px #00ffca; border-bottom: 2px solid #00ffca; padding-bottom: 10px; }
-.chernobyl-panel { background: #0a0a0a; padding: 20px; border-radius: 8px; border: 2px solid #333; }
-.meter { margin-bottom: 15px; text-align: left; }
-.bar-bg { width: 100%; height: 20px; background: #222; border: 1px solid #444; margin: 5px 0; }
-.bar-fill { height: 100%; transition: width 0.2s, background-color 0.2s; }
-.blink-red { color: #ff0000; animation: blink 0.5s infinite; font-weight: bold; }
-.green-text { color: #00ffca; }
-.coal-btn { background: #b33900; color: white; border: 2px solid #ff4d00; padding: 15px; width: 100%; font-size: 1.2rem; cursor: pointer; border-radius: 5px; font-weight: bold; margin-bottom: 10px; }
-.coal-btn:active { background: #ff4d00; }
-.supply-btn { background: #333; color: #fff; border: 1px solid #555; padding: 10px; width: 100%; cursor: pointer; border-radius: 5px; }
-.chernobyl-boom { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
-.chernobyl-cold { color: #0088ff; text-shadow: 0 0 20px #0088ff; }
-.brake-theme { background: #2b2b36; border: 4px solid #1a1a24; }
-.dashboard-panel { display: flex; justify-content: space-around; background: #111; padding: 20px; border-radius: 10px; border: 2px inset #444; margin-bottom: 30px; }
-.dashboard-panel h3 { font-size: 2rem; color: #ff3333; font-family: 'Courier New', monospace; margin: 0; }
-.dashboard-panel p { color: #888; font-size: 0.8rem; margin: 0; }
-.lever-container { display: flex; flex-direction: column; align-items: center; margin: 30px 0; }
-.lever { width: 60px; height: 150px; background: #222; border-radius: 30px; position: relative; border: 4px solid #111; box-shadow: inset 0 0 15px #000; cursor: pointer; }
-.lever-shaft { width: 16px; height: 80px; background: linear-gradient(90deg, #666, #999, #666); position: absolute; bottom: 10px; left: 18px; transition: transform 0.2s ease, bottom 0.2s ease; transform-origin: bottom; }
-.lever-handle { width: 50px; height: 50px; background: radial-gradient(circle, #ff3333, #aa0000); border-radius: 50%; position: absolute; bottom: 80px; left: 1px; transition: bottom 0.2s ease; z-index: 2; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
-.lever.pulled .lever-shaft { transform: rotateX(60deg) scaleY(0.5); bottom: -10px; }
-.lever.pulled .lever-handle { bottom: 10px; }
-.radar-theme { background: #0a1f0a; border: 5px solid #003300; }
-.radar-screen { width: 300px; height: 300px; border-radius: 50%; border: 2px solid #00ff00; margin: 0 auto; position: relative; background: radial-gradient(circle, #001100 0%, #002200 100%); overflow: hidden; box-shadow: 0 0 20px #00ff00; }
-.radar-sweep { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: linear-gradient(90deg, rgba(0,255,0,0) 0%, rgba(0,255,0,1) 100%); transform-origin: 0 50%; animation: sweep 2s linear infinite; }
-.radar-blip { position: absolute; width: 10px; height: 10px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; cursor: pointer; }
-.cargo-theme { background: #1c2331; }
-.conveyor { width: 100%; height: 100px; background: #333; margin: 20px 0; border-bottom: 5px solid #222; display: flex; align-items: center; justify-content: space-around; }
-.cargo-box { width: 50px; height: 50px; background: #c68e17; border: 2px solid #8b5a00; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: grab; }
-.train-wagon { width: 150px; height: 80px; background: #555; border: 2px solid #222; margin: 0 auto; display: flex; flex-wrap: wrap; align-content: flex-end; justify-content: center; padding-bottom: 5px; }
-.placeholder-game { padding: 50px; }
-.memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; padding: 20px; }
-.memory-card { width: 80px; height: 80px; perspective: 1000px; cursor: pointer; }
-.memory-card-inner { width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; position: relative; }
-.memory-card.flipped .memory-card-inner { transform: rotateY(180deg); }
-.memory-card-front, .memory-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-.memory-card-front { background: #333; border: 2px solid #555; transition: background 0.2s; }
-.memory-card-front:hover { background: #444; border-color: #00ffca; }
-.memory-card-back { background: #00ffca; color: #000; transform: rotateY(180deg); }
-.win-screen { animation: popIn 0.5s ease-out forwards; }
-.flappy-area { width: 100%; height: 500px; background: linear-gradient(180deg, #87CEEB 0%, #e0f6ff 100%); position: relative; overflow: hidden; border-radius: 10px; border: 3px solid #333; margin-top: 20px; cursor: pointer; box-shadow: inset 0 0 20px rgba(0,0,0,0.2); }
-.flappy-train { position: absolute; left: 100px; font-size: 40px; line-height: 40px; transition: top 0.1s linear; text-shadow: 2px 2px 0 #000; z-index: 5; }
-.flappy-pipe { position: absolute; background: linear-gradient(90deg, #2E8B57 0%, #3cb371 50%, #2E8B57 100%); border: 2px solid #006400; box-shadow: 5px 0 10px rgba(0,0,0,0.3); }
-.flappy-pipe.top { border-bottom: 5px solid #004d00; border-radius: 0 0 5px 5px; }
-.flappy-pipe.bottom { border-top: 5px solid #004d00; border-radius: 5px 5px 0 0; }
-.flappy-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); padding: 30px; border-radius: 15px; color: white; font-weight: bold; text-align: center; z-index: 10; border: 2px solid #00ffca; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-.flappy-msg.over { border-color: #ff3333; color: #ff3333; }
-.snake-grid { display: grid; grid-template-columns: repeat(20, 1fr); width: 400px; height: 400px; background: #000; }
-.snake-cell { border: 1px solid #111; }
-.snake-cell.body { background: #00ffca; }
-.simon-board { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 300px; margin: 30px auto; }
-.simon-btn { height: 120px; border-radius: 20px; cursor: pointer; opacity: 0.6; }
-.simon-btn.red { background: #ff4444; }
-.simon-btn.green { background: #44ff44; }
-.simon-btn.blue { background: #4444ff; }
-.simon-btn.yellow { background: #ffff44; }
-.simon-btn.active { opacity: 1; transform: scale(1.05); }
-.big-click-btn { padding: 40px; font-size: 2rem; background: #ff9900; border: none; border-radius: 20px; cursor: pointer; }
-.math-problem { font-size: 3rem; color: #00ffca; margin: 20px; }
-@keyframes popIn {
-  0% { transform: scale(0.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+.game-overlay-screen.game-over-theme h3 {
+  color: var(--danger-color);
+  text-shadow: 0 0 10px rgba(231, 76, 60, 0.3);
 }
-@keyframes sweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+.game-overlay-screen.success-theme h3 {
+  color: var(--success-color);
+  text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+}
+
+.game-explanation-text {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin-bottom: 25px;
+}
+
+.game-controls-badge {
+  background: var(--bg-input);
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 30px;
+  color: var(--text-primary);
+}
+
+.btn-arcade-play {
+  background: var(--primary-color);
+  color: #000000;
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: 12px 35px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.btn-arcade-play:hover {
+  background: #00ffd5;
+  box-shadow: 0 0 15px rgba(0, 255, 213, 0.4);
+}
+
+/* ==========================================================================
+   3. KABINA MASZYNISTY (BRAKE GAME) - SPECYFICZNE STYLE
+   ========================================================================== */
+.driver-cabin-panel {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 500px;
+  margin: 40px auto 20px auto;
+}
+
+.cabin-gauge {
+  background: rgba(42, 46, 53, 0.5);
+  border: 1px solid var(--border-color);
+  padding: 15px 25px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 160px;
+}
+
+.cabin-gauge h4 {
+  font-size: 1.8rem;
+  margin: 0 0 5px 0;
+  font-family: monospace;
+}
+
+.cabin-gauge.speed-mode h4 { color: var(--primary-color); }
+.cabin-gauge.distance-mode h4 { color: var(--accent-color); }
+
+.cabin-gauge p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+/* DŹWIGNIA HAMULCA */
+.brake-lever-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.brake-lever-body {
+  width: 40px;
+  height: 120px;
+  background: #1c1f24;
+  border: 2px solid var(--border-color);
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+}
+
+.brake-lever-handle {
+  width: 32px;
+  height: 32px;
+  background: var(--danger-color);
+  border-radius: 50%;
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.brake-lever-body.pulled-state .brake-lever-handle {
+  top: 74px;
+  background: #c0392b;
+  box-shadow: 0 0 15px var(--danger-color);
+}
+
+.brake-lever-wrapper p {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   4. KONTROLA MATEMATYCZNA (CONDUCTOR MATH) - SPECYFICZNE STYLE
+   ========================================================================== */
+.math-quiz-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+}
+
+.math-question-box {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 40px;
+  font-family: 'Courier New', Courier, monospace;
+  text-shadow: 0 0 10px rgba(255,255,255,0.1);
+}
+
+.math-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  width: 100%;
+  max-width: 450px;
+}
+
+.btn-math-option {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 15px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-math-option:hover {
+  border-color: var(--primary-color);
+  background: rgba(52, 152, 219, 0.1);
+  transform: translateY(-2px);
+}
+
+.btn-math-option:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   5. POZOSTAŁE GRY (PLACEHOLDERY ELEMENTÓW)
+   ========================================================================== */
+.game-element {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.wagon {
+  width: 6%;
+  height: 35px;
+  font-size: 30px;
+  z-index: 4;
+}
+
+.wagon.gold {
+  font-size: 35px;
+  animation: arcadeGoldGlow 0.8s infinite alternate;
+}
+
+.locomotive {
+  bottom: 10px;
+  width: 15%;
+  height: 50px;
+  font-size: 45px;
+  z-index: 5;
+}
+
+@keyframes arcadeGoldGlow {
+  from { filter: drop-shadow(0 0 2px #ffd700); }
+  to { filter: drop-shadow(0 0 10px #ffd700) scale(1.1); }
+}
+
+/* ==========================================================================
+   UZUPEŁNIENIE UI DLA: SWITCHGAME & TRAINMAZE
+   ========================================================================== */
+
+/* Elementy dedykowane dla SwitchGame (Konsola dźwigni) */
+.switch-indicator-box {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #000;
+    border-radius: 4px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    transition: background-color 0.2s ease;
+}
+.switch-indicator-box.route-a {
+    background-color: #ff0055;
+    box-shadow: 0 0 8px rgba(255, 0, 85, 0.6);
+}
+.switch-indicator-box.route-b {
+    background-color: #00ffca;
+    box-shadow: 0 0 8px rgba(0, 255, 202, 0.6);
+}
+
+.industrial-switch-slot {
+    width: 50px;
+    height: 110px;
+    background: #111;
+    border: 3px solid #2a2a2a;
+    border-radius: 8px;
+    position: relative;
+    margin: 0 auto;
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+}
+
+.industrial-lever-shaft {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 55px;
+    background: #444;
+    border-radius: 3px;
+    transition: bottom 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.industrial-lever-shaft.pulled-up {
+    bottom: 45px;
+}
+
+.industrial-lever-shaft.pulled-down {
+    bottom: 10px;
+}
+
+.industrial-lever-knob {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    position: absolute;
+    top: -9px;
+    left: -6px;
+    transition: background-color 0.2s;
+}
+
+.industrial-lever-knob.active-a {
+    background: #ff0055;
+    box-shadow: 0 0 10px #ff0055;
+}
+
+.industrial-lever-knob.active-b {
+    background: #00ffca;
+    box-shadow: 0 0 10px #00ffca;
+}
+
+/* Elementy dedykowane dla TrainMaze (Plansza labiryntu) */
+.maze-board-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3px;
+    background: #0b0f12;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #22252a;
+    max-width: 360px;
+    margin: 0 auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.maze-cell {
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.maze-cell.cell-wall {
+    background-color: #1a1d20;
+    border: 1px solid #292d32;
+}
+
+.maze-cell.cell-track {
+    background-color: #031510;
+    border: 1px solid #092e23;
+    box-shadow: inset 0 0 4px rgba(0, 255, 202, 0.05);
+}
+
+.maze-emoji-object {
+    font-size: 20px;
+}
+
+.animate-train {
+    display: inline-block;
+    animation: trainPulse 0.4s infinite alternate;
+}
+
+@keyframes trainPulse {
+    from { transform: scale(0.95); }
+    to { transform: scale(1.1); }
+}
+
+/* Animacja pulsu */
+@keyframes pulse-wave {
+  0%, 100% { box-shadow: 0 0 0px rgba(0, 255, 202, 0); }
+  50% { box-shadow: 0 0 15px rgba(0, 255, 202, 0.6); }
+}
+
+.game-arcade-card {
+  transition: transform 0.2s;
+}
+
+.game-arcade-card.active-game-mode {
+  animation: pulse-wave 2s infinite ease-in-out;
+}

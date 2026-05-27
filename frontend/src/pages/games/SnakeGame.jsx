@@ -1,24 +1,36 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../GamesPage.css';
 
-const GRID_SIZE = 20;
-const INITIAL_SNAKE = [[10, 10]];
-const INITIAL_DIRECTION = [0, -1];
+const GRID_SIZE = 15; // Zmniejszona siatka pod stały widok viewportu
 
 export default function SnakeGame({ t, onBack }) {
-  const [snake, setSnake] = useState(INITIAL_SNAKE);
-  const [direction, setDirection] = useState(INITIAL_DIRECTION);
-  const [food, setFood] = useState([5, 5]);
-  const [gameOver, setGameOver] = useState(false);
+  const [snake, setSnake] = useState([[7, 7]]);
+  const [direction, setDirection] = useState([0, -1]);
+  const [food, setFood] = useState([3, 3]);
+  const [gameState, setGameState] = useState('idle'); // idle, running, crashed
   const [score, setScore] = useState(0);
-  const [isStarted, setIsStarted] = useState(false);
 
-  const generateFood = useCallback(() => {
-    return [Math.floor(Math.random() * GRID_SIZE), Math.floor(Math.random() * GRID_SIZE)];
+  const generateFood = useCallback((currentSnake) => {
+    while (true) {
+      const x = Math.floor(Math.random() * GRID_SIZE);
+      const y = Math.floor(Math.random() * GRID_SIZE);
+      if (!currentSnake.some(s => s[0] === x && s[1] === y)) {
+        return [x, y];
+      }
+    }
   }, []);
 
+  const startGame = () => {
+    const initSnake = [[7, 7]];
+    setSnake(initSnake);
+    setDirection([0, -1]);
+    setScore(0);
+    setFood(generateFood(initSnake));
+    setGameState('running');
+  };
+
   const handleKeyDown = useCallback((e) => {
-    if (!isStarted) setIsStarted(true);
+    if (gameState !== 'running') return;
     switch (e.key) {
       case 'ArrowUp': if (direction[1] !== 1) setDirection([0, -1]); break;
       case 'ArrowDown': if (direction[1] !== -1) setDirection([0, 1]); break;
@@ -26,7 +38,7 @@ export default function SnakeGame({ t, onBack }) {
       case 'ArrowRight': if (direction[0] !== -1) setDirection([1, 0]); break;
       default: break;
     }
-  }, [direction, isStarted]);
+  }, [direction, gameState]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -34,42 +46,113 @@ export default function SnakeGame({ t, onBack }) {
   }, [handleKeyDown]);
 
   useEffect(() => {
-    if (!isStarted || gameOver) return;
+    if (gameState !== 'running') return;
+
     const moveInterval = setInterval(() => {
-      setSnake(prev => {
-        const head = prev[0];
-        const newHead = [head[0] + direction[0], head[1] + direction[1]];
-        if (newHead[0] < 0 || newHead[0] >= GRID_SIZE || newHead[1] < 0 || newHead[1] >= GRID_SIZE || prev.some(s => s[0] === newHead[0] && s[1] === newHead[1])) {
-          setGameOver(true);
-          return prev;
+      setSnake((prevSnake) => {
+        const head = prevSnake[0];
+        const nextHead = [head[0] + direction[0], head[1] + direction[1]];
+
+        // Kolizja ze ścianą boczna magistrali
+        if (nextHead[0] < 0 || nextHead[0] >= GRID_SIZE || nextHead[1] < 0 || nextHead[1] >= GRID_SIZE) {
+          setGameState('crashed');
+          return prevSnake;
         }
-        const newSnake = [newHead, ...prev];
-        if (newHead[0] === food[0] && newHead[1] === food[1]) {
-          setScore(s => s + 10);
-          setFood(generateFood());
+
+        // Kolizja z własnym ogonem sondy
+        if (prevSnake.some(segment => segment[0] === nextHead[0] && segment[1] === nextHead[1])) {
+          setGameState('crashed');
+          return prevSnake;
+        }
+
+        const newSnake = [nextHead, ...prevSnake];
+
+        // Sprawdzenie przechwycenia pakietu usterki
+        if (nextHead[0] === food[0] && nextHead[1] === food[1]) {
+          setScore(s => s + 1);
+          setFood(generateFood(newSnake));
         } else {
           newSnake.pop();
         }
+
         return newSnake;
       });
-    }, 150);
+    }, 180 - Math.min(score * 8, 100)); // Przyspieszenie wraz z postępem
+
     return () => clearInterval(moveInterval);
-  }, [direction, isStarted, gameOver, food, generateFood]);
+  }, [gameState, direction, food, score, generateFood]);
 
   return (
-    <div className="game-container snake-theme">
-      <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>{t.game_snake_title}</h2>
-      <p>{t.score} {score}</p>
-      <div className="snake-grid">
-        {!isStarted && !gameOver && <div className="overlay-msg">{t.click_to_start}</div>}
-        {gameOver && <div className="overlay-msg"><h3>{t.game_over}</h3><button className="play-button" onClick={() => { setSnake(INITIAL_SNAKE); setScore(0); setGameOver(false); setIsStarted(false); }}>{t.play_again}</button></div>}
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
-          const x = i % GRID_SIZE; const y = Math.floor(i / GRID_SIZE);
-          const isSnake = snake.some(s => s[0] === x && s[1] === y);
-          const isFood = food[0] === x && food[1] === y;
-          return <div key={i} className={`snake-cell ${isSnake ? 'body' : ''}`}>{isFood ? '🧍' : ''}</div>;
-        })}
+    <div className="game-card-wrapper">
+      <button className="back-button" onClick={onBack}>&larr; {t.btn_back || 'Powrót'}</button>
+
+      <div className="game-main-card">
+        <div className="game-top-header">
+          <h2>📟 {t.game_snake_title || 'SONDAŻ MAGISTRALI'}</h2>
+          {gameState === 'running' && (
+            <div>REKUPERACJA: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score} KB</span></div>
+          )}
+        </div>
+
+        <div className="game-viewport-area" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {gameState === 'idle' && (
+            <div className="game-overlay-screen">
+              <h3>⚡ KALIBRACJA STRUKTURY ŚWIATŁOWODU</h3>
+              <p className="game-explanation-text">
+                Steruj sondą czyszczącą za pomocą klawiszy strzałek. Usuwaj pakiety śmieciowych danych we mgle elektromagnetycznej. Uderzenie w rdzeń ekranu niszczy sondę.
+              </p>
+              <button className="btn-arcade-play" onClick={startGame}>URUCHOM SONDĘ</button>
+            </div>
+          )}
+
+          {gameState === 'running' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+              width: '280px',
+              height: '280px',
+              background: '#0d131a',
+              border: '2px solid #2c3e50',
+              borderRadius: '6px',
+              padding: '2px'
+            }}>
+              {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, idx) => {
+                const x = idx % GRID_SIZE;
+                const y = Math.floor(idx / GRID_SIZE);
+                
+                const isHead = snake[0][0] === x && snake[0][1] === y;
+                const isBody = !isHead && snake.some(s => s[0] === x && s[1] === y);
+                const isFood = food[0] === x && food[1] === y;
+
+                let cellBg = 'transparent';
+                if (isHead) cellBg = '#00ffca';
+                else if (isBody) cellBg = 'rgba(0, 255, 202, 0.4)';
+                else if (isFood) cellBg = '#ff4757';
+
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      background: cellBg,
+                      borderRadius: isHead || isFood ? '3px' : '1px',
+                      margin: '1px',
+                      boxShadow: isHead ? '0 0 8px #00ffca' : isFood ? '0 0 8px #ff4757' : 'none'
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {gameState === 'crashed' && (
+            <div className="game-overlay-screen game-over-theme">
+              <h3>💥 DEKOMPRESJA SONDE!</h3>
+              <p className="game-explanation-text">Sonda uderzyła w fizyczną barierę i utraciła zasilanie pomocnicze.</p>
+              <p className="game-explanation-text">Oczyszczony rejestr: <strong>{score} bloków</strong></p>
+              <button className="btn-arcade-play" onClick={startGame}>RESTARTUJ SYSTEM NAPROWADZANIA 🔄</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

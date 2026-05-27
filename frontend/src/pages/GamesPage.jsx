@@ -1,9 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import './ProfilePage.css';
+import './GamesPage.css'; // Naprawiono: Poprawny plik CSS ze stylami gier
 import { translations } from './constants/translations';
 
 // Import all games
@@ -27,41 +24,45 @@ import MaintenanceGame from './games/MaintenanceGame';
 import CargoGame from './games/CargoGame';
 
 const GAMES_LIST = [
-  { id: 'memory', key: 'game_memory', emoji: '🧠' },
-  { id: 'flappy', key: 'game_flappy', emoji: '🚂' },
-  { id: 'snake', key: 'game_snake', emoji: '🐍' },
-  { id: 'simon', key: 'game_simon', emoji: '🎵' },
-  { id: 'catcher', key: 'game_catcher', emoji: '🚂' },
-  { id: 'clicker', key: 'game_clicker', emoji: '🖱️' },
-  { id: 'math', key: 'game_math', emoji: '🔢' },
-  { id: 'maze', key: 'game_maze', emoji: '迷' },
-  { id: 'signal', key: 'game_signal', emoji: '🚦' },
-  { id: 'brake', key: 'game_brake', emoji: '🛑' },
-  { id: 'coupler', key: 'game_coupler', emoji: '🔗' },
-  { id: 'switch', key: 'game_switch', emoji: '🔀' },
-  { id: 'radio', key: 'game_radio', emoji: '📻' },
-  { id: 'bridge', key: 'game_bridge', emoji: '🌉' },
-  { id: 'radar', key: 'game_radar', emoji: '📡' },
-  { id: 'maintenance', key: 'game_maintenance', emoji: '🔧' },
-  { id: 'cargo', key: 'game_cargo', emoji: '📦' },
-  { id: 'furnace', key: 'game_furnace', emoji: '🔥' }
+  { id: 'wagoncatcher', key: 'game_wagoncatcher', emoji: '📦', ready: true }, 
+  { id: 'math', key: 'game_math', emoji: '🎫', ready: true },
+  { id: 'brake', key: 'game_brake', emoji: '🎛️', ready: true },
+  { id: 'bridge', key: 'game_bridge', emoji: '🌉', ready: true },
+  { id: 'coupler', key: 'game_coupler', emoji: '🔗', ready: true },
+  { id: 'cargo', key: 'game_cargo', emoji: '🚢', ready: true },
+  { id: 'memory', key: 'game_memory', emoji: '🧠', ready: true },
+  { id: 'flappy', key: 'game_flappy', emoji: '🚂', ready: true },
+  { id: 'snake', key: 'game_snake', emoji: '🐍', ready: true },
+  { id: 'simon', key: 'game_simon', emoji: '🚦', ready: true },
+  { id: 'clicker', key: 'game_clicker', emoji: '🖱️', ready: true },
+  { id: 'maze', key: 'game_maze', emoji: '🌀', ready: true },
+  { id: 'furnace', key: 'game_furnace', emoji: '🔥', ready: true },
+  { id: 'radar', key: 'game_radar', emoji: '📡', ready: true },
+  { id: 'signal', key: 'game_signal', emoji: '📻', ready: true },
+  { id: 'switch', key: 'game_switch', emoji: '🎚️', ready: true },
+  { id: 'radio', key: 'game_radio', emoji: '📳', ready: true },
+  { id: 'maintenance', key: 'game_maintenance', emoji: '🔧', ready: true }
 ];
 
 export default function GamesPage() {
+  const { user } = useAuth();
   const [activeGame, setActiveGame] = useState(null);
-  const { user, updateUser } = useAuth();
-  const lang = 'EN';
-  
+
+  const lang = user?.settings?.language || 'PL';
   const t = translations[lang]?.games || translations.PL.games;
 
   const renderGame = () => {
-    const props = { t, onBack: () => setActiveGame(null) };
+    const props = {
+      t: translations[lang]?.app || translations.PL.app,
+      onBack: () => setActiveGame(null)
+    };
+
     switch (activeGame) {
       case 'memory': return <MemoryGame {...props} />;
       case 'flappy': return <FlappyTrain {...props} />;
       case 'snake': return <SnakeGame {...props} />;
       case 'simon': return <SimonSignals {...props} />;
-      case 'catcher': return <WagonCatcher {...props} />;
+      case 'wagoncatcher': return <WagonCatcher {...props} />; 
       case 'clicker': return <TrainClicker {...props} />;
       case 'math': return <ConductorMath {...props} />;
       case 'maze': return <TrainMaze {...props} />;
@@ -86,18 +87,29 @@ export default function GamesPage() {
   return (
     <div className="games-page">
       <header className="games-header">
-        <h1>{t.games_title}</h1>
-        <p>{t.games_subtitle}</p>
+        <h1>{t.games_title || 'Strefa Gier Maszynisty'}</h1>
+        <p>{t.games_subtitle || 'Przetestuj swój refleks i umiejętności kolejowe'}</p>
       </header>
+      
       <div className="games-grid">
-        {GAMES_LIST.map((game) => (
-          <div key={game.id} className="game-card" onClick={() => setActiveGame(game.id)}>
-            <h3>{`${game.emoji}${t[`${game.key}_title`]}`}</h3>
-            <p>{t[`${game.key}_desc`]}</p>
-            <button className="play-btn">{t.btn_play}</button>
-          </div>
-        ))}
+        {GAMES_LIST.map((game, index) => {
+          const delay = `${(index % 4) * 0.2}s`; 
+          return (
+            <div 
+              key={game.id} 
+              className={`game-arcade-card ${game.ready ? 'active-game-mode' : ''}`} 
+              onClick={() => setActiveGame(game.id)}
+              style={{ animationDelay: delay }} 
+            >
+              <span className="game-card-emoji">{game.emoji}</span>
+              <h3 className="game-card-title">{t[game.key + '_title']}</h3>
+              <span className="game-card-status">
+              {game.ready ? 'ONLINE 🟢' : 'WKRÓTCE 🔒'}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-}
+} 

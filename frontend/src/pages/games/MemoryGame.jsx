@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import '../GamesPage.css';
 
 const EMOJIS = ['🚂', '🚋', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉'];
 
@@ -8,13 +7,9 @@ export default function MemoryGame({ t, onBack }) {
   const [flipped, setFlipped] = useState([]);
   const [solved, setSolved] = useState([]);
   const [moves, setMoves] = useState(0);
-
-  useEffect(() => {
-    startNewGame();
-  }, []);
+  const [gameState, setGameState] = useState('idle'); // idle, playing
 
   const startNewGame = () => {
-    // Tasowanie kart
     const shuffled = [...EMOJIS, ...EMOJIS]
       .sort(() => Math.random() - 0.5)
       .map((emoji, idx) => ({ id: idx, emoji }));
@@ -22,10 +17,10 @@ export default function MemoryGame({ t, onBack }) {
     setFlipped([]);
     setSolved([]);
     setMoves(0);
+    setGameState('playing');
   };
 
   const handleCardClick = (index) => {
-    // Blokada przed kliknięciem tej samej, odkrytej lub więcej niż 2 kart
     if (flipped.length === 2 || flipped.includes(index) || solved.includes(index)) return;
 
     const newFlipped = [...flipped, index];
@@ -38,41 +33,84 @@ export default function MemoryGame({ t, onBack }) {
         setSolved(prev => [...prev, first, second]);
         setFlipped([]);
       } else {
-        setTimeout(() => setFlipped([]), 1000);
+        setTimeout(() => setFlipped([]), 800);
       }
     }
   };
 
   return (
-    <div className="game-container memory-theme">
-      <button className="back-button" onClick={onBack}>&larr; {t.btn_back}</button>
-      <h2>{t.game_memory_title}</h2>
-      <p>{t.moves} {moves}</p>
-      
-      {solved.length === cards.length && cards.length > 0 ? (
-        <div className="win-screen">
-          <h3>{t.congratulations}</h3>
-          <button className="play-button" onClick={startNewGame}>{t.play_again}</button>
+    <div className="game-card-wrapper">
+      <button className="back-button" onClick={onBack}>&larr; {t.btn_back || 'Powrót'}</button>
+
+      <div className="game-main-card">
+        <div className="game-top-header">
+          <h2>🧠 {t.game_memory_title || 'Pamięć Maszynisty'}</h2>
+          {gameState === 'playing' && (
+            <div className="game-hud-stats">
+              <span className="hud-score">🔌 Ruchy: <strong>{moves}</strong></span>
+              <span className="hud-timer">✅ Sparowane: <strong>{solved.length / 2} / 8</strong></span>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="memory-grid">
-          {cards.map((card, idx) => {
-            const isFlipped = flipped.includes(idx) || solved.includes(idx);
-            return (
-              <div 
-                key={card.id} 
-                className={`memory-card ${isFlipped ? 'flipped' : ''}`}
-                onClick={() => handleCardClick(idx)}
-              >
-                <div className="memory-card-inner">
-                  <div className="memory-card-front">❓</div>
-                  <div className="memory-card-back">{card.emoji}</div>
-                </div>
-              </div>
-            );
-          })}
+
+        <div className="game-viewport-area memory">
+          {gameState === 'idle' && (
+            <div className="game-overlay-screen">
+              <h3>Matryca Pamięciowa</h3>
+              <p className="game-explanation-text">
+                Odkrywaj karty i łącz w pary identyczne symbole pociągów i infrastruktury kolejowej. Ukończ grę w jak najmniejszej liczbie ruchów!
+              </p>
+              <button className="btn-arcade-play" onClick={startNewGame}>URUCHOM SYSTEMY</button>
+            </div>
+          )}
+
+          {gameState === 'playing' && solved.length === cards.length && (
+            <div className="game-overlay-screen success-theme">
+              <h3>🎉 BRAWO, KOLEJARZU!</h3>
+              <p className="game-explanation-text">Wszystkie obwody pamięci zostały zsynchronizowane w <strong>{moves}</strong> ruchach!</p>
+              <button className="btn-arcade-play" onClick={startNewGame}>Zagraj Ponownie 🔄</button>
+            </div>
+          )}
+
+          {gameState === 'playing' && solved.length < cards.length && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '12px',
+              padding: '20px',
+              height: '100%',
+              boxSizing: 'border-box',
+              alignContent: 'center'
+            }}>
+              {cards.map((card, idx) => {
+                const isFlipped = flipped.includes(idx) || solved.includes(idx);
+                return (
+                  <div 
+                    key={card.id} 
+                    onClick={() => handleCardClick(idx)}
+                    style={{
+                      aspectRatio: '4/3',
+                      background: isFlipped ? 'var(--bg-input)' : 'linear-gradient(135deg, #1e2530 0%, #0f121a 100%)',
+                      border: isFlipped ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: '2rem',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      boxShadow: isFlipped ? '0 0 10px rgba(52, 152, 219, 0.3)' : 'none',
+                      transition: 'all 0.6s ease'
+                    }}
+                  >
+                    {isFlipped ? card.emoji : '❓'}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
