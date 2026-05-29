@@ -26,6 +26,15 @@ db.serialize(() => {
         animations BOOLEAN DEFAULT 1,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
+
+    // Nowa tabela do obsługi płynnych tras z GTFS
+    db.run(`CREATE TABLE IF NOT EXISTS shapes (
+        shape_id TEXT,
+        shape_pt_lat REAL,
+        shape_pt_lon REAL,
+        shape_pt_sequence INTEGER
+    )`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_shapes_id ON shapes(shape_id)`);
 });
 
 export default db;
