@@ -4,7 +4,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js --ignore data/*"
+    "dev": "nodemon server.js --ignore data/*",
+    "dev:all": "concurrently --kill-others -n \"LOG-WINDOW,BACKEND,FRONTEND\" -c \"bgYellow.black,bgBlue.white,bgCyan.black\" \"node log-window.js\" \"nodemon server.js --ignore data/*\" \"cd ../frontend && npm run dev\""
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "concurrently": "^10.0.0",
     "nodemon": "^3.1.14"
   }
 }
