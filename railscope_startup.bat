@@ -9,7 +9,7 @@ start wt -M -d C:\Users\kaper\railscope\backend cmd /k "title LOG_WINDOW && node
 timeout /t 3
 
 :: Otwarcie projektu w Operze GX
-start http://localhost:5173
+start opera.exe http://localhost:5173
 
 echo ===================================================
 echo   Wszystko gotowe! Okna podzielone automatycznie.

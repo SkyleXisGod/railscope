@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import './GamesPage.css'; // Naprawiono: Poprawny plik CSS ze stylami gier
+import './GamesPage.css'; // Poprawny plik CSS ze stylami gier
 import { translations } from './constants/translations';
 
 // Import all games
@@ -55,6 +55,9 @@ export default function GamesPage() {
   const lang = user?.settings?.language || 'PL';
   const t = translations[lang]?.games || translations.PL.games;
 
+  // Sprawdzamy, czy użytkownik ma rolę premium
+  const isPremium = user?.role === 'PLUS';
+
   const renderGame = () => {
     const props = {
       t: translations[lang]?.app || translations.PL.app,
@@ -86,36 +89,59 @@ export default function GamesPage() {
     }
   };
 
-  if (activeGame) {
+  // Jeśli użytkownik jest premium i odpalił grę -> pełny ekran gry
+  if (activeGame && isPremium) {
     return <div className="games-page fullscreen">{renderGame()}</div>;
   }
 
   return (
-    <div className="games-page">
-      <header className="games-header">
-        <h1>{t.games_title || 'Strefa Gier Maszynisty'}</h1>
-        <p>{t.games_subtitle || 'Przetestuj swój refleks i umiejętności kolejowe'}</p>
-      </header>
-      
-      <div className="games-grid">
-        {GAMES_LIST.map((game, index) => {
-          const delay = `${(index % 4) * 0.2}s`; 
-          return (
-            <div 
-              key={game.id} 
-              className={`game-arcade-card ${game.ready ? 'active-game-mode' : ''}`} 
-              onClick={() => setActiveGame(game.id)}
-              style={{ animationDelay: delay }} 
-            >
-              <span className="game-card-emoji">{game.emoji}</span>
-              <h3 className="game-card-title">{t[game.key + '_title']}</h3>
-              <span className="game-card-status">
-              {game.ready ? 'ONLINE 🟢' : 'WKRÓTCE 🔒'}
-              </span>
-            </div>
-          );
-        })}
+    <div className="premium-games-wrapper">
+      {/* 1. Właściwa zawartość strony (będzie rozmyta dla zwykłych użytkowników) */}
+      <div className={`games-page ${!isPremium ? 'premium-blur-active' : ''}`}>
+        <header className="games-header">
+          <h1>{t.games_title || 'Strefa Gier Maszynisty'}</h1>
+          <p>{t.games_subtitle || 'Przetestuj swój refleks i umiejętności kolejowe'}</p>
+        </header>
+        
+        <div className="games-grid">
+          {GAMES_LIST.map((game, index) => {
+            const delay = `${(index % 4) * 0.2}s`; 
+            return (
+              <div 
+                key={game.id} 
+                className={`game-arcade-card ${game.ready ? 'active-game-mode' : ''}`} 
+                onClick={() => isPremium && setActiveGame(game.id)}
+                style={{ animationDelay: delay }} 
+              >
+                <span className="game-card-emoji">{game.emoji}</span>
+                <h3 className="game-card-title">{t[game.key + '_title']}</h3>
+                <span className="game-card-status">
+                  {game.ready ? 'ONLINE 🟢' : 'WKRÓTCE 🔒'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      {/* 2. Nakładka z blokadą i przyciskiem (widoczna TYLKO gdy brak premium) */}
+      {!isPremium && (
+        <div className="premium-overlay-container">
+          <div className="premium-lock-box">
+            <div className="premium-lock-icon">🔒</div>
+            <h2 className="premium-lock-title">Strefa Premium</h2>
+            <p className="premium-lock-message">
+              Przepraszamy! Sekcja gier zręcznościowych dostępna jest wyłącznie dla użytkowników posiadających aktywne konto Premium.
+            </p>
+            <button 
+              className="premium-redirect-btn"
+              onClick={() => window.location.href = '/pay' /* Przekierowanie do strony płatności */}
+            >
+              Odblokuj Dostęp Premium 🌟
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-} 
+}
