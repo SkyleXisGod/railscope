@@ -939,6 +939,58 @@ app.get("/api/stations/:id", (req, res) => {
     }
 });
 
+app.get('/api/admin/users', (req, res) => {
+    db.all(`SELECT id, username, email, role, avatar, premiumDate, bannedUntil FROM users`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(rows);
+    });
+});
+
+app.put('/api/admin/users/:id', (req, res) => {
+    const { username, email, role, bannedUntil, callerRole } = req.body; 
+    const targetId = req.params.id;
+
+    db.get(`SELECT role FROM users WHERE id = ?`, [targetId], (err, targetUser) => {
+        if (err || !targetUser) return res.status(404).json({ error: "Nie znaleziono użytkownika" });
+
+        if (targetUser.role === 'ZARZADCA') {
+            return res.status(403).json({ error: "Konto Zarządcy jest zablokowane do edycji systemowej." });
+        }
+
+        if (callerRole === 'ADMIN') {
+            if (targetUser.role === 'ADMIN') {
+                return res.status(403).json({ error: "Admin nie może edytować innego Admina." });
+            }
+            if (role === 'ADMIN' || role === 'ZARZADCA') {
+                return res.status(403).json({ error: "Brak uprawnień do nadania tej roli." });
+            }
+        }
+
+        db.run(`UPDATE users SET username = ?, email = ?, role = ?, bannedUntil = ? WHERE id = ?`, 
+        [username, email, role, bannedUntil, targetId], function(err) {
+            if (err) return res.status(500).json({ error: "Błąd bazy danych" });
+            res.json({ message: "Użytkownik zaktualizowany" });
+        });
+    });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+    const targetId = req.params.id;
+    const { callerRole } = req.body;
+
+    db.get(`SELECT role FROM users WHERE id = ?`, [targetId], (err, targetUser) => {
+        if (!targetUser) return res.status(404).json({ error: "Nie znaleziono" });
+        
+        if (targetUser.role === 'ZARZADCA') return res.status(403).json({ error: "Zarządca jest nietykalny." });
+        if (callerRole === 'ADMIN' && targetUser.role === 'ADMIN') return res.status(403).json({ error: "Brak uprawnień." });
+
+        db.run(`DELETE FROM users WHERE id = ?`, [targetId], function(err) {
+            if (err) return res.status(500).json({ error: "Błąd usuwania" });
+            res.json({ message: "Usunięto pomyślnie" });
+        });
+    });
+});
+
 app.get("/api/stats", async (req, res) => {
     try {
         const trains = allTrainsList;

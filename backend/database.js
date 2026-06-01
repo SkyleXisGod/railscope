@@ -35,6 +35,7 @@ db.serialize(() => {
         shape_pt_sequence INTEGER
     )`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_shapes_id ON shapes(shape_id)`);
+    db.run(`ALTER TABLE users ADD COLUMN bannedUntil DATETIME DEFAULT NULL;`);
 });
 
 export default db;
