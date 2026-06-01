@@ -1,0 +1,448 @@
+/* ========================================= */
+/* 1. GŁÓWNY KONTENER                        */
+/* ========================================= */
+.admin-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    padding: 0 40px;
+    overflow: hidden;
+}
+
+.admin-container.access-denied {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.admin-container.access-denied h1 {
+    color: #ff4d4d;
+    font-size: 3rem;
+    text-shadow: 0 0 20px rgba(255, 77, 77, 0.4);
+    margin-bottom: 10px;
+}
+
+.admin-header {
+    padding: 40px 0 20px 0;
+}
+
+.admin-title {
+    font-family: 'Dancing Script', cursive; /* Nawiązanie do StationsPage */
+    font-size: 3.5rem;
+    margin: 0;
+    color: var(--text-primary);
+    text-shadow: 0 0 15px rgba(0, 255, 213, 0.2);
+}
+
+.admin-subtitle {
+    margin: -5px 0 20px 0;
+    color: var(--text-secondary);
+}
+
+/* ========================================= */
+/* 2. WYSZUKIWARKA I STATY                   */
+/* ========================================= */
+.admin-search-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    max-width: 800px;
+}
+
+.admin-search-input {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.admin-search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
+}
+
+.admin-stats-badge {
+    padding: 14px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-weight: bold;
+    color: var(--text-secondary);
+}
+
+.admin-stats-badge span {
+    color: var(--accent-color);
+    font-size: 1.1rem;
+    margin-left: 5px;
+}
+
+/* ========================================= */
+/* 3. TABELA UŻYTKOWNIKÓW                    */
+/* ========================================= */
+.admin-list-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 40px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Odstępy między wierszami tworzące efekt "kart" */
+    color: var(--text-primary);
+}
+
+.admin-table th {
+    text-align: left;
+    color: var(--text-secondary);
+    padding: 10px 24px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.admin-table-row {
+    background: var(--bg-card);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.admin-table-row:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.admin-table-row td {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table-row td:first-child {
+    border-left: 1px solid var(--border-color);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.admin-table-row td:last-child {
+    border-right: 1px solid var(--border-color);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.id-cell {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+    width: 80px;
+}
+
+.name-cell {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.email-cell {
+    color: var(--text-secondary);
+}
+
+.actions-cell {
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px !important;
+    color: var(--text-secondary);
+    font-style: italic;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+/* ========================================= */
+/* 4. BADGE RÓL                              */
+/* ========================================= */
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.role-USER {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.role-PLUS {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.role-ADMIN {
+    background: rgba(255, 77, 77, 0.15);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+}
+
+/* ========================================= */
+/* 5. PRZYCISKI AKCJI                        */
+/* ========================================= */
+.action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.edit-btn {
+    background: rgba(0, 255, 213, 0.1);
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.edit-btn:hover {
+    background: var(--accent-color);
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 255, 213, 0.4);
+}
+
+.delete-btn {
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff4d4d;
+    border-color: rgba(255, 77, 77, 0.3);
+}
+
+.delete-btn:hover {
+    background: #ff4d4d;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
+}
+
+/* ========================================= */
+/* 6. MODAL EDYCJI                           */
+/* ========================================= */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.admin-modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 30px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.admin-modal-card h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+
+.admin-input-group {
+    margin-bottom: 20px;
+}
+
+.admin-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.admin-input-group input,
+.admin-input-group select {
+    width: 100%;
+    padding: 12px 15px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.admin-input-group input:focus,
+.admin-input-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
+}
+
+.admin-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.cancel-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.cancel-btn:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.save-btn {
+    background: var(--accent-color);
+    color: #000;
+}
+
+.save-btn:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 213, 0.5);
+    transform: translateY(-2px);
+}
+
+/* ========================================= */
+/* 7. ANIMACJE                               */
+/* ========================================= */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar z StationsPage.css (dziedziczony globalnie, ale na wszelki wypadek) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-color); box-shadow: 0 0 10px rgba(0, 255, 213, 0.5); }
+
+/* ========================================= */
+/* DODATKI DLA BANÓW I ZARZĄDCY              */
+/* ========================================= */
+
+/* Unikalny wygląd dla potężnego ZARZADCY */
+.role-ZARZADCA {
+    background: rgba(255, 0, 85, 0.15);
+    color: #ff0055;
+    border: 1px solid rgba(255, 0, 85, 0.5);
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+    text-shadow: 0 0 5px rgba(255, 0, 85, 0.5);
+}
+
+/* Badge dla zbanowanych użytkowników */
+.banned-badge {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: #ff4d4d;
+    color: #fff;
+    animation: pulse-ban 2s infinite;
+}
+
+/* Przekreślony tekst i czerwony gradient dla zbanowanego wiersza */
+.row-banned {
+    position: relative;
+    opacity: 0.7;
+}
+
+.row-banned::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: #ff4d4d;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.row-banned .name-cell {
+    text-decoration: line-through;
+    color: #888;
+}
+
+/* Informacja o zablokowanej akcji (kiedy ADMIN próbuje edytować ZARZADCĘ) */
+.locked-action {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Styl dla grupy inputa od bana w modalu */
+.ban-group {
+    background: rgba(255, 77, 77, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 77, 77, 0.2);
+}
+
+.ban-group label {
+    color: #ff6b6b !important;
+}
+
+.ban-group input {
+    border-color: rgba(255, 77, 77, 0.4) !important;
+}
+
+.ban-group input:focus {
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.3) !important;
+    border-color: #ff4d4d !important;
+}
+
+@keyframes pulse-ban {
+    0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 77, 77, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+}
+
+.unban-btn {
+    background: rgba(0, 255, 100, 0.1);
+    color: #00ff64;
+    border-color: rgba(0, 255, 100, 0.3);
+}
+
+.unban-btn:hover {
+    background: #00ff64;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 255, 100, 0.4);
+}

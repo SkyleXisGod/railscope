@@ -83,5 +83,5 @@ Zgodnie z architekturą repozytorium, kluczowe elementy znajdują się w katalog
 ## ⚠️ Rozwiązywanie problemów (Troubleshooting)
 
 * Błąd usuwania pamięci podręcznej (node_modules): Jeśli po instalacji nowych gier lub zmianie brancha występują błędy kompilacji, usuń folder node_modules oraz plik package-lock.json, a następnie wywołaj ponownie: npm install
-* Brak tłumaczeń lub błędny stan użytkownika: Upewnij się, że obiekt użytkownika w Supabase posiada w bazie zdefiniowane odpowiednie pola z językiem.
+* Brak tłumaczeń lub błędny stan użytkownika: Upewnij się, że obiekt użytkownika posiada w bazie zdefiniowane odpowiednie pola z językiem.
 * Serwer się zamyka po odpaleniu .bat: Upewnij się, że masz zainstalowanego Node.js oraz że wykonałeś krok "npm install". Możesz też edytować plik .bat dodając na końcu słowo "pause", aby zobaczyć treść błędu.

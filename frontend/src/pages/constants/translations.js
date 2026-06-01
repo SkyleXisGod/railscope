@@ -201,6 +201,7 @@ export const translations = {
             profile: 'Profil',
             games_title: 'Gry',
             my_profile: 'Mój Profil',
+            admin_panel: 'Panel Administracyjny',
             logout: 'Wyloguj'
         },
         globalLoader: {
@@ -430,6 +431,7 @@ export const translations = {
             profile: 'Profile',
             games_title: 'Games',
             my_profile: 'My Profile',
+            admin_panel: 'Admin Panel',
             logout: 'Log out'
         },
         globalLoader: {
@@ -667,6 +669,7 @@ export const translations = {
             profile: 'Профиль',
             games_title: 'Игры',
             my_profile: 'Мой профиль',
+            admin_panel: 'Панель администратора',
             logout: 'Выйти'
         },
         globalLoader: {
@@ -904,6 +907,7 @@ export const translations = {
             profile: 'Profilo',
             games_title: 'Giochi',
             my_profile: 'Il mio Profilo',
+            admin_panel: 'Pannello Admin',
             logout: 'Disconnetti'
         },
         globalLoader: {
@@ -1141,6 +1145,7 @@ export const translations = {
             profile: 'Perfil',
             games_title: 'Juegos',
             my_profile: 'Mi Perfil',
+            admin_panel: 'Panel de Admin',
             logout: 'Cerrar sesión'
         },
         globalLoader: {
@@ -1377,6 +1382,7 @@ export const translations = {
             profile: 'Mój Profil',
             games_title: 'Zabawy',
             my_profile: 'Mój Profil',
+            admin_panel: 'Pulpit Zarządcy',
             logout: 'Opuść komnatę'
         },
         globalLoader: {
@@ -1614,6 +1620,7 @@ export const translations = {
             profile: 'Identity Card',
             games_title: 'Arcade',
             my_profile: 'My File',
+            admin_panel: 'Government Panel',
             logout: 'Evacuate Application'
         },
         globalLoader: {
@@ -1841,6 +1848,7 @@ export const translations = {
             profile: 'Profil',
             games_title: 'Spiele',
             my_profile: 'Mein Profil',
+            admin_panel: 'Admin-Bereich',
             logout: 'Ausloggen'
         },
         globalLoader: {
@@ -2070,6 +2078,7 @@ export const translations = {
             profile: 'プロフィール',
             games_title: 'ゲーム',
             my_profile: 'マイプロフィール',
+            admin_panel: '管理者パネル',
             logout: 'ログアウト'
         },
         globalLoader: {
@@ -2299,6 +2308,7 @@ export const translations = {
             profile: 'Logbook',
             games_title: 'Tavern',
             my_profile: 'My Logbook',
+            admin_panel: 'Admiralty',
             logout: 'Abandon Ship'
         },
         globalLoader: {
