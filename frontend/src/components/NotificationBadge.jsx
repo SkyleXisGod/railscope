@@ -9,7 +9,6 @@ export default function NotificationBadge() {
 
     useEffect(() => {
         if (!user) return;
-        // Załaduj wiadomości dla konkretnego usera z bazy danych / localStorage
         const allNotifs = JSON.parse(localStorage.getItem('railscope_notifications') || '{}');
         setNotifications(allNotifs[user.username] || []);
     }, [user, isOpen]);

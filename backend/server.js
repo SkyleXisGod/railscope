@@ -26,7 +26,6 @@ const connectLogTerminal = () => {
 };
 connectLogTerminal();
 
-// Simple colored logger helpers
 const logInfo = (emoji, text, num) => {
     const tag = chalk.bgBlue.white(' INFO LOG ');
     if (typeof num !== 'undefined') console.log(`${tag} ${emoji} ${text} : ${chalk.yellow(num)}`);
@@ -55,12 +54,10 @@ const logError = (emoji, text, err) => {
     if (err) console.error(`${tag} ${emoji} ${text}`, err);
     else console.error(`${tag} ${emoji} ${text}`);
 };
-// Inicjalizacja bazy danych (jeśli jej brakuje)
 const db = new sqlite3.Database('./railscope.db', (err) => {
     if (err) logError('❌', 'Database connection error:', err.message);
     else {
         logSuccess('✅', 'Connected to SQLite database.');
-        // Tworzenie tabeli użytkowników, jeśli nie istnieje
         logInfo('🛠️', ' Ensuring database tables exist...');
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -219,9 +216,7 @@ app.use(express.json());
 
 
 io.on('connection', (socket) => {
-    // console.log(`[CHAT] Nowe połączenie: ${socket.id}`);
-
-    // 1. Pobieranie historii czatu (ostatnie 50 wiadomości)
+    feedLog('🔌', `New client connected: ${socket.id}`);
     socket.on('get_chat_history', () => {
         const query = `
             SELECT cm.id, u.username, u.role, u.avatar_url, cm.text, 
@@ -236,12 +231,10 @@ io.on('connection', (socket) => {
                 console.error("[CHAT ERR] Nie udało się pobrać historii:", err.message);
                 return;
             }
-            // Odwracamy kolejność, aby najnowsze wiadomości były na dole czatu
             socket.emit('chat_history', rows.reverse());
         });
     });
 
-    // 2. Odbieranie i rozsyłanie nowej wiadomości
     socket.on('send_message', (data) => {
         const { user_id, text } = data;
 
@@ -255,9 +248,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const lastId = this.lastID; // ID świeżo dodanego wpisu
-
-            // Pobieramy pełne dane wiadomości wraz z rolą i nickiem usera do rozesłania
+            const lastId = this.lastID; 
             const selectQuery = `
                 SELECT cm.id, u.username, u.role, u.avatar_url, cm.text,
                        strftime('%H:%M', cm.timestamp, 'localtime') as timestamp
@@ -271,22 +262,19 @@ io.on('connection', (socket) => {
                     console.error("[CHAT ERR] Błąd pobierania nowej wiadomości:", err?.message);
                     return;
                 }
-                // Wysyłamy do KAŻDEGO połączonego użytkownika
                 io.emit('receive_message', row);
             });
         });
     });
 
     socket.on('disconnect', () => {
-        // console.log(`[CHAT] Rozłączono: ${socket.id}`);
+        feedLog('🔌', `Client disconnected: ${socket.id}`);
     });
 });
 
-// Request/response logger so every HTTP request is visible in the backend logs
 app.use((req, res, next) => {
     const inboundMsg = `➡️ HTTP ${req.method} ${req.originalUrl}`;
     
-    // Send to external terminal if connected; otherwise keep main terminal clean
     if (logSocket) {
         logSocket.write(inboundMsg + '\n');
     }
@@ -326,6 +314,7 @@ app.post("/api/tickets", (req, res) => {
             res.json({ success: true, ticketId: this.lastID });
         }
     );
+    feedLog('🎫', `Nowe zgłoszenie od użytkownika ID: ${userId} - ${title} [${category}]`);
 });
 
 app.get("/api/admin/tickets", (req, res) => {
@@ -412,6 +401,8 @@ app.post("/api/admin/tickets/:id/reply", (req, res) => {
             res.json({ success: true, message: "Odpowiedź wysłana" });
         }
     );
+
+    feedLog('💬', `Admin ${adminName} odpowiedział na zgłoszenie ID: ${id} - ${message}`);
 });
 
 app.delete("/api/admin/tickets/:id", (req, res) => {
@@ -420,12 +411,13 @@ app.delete("/api/admin/tickets/:id", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, message: "Pomyślnie usunięto zgłoszenie" });
     });
+    
+    feedLog('🗑️', `Zgłoszenie ID: ${id} zostało usunięte przez administratora.`);
 });
 
 app.post("/api/admin/update-user", (req, res) => {
     const { username, bannedUntil} = req.body;
     
-    // Upewnij się, że SQL jest poprawny
     db.run(
         `UPDATE users SET bannedUntil = ? WHERE username = ?`,
         [bannedUntil, username],
@@ -437,6 +429,8 @@ app.post("/api/admin/update-user", (req, res) => {
             res.json({ success: true });
         }
     );
+
+    feedLog('⛔', `Użytkownik ${username} został zbanowany do ${bannedUntil ? bannedUntil : 'odwołania'}.`);
 });
 
 app.post('/api/login', (req, res) => {
@@ -459,15 +453,13 @@ app.post('/api/login', (req, res) => {
             return res.status(401).json({ error: "Incorrect password" });
         }
 
-        // Pobierz ustawienia
         db.get(`SELECT * FROM user_settings WHERE user_id = ?`, [user.id], (err, settings) => {
             if (err) logWarn('⚠️', 'Error fetching user settings:', err.message);
             const defaultSettings = { language: 'PL', theme: '#00ffd5', accent_color: '#00ffd5', animations: 'block', text_color: '#FFFFFF', text_outline: 0, background_mode: 'dark', map_theme: 'dark' };
             const userSettings = settings || defaultSettings;
-            // Usuwamy hasło przed wysłaniem do frontendu dla bezpieczeństwa
             const { password, ...userSafeData } = user;
             if (!userSafeData.role) userSafeData.role = 'USER';
-            logFeed('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
+            feedLog('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
         });
     });
@@ -482,14 +474,13 @@ app.post('/api/register', async (req, res) => {
         
         db.run(query, [username, email, hashedPassword], function(err) {
             if (err) {
-                // e.g. email already exists (UNIQUE constraint)
                 return res.status(400).json({ error: "User with this email already exists." });
             }
             const userId = this.lastID;
             db.run(`INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)`, [userId], (settingsErr) => {
                 if (settingsErr) logError('❌', 'Error creating user settings:', settingsErr.message);
             });
-            logFeed('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
+            feedLog('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
             res.status(201).json({ message: "Account created successfully." });
         });
     } catch (error) {
@@ -552,7 +543,6 @@ app.post('/api/update-profile', async (req, res) => {
     });
 });
 
-// --- AKTUALIZACJA USTAWIEŃ ---
 app.post('/api/settings', (req, res) => {
     const { userId, language, theme, accentColor, animations, textColor, textOutline, backgroundMode, mapTheme } = req.body;
     
@@ -571,7 +561,6 @@ app.post('/api/settings', (req, res) => {
     });
 });
 
-// Endpoint do usuwania użytkownika
 app.delete('/api/users/:id', (req, res) => {
     const { id } = req.params;
     db.run(`DELETE FROM users WHERE id = ?`, [id], function(err) {
@@ -580,9 +569,8 @@ app.delete('/api/users/:id', (req, res) => {
     });
 });
 
-// Endpoint do "płatności" (emulacja upgrade'u)
 app.post('/api/upgrade', (req, res) => {
-    const { id, role } = req.body; // role: 'PLUS' lub 'ADMIN'
+    const { id, role } = req.body; 
     const premiumDate = role === 'PLUS' ? new Date().toISOString().split('T')[0] : null;
     db.run(`UPDATE users SET role = ?, premiumDate = ? WHERE id = ?`, [role, premiumDate, id], (err) => {
         if (err) return res.status(500).json({ error: "Database error" });
@@ -906,7 +894,7 @@ const buildIndexes = () => {
 const PLK_API_KEY = process.env.PLK_API_KEY;
 const BASE_URL = process.env.PLK_BASE_URL;
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
-const MAX_SHAPE_JOIN_DISTANCE = 0.25; // degrees, prevents wrong long jumps between disconnected shape fragments
+const MAX_SHAPE_JOIN_DISTANCE = 0.25; 
 
 const downloadInitialData = async () => {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });

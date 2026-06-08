@@ -245,7 +245,7 @@ export default function StatsPage() {
                         <h4 style={{ marginTop: 20 }}>{t.top_delayed_trains}</h4>
                         <div className="detail-list">
                             {topDelayedTrains.length > 0 ? topDelayedTrains.map((train, idx) => {
-                                // --- TUTAJ MOŻESZ DAĆ LOGA ---
+
                                 console.log("Dane pociągu:", train);
                                 
                                 return (

@@ -62,7 +62,6 @@ export default function TicketPage() {
             setTimeout(() => setSuccess(false), 4000);
         } catch (error) {
             console.error("Błąd wysyłania zgłoszenia:", error);
-            // alert - lepiej obsłużyć błędy w UI, ale trzymam się koncepcji z pliku źródłowego
             alert("Nie udało się wysłać zgłoszenia.");
         }
     };

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import './GamesPage.css'; // Poprawny plik CSS ze stylami gier
+import './GamesPage.css';
 import { translations } from './constants/translations';
 import { gameTranslations } from './constants/gamestranslations';
 
-// Import all games
 import MemoryGame from './games/MemoryGame';
 import FlappyTrain from './games/FlappyTrain';
 import SnakeGame from './games/SnakeGame';
@@ -115,14 +114,12 @@ export default function GamesPage() {
     }
   };
 
-  // Jeśli użytkownik jest premium i odpalił grę -> pełny ekran gry
   if ((activeGame && hasPlusAccess) || (activeGame && isAdmin)) {
     return <div className="games-page fullscreen">{renderGame()}</div>;
   }
 
   return (
     <div className="premium-games-wrapper">
-      {/* 1. Właściwa zawartość strony (będzie rozmyta dla zwykłych użytkowników) */}
       <div className={`games-page ${!hasPlusAccess ? 'premium-blur-active' : ''}`}>
         <header className="games-header">
           <h1>{pageT.games_title || 'Strefa Gier Maszynisty'}</h1>
@@ -150,7 +147,6 @@ export default function GamesPage() {
         </div>
       </div>
 
-      {/* 2. Nakładka z blokadą i przyciskiem (widoczna TYLKO gdy brak premium) */}
       {!hasPlusAccess && (
         <div className="premium-overlay-container">
           <div className="premium-lock-box">
@@ -161,7 +157,7 @@ export default function GamesPage() {
             </p>
             <button 
               className="premium-redirect-btn"
-              onClick={() => window.location.href = '/pay' /* Przekierowanie do strony płatności */}
+              onClick={() => window.location.href = '/pay' }
             >
               {pageT.premiumButton || 'Odblokuj Dostęp Premium 🌟'}
             </button>

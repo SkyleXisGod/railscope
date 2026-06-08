@@ -6,11 +6,7 @@ import './AdminPage.css';
 
 export default function AdminPage() {
     const { user } = useAuth();
-    
-    // --- MODULARNE ZAKŁADKI ---
-    const [activeTab, setActiveTab] = useState('users'); // 'users' lub 'tickets'
-
-    // --- STANY UŻYTKOWNIKÓW (Twoje) ---
+    const [activeTab, setActiveTab] = useState('users'); 
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -18,20 +14,14 @@ export default function AdminPage() {
     const [sortBy, setSortBy] = useState('default');
     const [filterRole, setFilterRole] = useState('all');
     const [groupByRole, setGroupByRole] = useState(false);
-    
     const [editingUser, setEditingUser] = useState(null);
     const [editForm, setEditForm] = useState({ username: '', email: '', role: '', bannedUntil: '' });
-
-    // --- STANY ZGŁOSZEŃ (Moje) ---
     const [ticketsList, setTicketsList] = useState([]);
     const [replyModal, setReplyModal] = useState({ isOpen: false, ticketId: null, message: '' });
-
-    // Dynamiczne dopasowanie tłumaczeń
     const lang = user?.settings?.language || 'PL';
     const baseTrans = adm_translations[lang] || adm_translations.PL || {};
     const t = baseTrans.admin ? baseTrans.admin : baseTrans;
-    
-    // Pobieranie danych w zależności od zakładki
+
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
@@ -40,9 +30,6 @@ export default function AdminPage() {
         }
     }, [activeTab]);
 
-    // ==========================================
-    // LOGIKA UŻYTKOWNIKÓW
-    // ==========================================
     const fetchUsers = async () => {
         setLoading(true);
         try {
@@ -121,9 +108,6 @@ export default function AdminPage() {
         }
     };
 
-    // ==========================================
-    // LOGIKA ZGŁOSZEŃ (TICKETY)
-    // ==========================================
     const fetchTickets = async () => {
         setLoading(true);
         try {
@@ -170,9 +154,6 @@ export default function AdminPage() {
         }
     };
 
-    // ==========================================
-    // POMOCNICZE FUNKCJE
-    // ==========================================
     if (!user || (user.role !== 'ADMIN' && user.role !== 'ZARZADCA')) {
         return (
             <div className="admin-container access-denied">
@@ -301,7 +282,6 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                {/* --- STYLIZOWANE ZAKŁADKI (BROWSER TABS) --- */}
                 <div style={{ 
                     display: 'flex', 
                     marginTop: '25px', 
@@ -315,13 +295,12 @@ export default function AdminPage() {
                             background: activeTab === 'users' ? '#1a1a1e' : 'transparent',
                             color: activeTab === 'users' ? '#00ffd5' : '#888894',
                             border: '2px solid #2e2e34',
-                            // Magia zakładki: jeśli jest aktywna, ukrywamy dolną ramkę i obniżamy ją lekko
                             borderBottom: activeTab === 'users' ? '2px solid #1a1a1e' : '2px solid #2e2e34',
                             borderRadius: '12px 12px 0 0',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '1rem',
-                            marginBottom: '-2px', // nachodzenie na główną linię
+                            marginBottom: '-2px', 
                             position: 'relative',
                             zIndex: activeTab === 'users' ? 2 : 1,
                             transition: 'all 0.2s ease-in-out'
@@ -495,10 +474,6 @@ export default function AdminPage() {
                     )}
                 </div>
             )}
-
-            {/* ==================== MODALE ==================== */}
-
-            {/* Modal edycji użytkownika */}
             {editingUser && (
                 <div className="admin-modal-overlay">
                     <div className="admin-modal-card">
@@ -551,8 +526,6 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
-
-            {/* Modal odpowiedzi na ticket */}
             {replyModal.isOpen && (
                 <div className="admin-modal-overlay">
                     <div className="admin-modal-card">

@@ -10,7 +10,6 @@
     font-family: 'Inter', sans-serif;
 }
 
-/* Szklana karta logowania */
 .auth-card {
     width: 100%;
     max-width: 420px;
@@ -52,7 +51,6 @@
     letter-spacing: 1px;
 }
 
-/* Formularz */
 .auth-form {
     display: flex;
     flex-direction: column;
@@ -90,7 +88,6 @@
     box-shadow: 0 0 15px rgba(0, 255, 213, 0.1);
 }
 
-/* Przycisk Neonowy */
 .auth-submit-btn {
     margin-top: 10px;
     padding: 16px;
@@ -118,7 +115,6 @@
     transform: none;
 }
 
-/* Błędy */
 .auth-error-msg {
     background: rgba(255, 77, 77, 0.1);
     color: #ff4d4d;
@@ -130,7 +126,6 @@
     border: 1px solid rgba(255, 77, 77, 0.2);
 }
 
-/* Stopka karty */
 .auth-footer {
     margin-top: 30px;
     text-align: center;
@@ -147,7 +142,6 @@
     color: #00ffd5;
 }
 
-/* Dekoracje w tle (Animowane kółka) */
 .auth-bg-decoration {
     position: absolute;
     width: 100%;
@@ -178,7 +172,6 @@
     left: -50px;
 }
 
-/* Spinner ładowania */
 .spinner {
     width: 20px;
     height: 20px;

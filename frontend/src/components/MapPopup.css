@@ -1,6 +1,3 @@
-/* ------------------------------------------------- */
-/* ------- 1. GŁÓWNE ZNACZNIKI (MARKERY NA MAPIE) -- */
-/* ------------------------------------------------- */
 
 .train-marker-wrapper {
     position: relative;
@@ -56,10 +53,6 @@
     transition: all 1s linear;
 }
 
-/* ------------------------------------------------- */
-/* ------- 2. NADPISYWANIE DOMYŚLNYCH POPUPÓW LEAFLET- */
-/* ------------------------------------------------- */
-
 .train-next-gen-popup .leaflet-popup-content-wrapper, .station-next-gen-popup .leaflet-popup-content-wrapper {
     background: rgba(18, 18, 18, 0.75) !important;
     backdrop-filter: blur(12px) !important;
@@ -82,7 +75,7 @@
     margin: 0 !important;
     min-width: 320px !important;
     max-width: 360px !important;
-    width: 100% !important; /* Szersza, responsywna szerokość */
+    width: 100% !important; 
 }
 
 .station-tooltip {
@@ -94,10 +87,6 @@
     font-weight: bold !important;
     text-shadow: 1px 1px 3px black, -1px -1px 3px black !important;
 }
-
-/* ------------------------------------------------- */
-/* ------- 3. WSPÓLNY UKŁAD (KONTENERY WNĘTRZA) ---- */
-/* ------------------------------------------------- */
 
 .popup-main-container {
     color: #ffffff;
@@ -186,10 +175,6 @@
 .station-variant .popup-top-bar { 
   background: #00ffd5; box-shadow: 0 2px 10px rgba(0, 255, 213, 0.4); 
 }
-
-/* ------------------------------------------------- */
-/* ------- 4. POPUP POCIĄGU (NAGŁÓWEK, STATUSY) ---- */
-/* ------------------------------------------------- */
 
 .popup-row-header {
     display: flex;
@@ -308,10 +293,6 @@
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* ------------------------------------------------- */
-/* ------- 5. OŚ CZASU (TIMELINE POCIĄGU) ---------- */
-/* ------------------------------------------------- */
-
 .timeline-container {
     display: flex;
     align-items: center;
@@ -363,11 +344,6 @@
     color: inherit;
 }
 
-
-
-
-
-
 .timeline-time {
     font-family: 'Courier New', monospace;
     font-size: 0.75rem;
@@ -398,15 +374,11 @@
 .timeline-train-icon {
     position: absolute;
     top: -8px;
-    margin-left: -8px; /* Środek emoji */
+    margin-left: -8px; 
     font-size: 14px;
     transition: left 1s linear;
     text-shadow: 0 0 5px rgba(0,0,0,0.8);
 }
-
-/* ------------------------------------------------- */
-/* ------- 6. POPUP STACJI (INFO BAZOWE) ----------- */
-/* ------------------------------------------------- */
 
 .popup-station-header {
     display: flex;
@@ -449,10 +421,6 @@
     display: none; 
 }
 
-/* ------------------------------------------------- */
-/* ------- 7. TABLICA ODJAZDÓW ZE STACJI ----------- */
-/* ------------------------------------------------- */
-
 .popup-departures {
     margin-top: 14px;
     padding-top: 12px;
@@ -471,7 +439,7 @@
 .departures-list {
     display: flex;
     flex-direction: column;
-    gap: 6px; /* Odstęp między wierszami */
+    gap: 6px;
 }
 
 .departure-item {
@@ -481,7 +449,7 @@
     padding: 8px 10px;
     border-radius: 6px;
     transition: background 0.2s;
-    border-left: 4px solid #444; /* Domyślny pasek z boku */
+    border-left: 4px solid #444; 
     min-width: 0;
 }
 
@@ -681,12 +649,11 @@
 }
 
 .station-departures-list {
-    min-height: 150px; /* Zapobiega skakaniu wysokości popupa */
+    min-height: 150px;
     display: flex;
     flex-direction: column;
 }
 
-/* Animacja wejścia popupa */
 @keyframes popup-reveal {
     0% { 
         transform: scale(0.3) translateY(40px); 
@@ -710,13 +677,11 @@
     box-shadow: 0 0 20px rgba(0, 255, 213, 0.15), 0 10px 40px rgba(0,0,0,0.8) !important;
 }
 
-/* Płynne pojawianie się elementów w środku */
 .departure-item {
     animation: slide-in-row 0.3s ease-out forwards;
     opacity: 0;
 }
 
-/* Efekt schodkowy dla rzędów (stagger) */
 .departure-item:nth-child(1) { animation-delay: 0.1s; }
 .departure-item:nth-child(2) { animation-delay: 0.15s; }
 .departure-item:nth-child(3) { animation-delay: 0.2s; }

@@ -102,7 +102,6 @@ const StationsLayer = memo(({ stations, currentZoom, stationId, trackedTrain, st
   });
 
 const getUpcomingDepartures = (payload) => {
-  // Rozpakowanie danych (obsługa obiektu { departures: [] })
   const departures = Array.isArray(payload) ? payload : (payload?.departures || []);
 
   if (!departures.length) return [];
@@ -110,7 +109,6 @@ const getUpcomingDepartures = (payload) => {
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
-  // 1. Obliczamy różnicę czasu dla każdego pociągu
   const processed = departures.map(t => {
     const timeStr = (t.dep && t.dep !== "-") ? t.dep : t.arr;
     const tMins = calcMin(timeStr);
@@ -118,23 +116,17 @@ const getUpcomingDepartures = (payload) => {
 
     let diff = tMins - currentMins;
     
-    // Obsługa zawijania doby
     if (diff < -720) diff += 1440; 
     
     return { ...t, diff };
   });
 
-  // 2. Sortujemy: najpierw te, które odjadą (diff >= 0), potem te, co odjechały (diff < 0)
-  // Ale ogólnie chcemy te, których diff jest najbliższy zeru.
   processed.sort((a, b) => {
-    // Pociągi w przyszłości mają priorytet i są rosnąco (0, 10, 20min...)
-    // Pociągi w przeszłości są na końcu
     if (a.diff >= 0 && b.diff < 0) return -1;
     if (a.diff < 0 && b.diff >= 0) return 1;
     return a.diff - b.diff;
   });
 
-  // 3. Zwracamy 5 rekordów (najbliższych czasowo)
   return processed.slice(0, 5);
 };
 
@@ -266,7 +258,6 @@ function MapController({ stationId, selectedStation, trainLocation, sidebarOpen,
   }, [sidebarOpen, map]);
 
   useEffect(() => {
-    // 1. Priorytet ma żywy pociąg
     if (isLive && trainLocation?.lat && trainLocation?.lon) {
       if (isTracking) {
         map.setView([trainLocation.lat, trainLocation.lon], 14, { animate: true, duration: 0.5 });
@@ -277,7 +268,6 @@ function MapController({ stationId, selectedStation, trainLocation, sidebarOpen,
       return;
     }
 
-    // 2. Kliknięta stacja (wybór z mapy lub z listy stacji poprzez stationId)
     if (stationId && selectedStation && selectedStation.lat && selectedStation.lon) {
       const targetKey = `station-${stationId}`;
       if (lastTargetId.current !== targetKey) {
@@ -290,7 +280,6 @@ function MapController({ stationId, selectedStation, trainLocation, sidebarOpen,
       return;
     }
 
-    // 3. Pierwsza stacja na trasie (jeśli tylko przeglądamy trasę pociągu bez live)
     if (firstStation && firstStation.lat && firstStation.lon) {
       if (lastTargetId.current !== 'route-start') {
         map.flyTo([firstStation.lat, firstStation.lon], 12, { animate: true, duration: 1.2 });
@@ -299,7 +288,6 @@ function MapController({ stationId, selectedStation, trainLocation, sidebarOpen,
       return;
     }
 
-    // Reset, jeśli nic nie jest wybrane
     if (!stationId && !trainLocation && !firstStation) {
       lastTargetId.current = null;
     }
@@ -345,8 +333,8 @@ export default function MapView({ sidebarOpen }) {
 
 useEffect(() => {
     if (stationId) {
-      setLoadingDepartures(true); // Odpalamy loader
-      setStationDepartures([]);    // CZYŚCIMY stare dane, żeby nie "straszyły"
+      setLoadingDepartures(true); 
+      setStationDepartures([]);  
 
       Promise.all([
         axios.get(`http://localhost:8080/api/stations/${stationId}`),
@@ -360,7 +348,6 @@ useEffect(() => {
         const currentMins = now.getHours() * 60 + now.getMinutes();
         const getT = (iso) => iso?.includes("T") ? iso.split("T")[1].substring(0, 5) : iso?.substring(0, 5);
 
-        // Grupowanie - identyczne jak w StationsPage
         const trainGroups = {};
         rawTrains.forEach(train => {
           const sInfo = train.stations?.find(s => String(s.stationId) === String(stationId)) || {};
@@ -376,7 +363,6 @@ useEffect(() => {
           }
         });
 
-        // Filtrowanie i sortowanie 5 najbliższych
         const processed = Object.values(trainGroups)
           .map(t => {
             const [h, m] = t.dep.split(':').map(Number);
@@ -392,7 +378,7 @@ useEffect(() => {
         setStationDepartures(processed);
       })
       .catch(err => console.error("Błąd stacji:", err))
-      .finally(() => setLoadingDepartures(false)); // Wyłączamy loader
+      .finally(() => setLoadingDepartures(false)); 
     }
   }, [stationId]);
 
@@ -519,7 +505,6 @@ useEffect(() => {
       console.log("🕵️‍♂️ [MAPA] Śledzony pociąg zmienił się. Pełny obiekt:", trackedTrain);
       console.log("⏱️ [MAPA] Wyciągnięte opóźnienie (trackedTrain.delay):", trackedTrain.delay);
       
-      // Mały test typu danych, bo czasem opóźnienie przychodzi jako string "15", a czasem jako liczba 15
       console.log("🔍 [MAPA] Typ zmiennej opóźnienia:", typeof trackedTrain.delay);
     } else {
       console.log("🛑 [MAPA] Śledzony pociąg to aktualnie: null");

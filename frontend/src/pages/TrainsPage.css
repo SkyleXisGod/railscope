@@ -1,6 +1,4 @@
-/* ========================================= */
-/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
-/* ========================================= */
+
 .trains-container {
     height: 100vh;
     display: flex;
@@ -27,9 +25,6 @@
     color: var(--text-secondary);
 }
 
-/* ========================================= */
-/* 2. STREFA WYSZUKIWANIA I FILTRY           */
-/* ========================================= */
 .search-grid {
     display: flex;
     flex-direction: column;
@@ -71,9 +66,6 @@
     font-weight: bold;
 }
 
-/* ========================================= */
-/* 3. LISTA POCIĄGÓW I KARTY                 */
-/* ========================================= */
 .trains-list {
     flex: 1;
     overflow-y: auto;
@@ -135,9 +127,6 @@
     padding-right: 20px;
 }
 
-/* ========================================= */
-/* 4. SZCZEGÓŁY TRASY (ROZWIJANE)            */
-/* ========================================= */
 .train-route-details {
     padding: 20px 24px;
     background: var(--bg-main);
@@ -172,7 +161,6 @@
 
 .route-row { position: relative; }
 
-/* Pionowa linia osi czasu */
 .route-row::before {
     content: "";
     position: absolute;
@@ -190,7 +178,6 @@
 .stop-name { font-weight: bold; }
 .stop-time { font-family: 'JetBrains Mono', monospace; color: #00ffcc; }
 
-/* Highlight dla wierszy */
 .row-current {
     background: rgba(0, 255, 213, 0.05);
     box-shadow: inset 4px 0 0 #00ffd5;
@@ -232,9 +219,6 @@
     letter-spacing: 0.5px;
 }
 
-/* ========================================= */
-/* 5. BADGE I WIZUALIA KATEGORII             */
-/* ========================================= */
 .cat-badge {
     display: inline-block;
     min-width: 45px;
@@ -251,9 +235,6 @@
 .cat-REG-badge { background-color: #7f8c8d; color: white; }
 .cat-OTHER-badge { background-color: #6c757d; color: white; }
 
-/* ========================================= */
-/* 6. PRZYCISKI I AKCJE                      */
-/* ========================================= */
 .route-action-container {
     display: flex;
     flex-direction: column;
@@ -290,9 +271,6 @@
 
 .btn-content { display: flex; align-items: center; gap: 8px; }
 
-/* ========================================= */
-/* 7. TRYB EKSPERYMENTALNY                   */
-/* ========================================= */
 .experimental-toggle-container {
     display: inline-flex;
     align-items: center;
@@ -340,7 +318,6 @@
 input:checked + .slider { background-color: #f39c12; }
 input:checked + .slider:before { transform: translateX(18px); }
 
-/* Komunikaty ładowania / błędów */
 .loader, .no-data, .error-message { text-align: center; padding: 40px; color: #888; font-size: 1.1rem; }
 .error-message { color: #ff4d4d; }
 .progress-bar-fill { display: none; }

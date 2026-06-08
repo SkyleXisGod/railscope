@@ -22,7 +22,6 @@ export default function SettingsPage() {
     const [mapTheme, setMapTheme] = useState(user?.settings?.map_theme || user?.settings?.mapTheme || DEFAULT_SETTINGS.mapTheme);
     const [animations, setAnimations] = useState(user?.settings?.animations !== 'none');
 
-    // EASTER EGG STATE: Kontrola widoczności sekretnych języków w select
     const [showSecretLanguages, setShowSecretLanguages] = useState(
         user?.settings?.language === 'PIRATE' || user?.settings?.language === 'WINGDINGS'
     );
@@ -31,7 +30,6 @@ export default function SettingsPage() {
         if (user?.settings) {
             const currentBgMode = user.settings.background_mode || user.settings.backgroundMode || DEFAULT_SETTINGS.backgroundMode;
             
-            // Jeśli tryb to jasny, automatycznie wymuszamy czarny tekst, w przeciwnym wypadku bierzemy z bazy
             const currentTextColor = currentBgMode === 'light' ? '#000000' : (user.settings.text_color || user.settings.textColor || DEFAULT_SETTINGS.textColor);
             const currentAnimations = user.settings.animations;
             setLang(user.settings.language || 'PL');
@@ -97,7 +95,7 @@ export default function SettingsPage() {
             accentColor: settings.accentColor ?? accentColor,
             animations: settings.animations ?? (animations ? 'block' : 'none'),
             textColor: settings.textColor ?? textColor,
-            textOutline: user?.settings?.text_outline ?? user?.settings?.textOutline ?? 0, // zachowanie starego pola bez zmian
+            textOutline: user?.settings?.text_outline ?? user?.settings?.textOutline ?? 0,
             backgroundMode: settings.backgroundMode ?? backgroundMode,
             mapTheme: settings.mapTheme ?? mapTheme
         };
@@ -155,7 +153,6 @@ export default function SettingsPage() {
         }
     };
 
-    // Obsługa zmiany trybu tła z automatycznym przełączaniem tekstu na czarny w trybie jasnym
     const handleBackgroundChange = (newMode) => {
         setBackgroundMode(newMode);
         
@@ -207,7 +204,7 @@ export default function SettingsPage() {
                         <input
                             type="color"
                             value={textColor}
-                            disabled={backgroundMode === 'light'} /* Zablokowane w trybie jasnym, bo tekst MUSI być wtedy czarny */
+                            disabled={backgroundMode === 'light'} 
                             onChange={(e) => {
                                 setTextColor(e.target.value);
                                 saveSettings({ textColor: e.target.value });
@@ -285,10 +282,9 @@ export default function SettingsPage() {
                             <input
                                 type="checkbox"
                                 checked={animations}
-                                disabled={true} /* <--- Blokada klikania w checkbox */
+                                disabled={true} 
                                 onChange={(e) => {
-                                    // Kod wewnątrz się nie wykona, dopóki jest disabled, 
-                                    // ale zostawiamy go lub możemy zakomentować
+
                                     const next = e.target.checked;
                                     setAnimations(next);
                                     saveSettings({ animations: next ? 'block' : 'none' });

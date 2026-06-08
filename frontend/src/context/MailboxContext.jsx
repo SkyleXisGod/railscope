@@ -14,7 +14,6 @@ export const MailboxProvider = ({ children }) => {
             const res = await axios.get(`http://localhost:8080/api/mailbox/${user.id}/unread-count`);
             const newCount = res.data.count;
 
-            // Sprawdzamy stan tylko jeśli mamy już jakieś dane
             setUnreadCount(prevCount => {
                 if (newCount > prevCount) {
                     const audio = new Audio('/notification.mp3');
@@ -30,11 +29,11 @@ export const MailboxProvider = ({ children }) => {
     useEffect(() => {
         if (!user) return;
 
-        refreshCount(); // Pobierz raz na start
+        refreshCount(); 
 
-        const interval = setInterval(refreshCount, 30000); // Pobieraj co 30s
+        const interval = setInterval(refreshCount, 30000); 
 
-        return () => clearInterval(interval); // Czyść przy zmianie usera/odmontowaniu
+        return () => clearInterval(interval); 
     }, [user]);
 
     return (

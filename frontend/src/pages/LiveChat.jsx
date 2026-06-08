@@ -54,11 +54,9 @@ export default function LiveChat() {
         }
     }, [cooldown]);
 
-// LiveChat.jsx
 
 const triggerAutoBan = async () => {
     try {
-        // 1. Zapisujemy w bazie
         const banDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         
         await axios.post('http://localhost:8080/api/admin/update-user', {
@@ -67,10 +65,8 @@ const triggerAutoBan = async () => {
             role: user.role
         });
 
-        // 2. Aktualizujemy stan aplikacji (tak jak w AdminPage.jsx)
         updateUser({ bannedUntil: banDate });
 
-        // 3. Wyrzucamy z czatu
         alert("Naruszenie zasad: Konto zablokowane na 24h.");
         window.location.reload(); 
     } catch (err) {
@@ -125,7 +121,6 @@ const triggerAutoBan = async () => {
                 {messages.map((msg) => (
                     <div key={msg.id} className="chat-message">
                         <div className="chat-msg-header">
-                            {/* Dynamiczne przypisywanie klasy stylu na podstawie roli (np. badge-admin, badge-user) */}
                             <span className={`chat-badge badge-${msg.role ? msg.role.toLowerCase() : 'user'}`}>{msg.role}</span>&nbsp;
                             <span className="chat-username">{msg.username}</span>&nbsp;
                             <span className="chat-time">{msg.timestamp}</span>

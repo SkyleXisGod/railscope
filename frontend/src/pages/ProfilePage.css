@@ -1,4 +1,3 @@
-/* Specyficzne style tylko dla profilu (bazują na zmiennych z theme.css) */
 
 .profile-page {
     padding-top: 1rem;
@@ -68,7 +67,6 @@
     gap: 10px;
 }
 
-/* Grid podziału na kolumny */
 .profile-grid,
 .profile-page-grid {
     display: grid;
@@ -127,7 +125,6 @@
     color: var(--text-primary);
 }
 
-/* Grupy informacji */
 .info-group {
     margin-bottom: 0;
 }
@@ -160,7 +157,6 @@
     color: var(--danger-color) !important;
 }
 
-/* Premium Section */
 .premium-section {
     grid-column: 1 / -1;
 }
@@ -181,7 +177,6 @@
     margin: 0;
 }
 
-/* RWD - Responsywność dla telefonów */
 @media (max-width: 768px) {
     .profile-avatar {
         width: 100px;
@@ -256,7 +251,6 @@
     color: var(--text-primary);
 }
 
-/* Grupy informacji */
 .info-group {
     margin-bottom: 1rem;
 }
@@ -276,7 +270,6 @@
     font-weight: 500;
 }
 
-/* Przyciski motywów */
 .settings-desc {
     margin-bottom: 1rem;
     color: var(--text-secondary);
@@ -288,7 +281,6 @@
     flex-wrap: wrap;
 }
 
-/* RWD - Responsywność dla telefonów */
 @media (max-width: 768px) {
     .profile-header {
         flex-direction: column;

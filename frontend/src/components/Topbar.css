@@ -107,9 +107,6 @@
     color: #ff4d4d;
 }
 
-/* ========================================= */
-/* NOWE STYLE DLA SKRZYNKI POCZTOWEJ         */
-/* ========================================= */
 .mailbox-section {
     position: relative;
     display: flex;
@@ -149,11 +146,11 @@
     width: 18px;
     height: 18px;
     font-size: 10px;
-    display: flex; /* WAŻNE: użyj flex, aby wycentrować cyfrę */
+    display: flex; 
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    border: 2px solid #141414; /* Obwódka, aby kropka odcinała się od tła */
+    border: 2px solid #141414; 
 }
 
 /* Dropdown poczty */
@@ -188,7 +185,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Animacja pulsowania dla nieprzeczytanej poczty */
 @keyframes pulse-unread {
     0% {
         transform: scale(0.9);
@@ -204,9 +200,6 @@
     }
 }
 
-/* ========================================= */
-/* SEKCJA PROFILU I DROPDOWN                 */
-/* ========================================= */
 .user-section {
     position: relative;
 }
@@ -350,7 +343,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Pozycjonowanie komponentu Badge w strukturze Topbara */
 .topbar-badge-container {
     display: inline-flex;
     align-items: center;

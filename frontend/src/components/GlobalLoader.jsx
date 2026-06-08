@@ -8,13 +8,11 @@ export default function GlobalLoader({ isVisible }) {
   const lang = user?.settings?.language || 'PL';
   const t = translations[lang]?.globalLoader || translations.PL.globalLoader;
 
-  // Stan dla losowania X-winga (1% szans)
   const [triggerXWing, setTriggerXWing] = useState(false);
 
-  // Losujemy tylko wtedy, kiedy loader faktycznie się pojawia
   useEffect(() => {
     if (isVisible) {
-      const luckyRoll = Math.random() < 0.01; // <-- Zmień tymczasowo na true, żeby przetestować!
+      const luckyRoll = Math.random() < 0.01; 
       setTriggerXWing(luckyRoll);
     }
   }, [isVisible]);
@@ -34,19 +32,18 @@ export default function GlobalLoader({ isVisible }) {
             overflow: 'hidden'
           }}
         >
-          {/* ================= EASTER EGG: REAKTYWOWANY, EPICKI X-WING (1/100) ================= */}
           {triggerXWing && (
             <motion.div
               initial={{ x: "-30vw", y: "85vh", scale: 0.05, rotate: -25, opacity: 0, filter: "blur(4px)" }}
               animate={{ 
                 x: ["-30vw", "40vw", "130vw"], 
                 y: ["85vh", "45vh", "-10vh"], 
-                scale: [0.05, 3.8, 0.2], // Potężne zbliżenie 3D przed obiektyw kamery
-                rotate: [-25, -15, -5],  // Delikatny roll podczas ucieczki w nadprzestrzeń
+                scale: [0.05, 3.8, 0.2],
+                rotate: [-25, -15, -5], 
                 opacity: [0, 1, 1, 0],
                 filter: ["blur(3px)", "blur(0px)", "blur(5px)"]
               }}
-              transition={{ duration: 1.8, ease: [0.25, 1, 0.5, 1] }} // Dynamiczne przyspieszenie
+              transition={{ duration: 1.8, ease: [0.25, 1, 0.5, 1] }} 
               style={{ 
                 position: 'absolute', 
                 top: 0, 
@@ -57,10 +54,8 @@ export default function GlobalLoader({ isVisible }) {
                 pointerEvents: 'none'
               }}
             >
-              {/* Ultra Szczegółowy Wektorowy T-65 X-Wing */}
               <svg viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
                 <defs>
-                  {/* Gradienty metalu, silników i laserów */}
                   <linearGradient id="hull-grad" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#efeff4" />
                     <stop offset="50%" stopColor="#d1d1d6" />
@@ -82,69 +77,54 @@ export default function GlobalLoader({ isVisible }) {
                   </filter>
                 </defs>
 
-                {/* --- POŚWIATA SILNIKÓW (Z TYŁU) --- */}
                 <circle cx="45" cy="62" r="14" fill="url(#engine-glow)" filter="url(#glow)" />
                 <circle cx="42" cy="88" r="14" fill="url(#engine-glow)" filter="url(#glow)" />
 
-                {/* --- SKRZYDŁO LEWE GÓRNE (Z TYŁU) --- */}
                 <path d="M70 65 L25 22 L30 18 L75 60 Z" fill="#c7c7cc" stroke="#3a3a3c" strokeWidth="0.5" />
-                <path d="M35 27 L28 21 L32 19 L38 25 Z" fill="#d32f2f" /> {/* Oznaczenie Red 5 */}
-                {/* Działko laserowe górne lewe */}
+                <path d="M35 27 L28 21 L32 19 L38 25 Z" fill="#d32f2f" /> 
+
                 <path d="M25 22 L12 10 L16 10 L28 20 Z" fill="url(#dark-metal)" />
                 <rect x="10" y="8" width="18" height="1.5" transform="rotate(-40 10 8)" fill="#ff0055" filter="url(#glow)" />
 
-                {/* --- SKRZYDŁO LEWE DOLNE (Z TYŁU) --- */}
                 <path d="M68 85 L20 120 L25 125 L72 88 Z" fill="#aeaeae" stroke="#3a3a3c" strokeWidth="0.5" />
                 <path d="M30 112 L22 118 L25 121 L32 115 Z" fill="#d32f2f" />
-                {/* Działko laserowe dolne lewe */}
+
                 <path d="M20 120 L5 132 L9 135 L23 123 Z" fill="url(#dark-metal)" />
                 <rect x="3" y="132" width="18" height="1.5" transform="rotate(38 3 132)" fill="#ff0055" filter="url(#glow)" />
 
-                {/* --- TUBY SILNIKÓW (NASADA SKRZYDEŁ) --- */}
-                {/* Silnik górny lewy */}
                 <rect x="48" y="52" width="26" height="13" rx="4" fill="url(#dark-metal)" stroke="#636366" />
                 <circle cx="48" cy="58.5" r="5" fill="#ff5e00" />
                 <circle cx="48" cy="58.5" r="2" fill="#fff" />
-                {/* Silnik dolny lewy */}
                 <rect x="45" y="80" width="26" height="13" rx="4" fill="url(#dark-metal)" stroke="#636366" />
                 <circle cx="45" cy="86.5" r="5" fill="#ff5e00" />
                 <circle cx="45" cy="86.5" r="2" fill="#fff" />
 
-                {/* --- GŁÓWNY KADŁUB (FUSELAGE) --- */}
-                {/* Silnik-Rura centralna struktury strukturalnej */}
                 <path d="M42 75 C42 60, 65 55, 80 55 L165 70 C175 71, 175 77, 165 78 L80 90 C65 90, 42 85, 42 75 Z" fill="url(#hull-grad)" stroke="#3a3a3c" />
-                {/* Zwężający się Dziób (Nose Cone) */}
                 <path d="M130 68 L185 73 C192 74, 192 76, 185 77 L130 80 Z" fill="#e5e5ea" stroke="#8e8e93" strokeWidth="0.5" />
-                <path d="M170 73.5 L182 74.5 L170 76 Z" fill="#d32f2f" /> {/* Paski na nosie */}
+                <path d="M170 73.5 L182 74.5 L170 76 Z" fill="#d32f2f" /> 
 
-                {/* --- KOKPIT (CANOPY) --- */}
                 <path d="M92 64 C95 54, 115 56, 122 66 L124 73 C115 75, 98 74, 92 64 Z" fill="url(#dark-metal)" stroke="#d1d1d6" strokeWidth="1" />
-                {/* Szyby kokpitu z błękitnym połyskiem */}
+
                 <path d="M96 63 C98 57, 110 58, 115 65 L110 71 L96 67 Z" fill="#00d2ff" opacity="0.6" />
                 <path d="M115 63 L120 66 L117 71 L112 70 Z" fill="#00d2ff" opacity="0.8" />
 
-                {/* --- ROBOT ASTROMECH (R2-D2) --- */}
                 <path d="M82 58 C82 54, 88 54, 88 58 Z" fill="#d1d1d6" />
-                <circle cx="85" cy="56" r="1" fill="#0033aa" /> {/* Niebieskie oko R2 */}
+                <circle cx="85" cy="56" r="1" fill="#0033aa" /> 
 
-                {/* --- SKRZYDŁO PRAWE GÓRNE (Z PRZODU) --- */}
                 <path d="M74 58 L145 15 L152 18 L78 64 Z" fill="url(#hull-grad)" stroke="#48484a" strokeWidth="0.5" />
-                <path d="M120 28 L138 18 L142 20 L125 31 Z" fill="#d32f2f" /> {/* Paski eskadry */}
-                {/* Generator laserowy i długie działko frontowe prawy przód */}
+                <path d="M120 28 L138 18 L142 20 L125 31 Z" fill="#d32f2f" /> 
                 <path d="M145 15 L160 12 L158 16 L148 18 Z" fill="url(#dark-metal)" />
                 <path d="M160 12 L198 2 V6 L162 15 Z" fill="#e5e5ea" stroke="#3a3a3c" strokeWidth="0.5" />
-                {/* Świecąca końcówka lasera */}
+
                 <circle cx="198" cy="4" r="2" fill="#ff0055" filter="url(#glow)" />
 
-                {/* --- SKRZYDŁO PRAWE DOLNE (Z PRZODU) --- */}
                 <path d="M76 84 L138 135 L144 131 L78 78 Z" fill="url(#hull-grad)" stroke="#48484a" strokeWidth="0.5" />
                 <path d="M110 112 L128 127 L132 124 L114 109 Z" fill="#d32f2f" />
-                {/* Działko laserowe prawe dolne */}
+    
                 <path d="M138 135 L152 140 L150 143 L136 138 Z" fill="url(#dark-metal)" />
                 <path d="M152 140 L195 146 V149 L152 142 Z" fill="#e5e5ea" stroke="#3a3a3c" strokeWidth="0.5" />
                 <circle cx="195" cy="147.5" r="2" fill="#ff0055" filter="url(#glow)" />
 
-                {/* Szczegóły mechaniczne (Greebles) na kadłubie */}
                 <rect x="58" y="70" width="12" height="2" fill="#636366" />
                 <rect x="75" y="72" width="18" height="1.5" fill="#48484a" />
                 <circle cx="138" cy="74" r="1.5" fill="#3a3a3c" />
@@ -155,7 +135,6 @@ export default function GlobalLoader({ isVisible }) {
           <div className="loader-content" style={{ textAlign: 'center', position: 'relative' }}>
             
             {lang === "PIRATE" ? (
-              /* ================= WERSJA: STATEK PIRACKI ================= */
               <>
                 <motion.div
                   animate={{ rotate: [-5, 5, -5], y: [0, -6, 0] }}
@@ -240,7 +219,6 @@ export default function GlobalLoader({ isVisible }) {
               </>
             )}
             
-            {/* Tekst ładowania */}
             <motion.p
               animate={{ opacity: [0.4, 1, 0.4], letterSpacing: ["2px", "5px", "2px"] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}

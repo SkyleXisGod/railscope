@@ -171,8 +171,8 @@
 }
 
 .disabled-group label {
-    cursor: not-allowed !important; /* Zmienia kursor na czerwoną przekreśloną linię / zakaz */
-    user-select: none; /* Blokuje podświetlanie tekstu przy próbie kliknięcia */
+    cursor: not-allowed !important; 
+    user-select: none; 
 }
 
 .disabled-group input[type="checkbox"] {

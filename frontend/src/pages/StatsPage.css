@@ -1,6 +1,4 @@
-/* ========================================= */
-/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
-/* ========================================= */
+
 .stats-container {
     min-height: calc(100vh - 55px);
     margin: 0 auto;
@@ -27,9 +25,6 @@
     font-size: 1.1rem;
 }
 
-/* ========================================= */
-/* 2. GRID I KARTY STATYSTYK                 */
-/* ========================================= */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -119,9 +114,6 @@
     font-size: 0.95rem;
 }
 
-/* ========================================= */
-/* 3. WARTOŚCI I TYPOGRAFIA                  */
-/* ========================================= */
 .big-value {
     font-size: 3.5rem;
     font-weight: 800;
@@ -132,9 +124,6 @@
 .neon-green { color: #00ffd5; text-shadow: 0 0 15px rgba(0, 255, 213, 0.3); }
 .neon-orange { color: #f39c12; text-shadow: 0 0 15px rgba(243, 156, 18, 0.3); }
 
-/* ========================================= */
-/* 4. REKORD OPÓŹNIENIA                      */
-/* ========================================= */
 .delay-record {
     display: flex;
     align-items: center;
@@ -161,9 +150,6 @@
 
 .delay-info strong { font-size: 1.4rem; color: #fff; }
 
-/* ========================================= */
-/* 5. LISTY (KATEGORIE I TECH)               */
-/* ========================================= */
 .category-split, .tech-list {
     display: flex;
     flex-direction: column;

@@ -1,6 +1,4 @@
-/* ========================================= */
-/* 1. GŁÓWNY KONTENER I NAGŁÓWKI             */
-/* ========================================= */
+
 .stations-container {
   height: 100vh;
   display: flex;
@@ -36,9 +34,6 @@
   color: #ccc;
 }
 
-/* ========================================= */
-/* 2. KONTROLKI WYSZUKIWANIA                 */
-/* ========================================= */
 .search-controls {
   display: flex;
   gap: 15px;
@@ -82,9 +77,6 @@
   box-shadow: 0 0 15px rgba(0, 255, 213, 0.15);
 }
 
-/* ========================================= */
-/* 3. LISTA STACJI I ELEMENTY                */
-/* ========================================= */
 .stations-list-wrapper {
   flex: 1;
   overflow-y: auto;
@@ -128,7 +120,7 @@
 .station-actions {
   display: flex;
   align-items: center;
-  gap: 15px; /* Zastąpione margin-right na gap dla czystości */
+  gap: 15px;
 }
 
 .map-btn {
@@ -147,9 +139,6 @@
   box-shadow: 0 0 10px rgba(0, 255, 213, 0.5);
 }
 
-/* ========================================= */
-/* 4. SZCZEGÓŁY STACJI (ROZWIJANE)           */
-/* ========================================= */
 .station-details {
   padding: 20px 24px;
   border-top: 1px solid var(--border-color);
@@ -171,9 +160,6 @@
   background: rgba(0, 255, 213, 0.1);
 }
 
-/* ========================================= */
-/* 5. TABELE I ODJAZDY                       */
-/* ========================================= */
 .timetable-table {
   width: 100%;
   border-collapse: collapse;
@@ -240,9 +226,6 @@
   filter: grayscale(100%);
 }
 
-/* ========================================= */
-/* 6. BADGE (KATEGORIE I STATUSY)            */
-/* ========================================= */
 .cat-badge {
   display: inline-block;
   min-width: 45px;
@@ -282,9 +265,6 @@
   color: #666;
 }
 
-/* ========================================= */
-/* 7. PRZYCISKI I AKCJE W TABELI             */
-/* ========================================= */
 .expand-list-btn {
   width: 100%;
   padding: 12px;
@@ -373,9 +353,6 @@
   gap: 8px;
 }
 
-/* ========================================= */
-/* 8. STREFA EKSPERYMENTALNA I TOGGLE        */
-/* ========================================= */
 .experimental-zone {
   display: flex;
   align-items: center;
@@ -440,9 +417,6 @@
 input:checked + .slider { background-color: orange; }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* ========================================= */
-/* 9. SCROLLBAR (CZYSTY I NOWOCZESNY)        */
-/* ========================================= */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -467,9 +441,6 @@ input:checked + .slider:before { transform: translateX(20px); }
   scrollbar-color: var(--border-color) var(--bg-main);
 }
 
-/* ========================================= */
-/* 10. ANIMACJE KLUCZOWE                     */
-/* ========================================= */
 @keyframes slideDownFade {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -481,12 +452,8 @@ input:checked + .slider:before { transform: translateX(20px); }
   100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
 }
 
-/* ========================================= */
-/* 11. DODANE RZECZY / POSEGREGUJ            */
-/* ========================================= */
 .progress-bar-fill { display: none; }
 
-/* Komunikat o REGIO */
 .regio-message-area {
     height: 30px;
     margin-top: 10px;
@@ -503,7 +470,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     text-shadow: 0 0 10px rgba(243, 156, 18, 0.2);
 }
 
-/* SKELETON LOADERS - Efekt pulsującego ładowania */
 .skeleton-wrapper {
     width: 100%;
     padding: 20px;
@@ -551,14 +517,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .station-row:hover {
     background: #222;
-    padding-left: 15px; /* Delikatny efekt przesunięcia przy hover */
+    padding-left: 15px; 
 }
 
 .station-details-overflow {
     overflow: hidden;
 }
 
-/* Peron w kółeczku dla lepszego wyglądu */
 .platform-badge {
     background: #333;
     padding: 2px 8px;

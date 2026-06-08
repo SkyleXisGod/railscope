@@ -41,7 +41,6 @@ export default function StationsPage() {
       .catch(err => console.error(t.error, err));
   }, [t]);
 
-  // FUNKCJE LOGICZNE (NIE DOTYKANE)
   const calcMin = (timeStr) => {
     if (!timeStr || timeStr === "??:??" || timeStr === "-") return null;
     const cleaned = String(timeStr).trim();
@@ -122,11 +121,10 @@ export default function StationsPage() {
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
-  // NAPRAWA FREEZE: Limitujemy tylko ILE widać na ekranie, logika szukania pozostaje ta sama
   const displayedStations = useMemo(() => {
     let filtered = stations.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
     if (sortAlphabetical) filtered.sort((a, b) => a.name.localeCompare(b.name));
-    return filtered.slice(0, 40); // Tylko pierwsze 40 wyników renderuje DOM - to ratuje kartę!
+    return filtered.slice(0, 40); 
   }, [stations, search, sortAlphabetical]);
 
   const filteredTimetable = timetable.filter(t => premiumCats.includes(t.category) || showRegio);

@@ -66,8 +66,8 @@ function AdminTodoPopup() {
               boxShadow: '0 0 20px rgba(255, 0, 85, 0.25)', borderRadius: '12px', padding: '16px',
               color: '#fff'
             }}
-          >
-            {/* Nagłówek */}
+            >
+
             <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #222', paddingBottom: '8px' }}>
               <span style={{ fontWeight: 'bold', color: '#ff0055', fontSize: '0.9rem', letterSpacing: '1px' }}>🛠️ ZARZĄDCA TODO</span>
               <button 
@@ -78,7 +78,6 @@ function AdminTodoPopup() {
               </button>
             </div>
 
-            {/* Lista zadań */}
             <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '12px', paddingRight: '4px' }}>
               {todos.length === 0 ? (
                 <p style={{ color: '#666', fontSize: '0.85rem', textAlign: 'center', margin: '15px 0' }}>Brak zadań. Czyste biurko!</p>
@@ -111,7 +110,6 @@ function AdminTodoPopup() {
               )}
             </div>
 
-            {/* Formularz dodawania */}
             <form onSubmit={addTodo} style={{ display: 'flex', gap: '6px' }}>
               <input 
                 type="text" 
@@ -135,7 +133,6 @@ function AdminTodoPopup() {
             </form>
           </motion.div>
         ) : (
-          /* Mały pływający przycisk wywołujący */
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -258,12 +255,10 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {/* --- WYŚWIETLANIE LISTY TODO TYLKO DLA KONTA 1@1 NA STRONIE GŁÓWNEJ --- */}
       {isTargetAdminAccount && location.pathname === "/" && !isLiveBanned && (
         <AdminTodoPopup />
       )}
 
-      {/* --- GŁÓWNA STRUKTURA APLIKACJI --- */}
       {location.pathname === "/auth" ? (
         <Routes>
           <Route path="/auth" element={<AuthPage />} />

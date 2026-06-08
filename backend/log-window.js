@@ -1,4 +1,3 @@
-// log-window.js
 import net from 'net';
 import chalk from 'chalk';
 
@@ -6,7 +5,6 @@ const server = net.createServer((socket) => {
     const tag = chalk.bgMagenta.white(' FEEDLOG ');
     
     socket.on('data', (data) => {
-        // Break multiple incoming requests up by lines and style them
         const lines = data.toString().split('\n');
         lines.forEach(line => {
             if (line.trim()) {

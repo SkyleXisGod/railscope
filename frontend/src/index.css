@@ -1,36 +1,26 @@
-/* ==========================================================================
-   GLOBALNE ZMIENNE (Łatwa zmiana motywu w ustawieniach)
-   ========================================================================== */
+
 :root {
-    /* Kolory główne */
     --primary-color: #3498db;
     --primary-hover: #2980b9;
     --accent-color: #e67e22;
     
-    /* Tła i powierzchnie */
     --bg-main: #121417;
     --bg-card: #1e2126;
     --bg-input: #2a2e35;
     
-    /* Tekst i obramowania */
     --text-primary: #ecf0f1;
     --text-color: #ecf0f1;
     --text-secondary: #95a5a6;
     --border-color: #343a40;
     
-    /* Systemowe */
     --success-color: #2ecc71;
     --danger-color: #e74c3c;
     
-    /* Odstępy i kształty */
     --border-radius: 12px;
     --transition-speed: 0.3s;
     --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* ==========================================================================
-   RESET I BAZOWE STYLE
-   ========================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -64,9 +54,6 @@ body {
 }
 
 
-/* ==========================================================================
-   GLOBALNE KLASY DLA WSZYSTKICH STRON (Używaj ich w każdym pliku .jsx)
-   ========================================================================== */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -98,9 +85,6 @@ body {
     padding-bottom: 0.5rem;
 }
 
-/* ==========================================================================
-   ELEMENTY INTERFEJSU (Przyciski, Inputy)
-   ========================================================================== */
 .btn {
     display: inline-flex;
     align-items: center;

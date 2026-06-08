@@ -32,11 +32,9 @@ export default function AuthPage() {
             const res = await axios.post(`http://localhost:8080/api/${endpoint}`, formData);
             
             if (isLogin) {
-                // Logowanie: serwer zwraca { user: { ... } }
                 login(res.data.user);
                 navigate('/');
             } else {
-                // Rejestracja pomyślna - przełącz na logowanie
                 setIsLogin(true);
                 setFormData({ ...formData, password: '' });
             }

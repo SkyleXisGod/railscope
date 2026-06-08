@@ -21,12 +21,8 @@ export default function Mailbox() {
         const fetchMessages = async () => {
             if (!user) return;
             try {
-                // Pobieranie wszystkich wiadomości przypisanych do użytkownika
                 const res = await axios.get(`http://localhost:8080/api/mailbox/${user.id}`);
                 
-                // AUTOMATYCZNE CZYSZCZENIE: Filtrujemy wiadomości starsze niż 7 dni na frontendzie
-                // Oczywiście optymalnie byłoby mieć to w CronJobie na backendzie, 
-                // ale ten filtr uniemożliwia ich wyświetlanie natychmiastowo.
                 const sevenDaysAgo = new Date();
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                 
@@ -80,7 +76,6 @@ export default function Mailbox() {
                     <li className={activeFolder === "inbox" ? "active" : ""} onClick={() => setActiveFolder("inbox")}>
                         <span>
                             {t.inbox} 
-                            {/* Świecąca kropeczka dla interfejsu (w navbarze należałoby wdrożyć analogiczną logikę lub Context API) */}
                             {hasUnread && <span style={{ marginLeft: '5px', fontSize: '12px' }}>{t.unreadDot}</span>}
                         </span>
                         {unreadCount > 0 && <span className="folder-count">{unreadCount}</span>}

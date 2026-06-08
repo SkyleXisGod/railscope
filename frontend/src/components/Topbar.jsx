@@ -157,7 +157,6 @@ export default function Topbar({ onToggleSidebar }) {
           )}
         </div>
 
-        {/* SEKCJA PROFILU UŻYTKOWNIKA (WYCZYSZCZONA ZE STAREJ KOPERTY) */}
         <div className="user-section">
           <div 
             className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
