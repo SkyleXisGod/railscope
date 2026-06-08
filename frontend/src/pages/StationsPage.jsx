@@ -167,7 +167,7 @@ export default function StationsPage() {
                 <div className="station-row" onClick={() => toggleStation(s.id)}>
                     <span className="station-name">{s.name}</span>
                     <div className="station-actions">
-                        <button className="map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?station=${s.id}`); }}>📍 {t.text_tracking}</button>
+                        <button className="map-btn" onClick={(e) => { e.stopPropagation(); navigate(`/?stationId=${s.id}`); }}>📍 {t.text_tracking}</button>
                         <span className="arrow">▼</span>
                     </div>
                 </div>

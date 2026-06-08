@@ -248,7 +248,7 @@ const getUpcomingDepartures = (payload) => {
   );
 });
 
-function MapController({ selectedStation, trainLocation, sidebarOpen, isTracking, setIsTracking, isLive, firstStation }) {
+function MapController({ stationId, selectedStation, trainLocation, sidebarOpen, isTracking, setIsTracking, isLive, firstStation }) {
   const map = useMap();
   const lastTargetId = useRef(null);
 
@@ -266,23 +266,44 @@ function MapController({ selectedStation, trainLocation, sidebarOpen, isTracking
   }, [sidebarOpen, map]);
 
   useEffect(() => {
-    const target = isLive ? trainLocation : (selectedStation || firstStation);
-    
-    if (target && target.lat && target.lon) {
-      const targetEntityId = isLive ? 'active-train' : (selectedStation ? `station-${selectedStation.id}` : 'route-start');
-
-      if (lastTargetId.current !== targetEntityId) {
-        map.flyTo([target.lat, target.lon], 12, { animate: true, duration: 1.2 });
-        lastTargetId.current = targetEntityId;
-      }
-
-      if (isLive && isTracking && trainLocation) {
+    // 1. Priorytet ma żywy pociąg
+    if (isLive && trainLocation?.lat && trainLocation?.lon) {
+      if (isTracking) {
         map.setView([trainLocation.lat, trainLocation.lon], 14, { animate: true, duration: 0.5 });
+      } else if (lastTargetId.current !== 'active-train') {
+        map.flyTo([trainLocation.lat, trainLocation.lon], 12, { animate: true, duration: 1.2 });
+        lastTargetId.current = 'active-train';
       }
-    } else if (!target) {
+      return;
+    }
+
+    // 2. Kliknięta stacja (wybór z mapy lub z listy stacji poprzez stationId)
+    if (stationId && selectedStation && selectedStation.lat && selectedStation.lon) {
+      const targetKey = `station-${stationId}`;
+      if (lastTargetId.current !== targetKey) {
+        map.flyTo([parseFloat(selectedStation.lat), parseFloat(selectedStation.lon)], 13, { 
+          animate: true, 
+          duration: 1.2 
+        });
+        lastTargetId.current = targetKey;
+      }
+      return;
+    }
+
+    // 3. Pierwsza stacja na trasie (jeśli tylko przeglądamy trasę pociągu bez live)
+    if (firstStation && firstStation.lat && firstStation.lon) {
+      if (lastTargetId.current !== 'route-start') {
+        map.flyTo([firstStation.lat, firstStation.lon], 12, { animate: true, duration: 1.2 });
+        lastTargetId.current = 'route-start';
+      }
+      return;
+    }
+
+    // Reset, jeśli nic nie jest wybrane
+    if (!stationId && !trainLocation && !firstStation) {
       lastTargetId.current = null;
     }
-  }, [selectedStation, trainLocation?.lat, trainLocation?.lon, isTracking, map, isLive, firstStation]);
+  }, [stationId, selectedStation, trainLocation?.lat, trainLocation?.lon, isTracking, map, isLive, firstStation]);
 
   return null;
 }
@@ -348,7 +369,7 @@ useEffect(() => {
           if (!trainGroups[groupKey]) {
             trainGroups[groupKey] = {
               cat: train.trainCategory || "REG",
-              train: train.trainName || train.displayNumber || "Pociąg",
+              train: train.displayNumber || "Pociąg",
               dest: train.relation?.split(" - ").pop() || "Stacja docelowa",
               dep: getT(sInfo.plannedDeparture) || getT(sInfo.plannedArrival) || "??:??",
             };
@@ -493,6 +514,18 @@ useEffect(() => {
     setComputedTrainPos(newPos);
   }, [trackedTrain, routeCoords, tick, isLive]);
 
+  useEffect(() => {
+    if (trackedTrain) {
+      console.log("🕵️‍♂️ [MAPA] Śledzony pociąg zmienił się. Pełny obiekt:", trackedTrain);
+      console.log("⏱️ [MAPA] Wyciągnięte opóźnienie (trackedTrain.delay):", trackedTrain.delay);
+      
+      // Mały test typu danych, bo czasem opóźnienie przychodzi jako string "15", a czasem jako liczba 15
+      console.log("🔍 [MAPA] Typ zmiennej opóźnienia:", typeof trackedTrain.delay);
+    } else {
+      console.log("🛑 [MAPA] Śledzony pociąg to aktualnie: null");
+    }
+  }, [trackedTrain]);
+
   const handleStationClick = useCallback((id) => {
     setSearchParams((prevParams) => {
       const newParams = new URLSearchParams(prevParams);
@@ -565,6 +598,7 @@ useEffect(() => {
         <TileLayer url={tileUrl} />
         <ZoomListener setZoomLevel={setCurrentZoom} />
         <MapController 
+          stationId={stationId}
           selectedStation={selectedStation} 
           trainLocation={computedTrainPos} 
           sidebarOpen={sidebarOpen}

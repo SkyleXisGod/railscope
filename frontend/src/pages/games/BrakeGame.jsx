@@ -40,17 +40,17 @@ export default function BrakeGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🎛️ Kabina Maszynisty (Hebel Hamulca)</h2>
+          <h2>🎛️ {t.title || 'Kabina Maszynisty'}</h2>
         </div>
 
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Symulator Hamowania</h3>
+              <h3>{t.introTitle || 'Symulator Hamowania'}</h3>
               <p className="game-explanation-text">
-                Pociąg pędzi w stronę stacji końcowej! Wyczuj odpowiedni moment i zaciągnij bezpiecznik hamulca, by zatrzymać skład idealnie przed peronem. Dojechanie z prędkością &gt; 0 skończy się katastrofą.
+                {t.introText || 'Pociąg pędzi w stronę stacji końcowej! Wyczuj odpowiedni moment i zaciągnij bezpiecznik hamulca, by zatrzymać skład idealnie przed peronem. Dojechanie z prędkością > 0 skończy się katastrofą.'}
               </p>
-              <button className="btn-arcade-play" onClick={startTrain}>RUSZAJ W TRASĘ 🚂</button>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.startButton || 'RUSZAJ W TRASĘ 🚂'}</button>
             </div>
           )}
 
@@ -59,11 +59,11 @@ export default function BrakeGame({ t, onBack }) {
               <div className="driver-cabin-panel">
                 <div className="cabin-gauge speed-mode">
                   <h4>{speed} km/h</h4>
-                  <p>PRĘDKOŚĆ</p>
+                  <p>{t.speedLabel || 'PRĘDKOŚĆ'}</p>
                 </div>
                 <div className="cabin-gauge distance-mode">
                   <h4>{obstacleDistance.toFixed(0)} m</h4>
-                  <p>DYSTANS DO STACJI</p>
+                  <p>{t.distanceLabel || 'DYSTANS DO STACJI'}</p>
                 </div>
               </div>
 
@@ -74,26 +74,26 @@ export default function BrakeGame({ t, onBack }) {
                 >
                   <div className="brake-lever-handle"></div>
                 </div>
-                <p>ZACIĄGNIJ HAMULEC AWARYJNY</p>
+                <p>{t.leverLabel || 'ZACIĄGNIJ HAMULEC AWARYJNY'}</p>
               </div>
             </>
           )}
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 KATASTROFA!</h3>
-              <p className="game-explanation-text">Nie zdążyłeś wyhamować pociągu i uderzyłeś w stację końcową!</p>
-              <button className="btn-arcade-play" onClick={startTrain}>Spróbuj Ponownie 🔄</button>
+              <h3>💥 {t.crashTitle || 'KATASTROFA!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'Nie zdążyłeś wyhamować pociągu i uderzyłeś w stację końcową!'}</p>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.retryButton || 'Spróbuj Ponownie 🔄'}</button>
             </div>
           )}
 
           {gameState === 'stopped' && (
             <div className="game-overlay-screen success-theme">
-              <h3>🎉 SUKCES!</h3>
+              <h3>🎉 {t.successTitle || 'SUKCES!'}</h3>
               <p className="game-explanation-text">
-                Wspaniały manewr! Pociąg zatrzymał się bezpiecznie na stacji. Pozostały dystans: <strong>{obstacleDistance.toFixed(1)} m</strong>.
+                {t.successText || 'Wspaniały manewr! Pociąg zatrzymał się bezpiecznie na stacji.'} {t.distanceLabel || 'Pozostały dystans'}: <strong>{obstacleDistance.toFixed(1)} m</strong>.
               </p>
-              <button className="btn-arcade-play" onClick={startTrain}>Kolejny Przejazd 🔄</button>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.nextButton || 'Kolejny Przejazd 🔄'}</button>
             </div>
           )}
         </div>

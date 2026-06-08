@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import '../GamesPage.css';
 
 const LOGISTICS_TYPES = [
-  { id: 'wood', emoji: '🪵', label: 'TARTAK (DREWNO)' },
-  { id: 'coal', emoji: '💼', label: 'MINERALNY (WĘGIEL / RUDA)' },
-  { id: 'chem', emoji: '🧪', label: 'CYSTERNA (CHEMIA / FLUID)' }
+  { id: 'wood', emoji: '🪵', label: 'Sawmill (Wood)' },
+  { id: 'coal', emoji: '💼', label: 'Mineral Cargo (Coal / Ore)' },
+  { id: 'chem', emoji: '🧪', label: 'Chemical Tank (Chemicals)' }
 ];
 
 export default function CargoGame({ t, onBack }) {
@@ -74,11 +74,11 @@ export default function CargoGame({ t, onBack }) {
       
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📦 {t.game_cargo_title || 'DYSPOZYCJA TOWAROWA'}</h2>
+          <h2>📦 {t.title || 'DYSPOZYCJA TOWAROWA'}</h2>
           {gameState === 'running' && (
             <div style={{ display: 'flex', gap: '20px', fontSize: '14px', fontWeight: 'bold' }}>
-              <div>ODPRAWIONO: <span style={{ color: '#00ffca' }}>{score}</span></div>
-              <div style={{ color: '#ff4757' }}>BŁĘDY: {errors}/3</div>
+              <div>{t.scoreLabel || 'ODPRAWIONO'}: <span style={{ color: '#00ffca' }}>{score}</span></div>
+              <div style={{ color: '#ff4757' }}>{t.errorsLabel || 'BŁĘDY'}: {errors}/3</div>
             </div>
           )}
         </div>
@@ -86,11 +86,11 @@ export default function CargoGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>📋 KIEROWANIE POTOKIEM ŁADUNKÓW</h3>
+              <h3>{t.introTitle || '📋 KIEROWANIE POTOKIEM ŁADUNKÓW'}</h3>
               <p className="game-explanation-text">
-                Wykrywaj nadjeżdżające wagony towarowe i przydzielaj je na odpowiednie tory odbiorcze (Tartak, Kopalnia, Zakład Chemiczny). Zwłoka lub błędne przekierowanie spowoduje przeciążenie stacji rozrządowej.
+                {t.introText || 'Wykrywaj nadjeżdżające wagony towarowe i przydzielaj je na odpowiednie tory odbiorcze (Tartak, Kopalnia, Zakład Chemiczny). Zwłoka lub błędne przekierowanie spowoduje przeciążenie stacji rozrządowej.'}
               </p>
-              <button className="btn-arcade-play" onClick={startLoader}>ROZPOCZNIJ PRZEKIEROWANIE</button>
+              <button className="btn-arcade-play" onClick={startLoader}>{t.startButton || 'ROZPOCZNIJ PRZEKIEROWANIE'}</button>
             </div>
           )}
 
@@ -100,7 +100,7 @@ export default function CargoGame({ t, onBack }) {
               {/* Pasek pozostałego czasu na reakcję */}
               <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '5px', color: '#aaa' }}>
-                  <span>CZAS NA ZMIANĘ ZWROTNICY SEKTORA</span>
+                  <span>{t.timeLabel || 'Switch time remaining'}</span>
                   <span>{Math.ceil(timeLeft)}%</span>
                 </div>
                 <div style={{ background: '#1c2430', height: '10px', borderRadius: '5px', overflow: 'hidden', border: '1px solid #2c3e50' }}>
@@ -112,7 +112,7 @@ export default function CargoGame({ t, onBack }) {
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{ background: '#141b24', border: '1px solid #3498db', borderRadius: '8px', padding: '20px 40px', textAlign: 'center', boxShadow: 'inset 0 0 15px rgba(52, 152, 219, 0.2)' }}>
                   <div style={{ fontSize: '48px', marginBottom: '10px', animation: 'pulse 1s infinite alternate' }}>{currentCargo.emoji}</div>
-                  <div style={{ fontSize: '14px', letterSpacing: '1px', fontWeight: 'bold', color: '#fff' }}>{currentCargo.label}</div>
+                  <div style={{ fontSize: '14px', letterSpacing: '1px', fontWeight: 'bold', color: '#fff' }}>{t.cargoLabels?.[currentCargo.id] || currentCargo.label}</div>
                 </div>
               </div>
 
@@ -136,7 +136,7 @@ export default function CargoGame({ t, onBack }) {
                     onClick={() => executeSort(type.id)}
                   >
                     <span style={{ fontSize: '18px' }}>{type.emoji}</span>
-                    <span style={{ fontWeight: '600' }}>{type.label}</span>
+                    <span style={{ fontWeight: '600' }}>{t.cargoLabels?.[type.id] || type.label}</span>
                   </button>
                 ))}
               </div>
@@ -146,10 +146,10 @@ export default function CargoGame({ t, onBack }) {
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 PARALIŻ LOGISTYCZNY!</h3>
-              <p className="game-explanation-text">Dopuściłeś do przekroczenia limitu 3 błędów odprawy. Tory rozrządowe zostały zablokowane.</p>
-              <p className="game-explanation-text">Odprawiono bezpiecznie: <strong>{score} składów towarowych</strong></p>
-              <button className="btn-arcade-play" onClick={startLoader}>UDROŻNIJ WĘZEŁ 🔄</button>
+              <h3>💥 {t.crashTitle || 'PARALIŻ LOGISTYCZNY!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'Dopuściłeś do przekroczenia limitu 3 błędów odprawy. Tory rozrządowe zostały zablokowane.'}</p>
+              <p className="game-explanation-text">{t.crashScoreText || 'Odprawiono bezpiecznie:'} <strong>{score} składów towarowych</strong></p>
+              <button className="btn-arcade-play" onClick={startLoader}>{t.retryButton || 'UDROŻNIJ WĘZEŁ 🔄'}</button>
             </div>
           )}
         </div>

@@ -121,11 +121,11 @@ export default function WagonCatcher({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📦 Łapacza Wagonów <br></br> (Jazda Manewrowa)</h2>
+          <h2>📦 {t.title || 'Wagon Catcher'} <br></br> ({t.introTitle || 'Maneuvering Run'})</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🏆 {t.score || 'Punkty'}: <strong>{score}</strong></span>
-              <span className="hud-timer">❤️ Życia: <strong>{Array.from({ length: Math.max(0, lives) }).map(() => '❤️').join(' ')}</strong></span>
+              <span className="hud-score">🏆 {t.scoreLabel || 'Score'}: <strong>{score}</strong></span>
+              <span className="hud-timer">{t.livesLabel || 'Lives'}: <strong>{Array.from({ length: Math.max(0, lives) }).map(() => '❤️').join(' ')}</strong></span>
             </div>
           )}
         </div>
@@ -133,16 +133,16 @@ export default function WagonCatcher({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Manewry na Stacji Rozrządowej</h3>
+              <h3>{t.introTitle || 'Yard maneuvering'}</h3>
               <p className="game-explanation-text">
-                Steruj lokomotywą za pomocą strzałek w lewo/prawo lub klawiszy A/D. Łap spadające ładunki kolejowe i zabezpiecz skład przed katastrofą logistyczną!
+                {t.introText || 'Steer the locomotive with left/right arrows or A/D. Catch falling freight loads and secure the train before a logistics disaster!'}
               </p>
               <div className="game-controls-badge" style={{ display: 'flex', gap: '15px', fontSize: '0.85rem' }}>
-                <span>📦 Zwykły: 15 pkt</span>
-                <span>⭐ Złoty (Szybki): 30 pkt</span>
-                <span>💼 Ciężki: 10 pkt</span>
+                <span>📦 {t.typeInfoNormal || 'Normal: 15 pts'}</span>
+                <span>⭐ {t.typeInfoGold || 'Gold (Fast): 30 pts'}</span>
+                <span>💼 {t.typeInfoHeavy || 'Heavy: 10 pts'}</span>
               </div>
-              <button className="btn-arcade-play" onClick={startGame}>URUCHOM JAZDĘ MANEWROWĄ</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'Start maneuvering run'}</button>
             </div>
           )}
 
@@ -185,10 +185,10 @@ export default function WagonCatcher({ t, onBack }) {
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 SKŁAD WYKOLEJONY!</h3>
-              <p className="game-explanation-text">Zgubiłeś zbyt wiele wagonów towarowych i utraciłeś stabilność pociągu.</p>
-              <p className="game-explanation-text">Twój ostateczny wynik: <strong>{score} punktów</strong></p>
-              <button className="btn-arcade-play" onClick={startGame}>Spróbuj Ponownie 🔄</button>
+              <h3>💥 {t.crashTitle || 'Train derailed!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'You dropped too many freight wagons and lost train stability.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Your final score:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Try again 🔄'}</button>
             </div>
           )}
         </div>
@@ -204,7 +204,7 @@ export default function WagonCatcher({ t, onBack }) {
               onTouchStart={() => { keysPressed.current['ArrowLeft'] = true; }}
               onTouchEnd={() => { keysPressed.current['ArrowLeft'] = false; }}
             >
-              ◀ LEWO
+              ◀ {t.leftButton || 'Left'}
             </button>
             <button 
               className="btn-arcade-play" 
@@ -214,7 +214,7 @@ export default function WagonCatcher({ t, onBack }) {
               onTouchStart={() => { keysPressed.current['ArrowRight'] = true; }}
               onTouchEnd={() => { keysPressed.current['ArrowRight'] = false; }}
             >
-              PRAWO ▶
+              {t.rightButton || 'Right'} ▶
             </button>
           </div>
         )}

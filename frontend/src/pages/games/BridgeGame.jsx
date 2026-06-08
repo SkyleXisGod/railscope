@@ -61,11 +61,11 @@ export default function BridgeGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2> Bridges Mechanizm Zwodzony (Ryglowanie)</h2>
+          <h2>{t.title || 'Most kolejowy'}</h2>
           {gameState === 'running' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🏆 Przeprawy: <strong>{score}</strong></span>
-              <span className="hud-timer">⚡ Prędkość: <strong>{(1.6 + score * 0.35).toFixed(1)}x</strong></span>
+              <span className="hud-score">🏆 {t.hudScore || 'Przeprawy'}: <strong>{score}</strong></span>
+              <span className="hud-timer">⚡ {t.hudSpeed || 'Prędkość'}: <strong>{(1.6 + score * 0.35).toFixed(1)}x</strong></span>
             </div>
           )}
         </div>
@@ -73,11 +73,11 @@ export default function BridgeGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Automatyka Mostów Ruchomych</h3>
+              <h3>{t.introTitle || 'Automatyka Mostów Ruchomych'}</h3>
               <p className="game-explanation-text">
-                Ekspres pasażerski pędzi w stronę otwartego ramienia mostu! Kliknij przycisk kontrolny w idealnym ułamku sekundy, aby opuścić i zablokować przęsło zanim koła lokomotywy miną barierę bezpieczeństwa.
+                {t.introText || 'Ekspres pasażerski pędzi w stronę otwartego ramienia mostu! Kliknij przycisk kontrolny w idealnym ułamku sekundy, aby opuścić i zablokować przęsło zanim koła lokomotywy miną barierę bezpieczeństwa.'}
               </p>
-              <button className="btn-arcade-play" onClick={startTrain}>URUCHOM SYGNAŁ DROGOWY</button>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.startButton || 'URUCHOM SYGNAŁ DROGOWY'}</button>
             </div>
           )}
 
@@ -148,7 +148,7 @@ export default function BridgeGame({ t, onBack }) {
                   onClick={() => { if(!isLowering) setIsLowering(true); }}
                   disabled={isLowering}
                 >
-                  {isLowering ? `OPUSZCZANIE ZWODU (${bridgeProgress}%)` : 'OPUŚĆ PRZĘSŁO NOW! 🚧'}
+                  {isLowering ? `${t.loweringLabel || 'OPUSZCZANIE ZWODU'} (${bridgeProgress}%)` : (t.startButton || 'OPUŚĆ PRZĘSŁO NOW! 🚧')}
                 </button>
               </div>
             </div>
@@ -156,18 +156,18 @@ export default function BridgeGame({ t, onBack }) {
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 KATASTROFA KOLEJOWA!</h3>
-              <p className="game-explanation-text">Pociąg runął w przepaść rzeczną. Most nie został zamknięty przed czasem krytycznym.</p>
-              <p className="game-explanation-text">Ostateczny rekord operacji: <strong>{score} składów</strong></p>
-              <button className="btn-arcade-play" onClick={startTrain}>Spróbuj Ponownie 🔄</button>
+              <h3>💥 {t.crashTitle || 'KATASTROFA KOLEJOWA!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'Pociąg runął w przepaść rzeczną. Most nie został zamknięty przed czasem krytycznym.'}</p>
+              <p className="game-explanation-text">{t.crashScoreText || 'Ostateczny rekord operacji:'} <strong>{score} składów</strong></p>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.retryButton || 'Spróbuj Ponownie 🔄'}</button>
             </div>
           )}
 
           {gameState === 'stopped' && (
             <div className="game-overlay-screen success-theme">
-              <h3>🎉 IDEALNY RELEKS!</h3>
-              <p className="game-explanation-text">Skład przejechał bezpiecznie nad barierą wodną. Automatyka sprawna.</p>
-              <button className="btn-arcade-play" onClick={startTrain}>Kolejny Skład (Zwiększ Prędkość) ⏩</button>
+              <h3>🎉 {t.successTitle || 'IDEALNY RELEKS!'}</h3>
+              <p className="game-explanation-text">{t.successText || 'Skład przejechał bezpiecznie nad barierą wodną. Automatyka sprawna.'}</p>
+              <button className="btn-arcade-play" onClick={startTrain}>{t.nextTrainButton || 'Kolejny Skład (Zwiększ Prędkość) ⏩'}</button>
             </div>
           )}
         </div>

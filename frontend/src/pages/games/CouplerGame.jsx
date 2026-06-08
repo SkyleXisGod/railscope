@@ -71,11 +71,11 @@ export default function CouplerGame({ t, onBack }) {
       
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🔗 {t.game_coupler_title || 'ZESPALANIE SPRZĘGÓW'}</h2>
+          <h2>🔗 {t.title || 'Coupler'}</h2>
           {gameState === 'running' && (
             <div style={{ display: 'flex', gap: '20px', fontSize: '14px', fontWeight: 'bold' }}>
-              <div>ZŁĄCZENIA: <span style={{ color: '#00ffca' }}>{score}</span></div>
-              <div style={{ color: damage > 60 ? '#ff4757' : '#fff' }}>USZKODZENIA: {damage}%</div>
+              <div>{t.scoreLabel || 'Connections'}: <span style={{ color: '#00ffca' }}>{score}</span></div>
+              <div style={{ color: damage > 60 ? '#ff4757' : '#fff' }}>{t.damageLabel || 'Damage'}: {damage}%</div>
             </div>
           )}
         </div>
@@ -83,11 +83,11 @@ export default function CouplerGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>🧲 KALIBRACJA SPRZĘGÓW</h3>
+              <h3>{t.introTitle || 'Calibrate the coupler'}</h3>
               <p className="game-explanation-text">
-                Zablokuj sworzeń blokujący, gdy ruchomy rdzeń znajdzie się dokładnie w centralnej strefie tolerancji. Niewłaściwy moment grozi zerwaniem przewodów powietrznych i uszkodzeniem mechanicznym.
+                {t.introText || 'Align the locking pin when the moving core enters the central tolerance zone. A mistimed connection can tear air hoses and damage the coupler.'}
               </p>
-              <button className="btn-arcade-play" onClick={startGame}>URUCHOM PROCEDURĘ</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'Start procedure'}</button>
             </div>
           )}
 
@@ -97,7 +97,7 @@ export default function CouplerGame({ t, onBack }) {
               {/* Pasek statusu uszkodzeń (taki sam jak w Maintenance) */}
               <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '5px', color: '#aaa' }}>
-                  <span>INTEGRALNOŚĆ MECHANIZMU</span>
+                  <span>{t.integrityLabel || 'Mechanism integrity'}</span>
                   <span>{100 - damage}%</span>
                 </div>
                 <div style={{ background: '#1c2430', height: '10px', borderRadius: '5px', overflow: 'hidden', border: '1px solid #2c3e50' }}>
@@ -132,7 +132,7 @@ export default function CouplerGame({ t, onBack }) {
                     transition: 'left 0.02s linear'
                   }} />
                 </div>
-                <p style={{ fontSize: '11px', color: '#aaa', marginTop: '8px' }}>STREFA PRZECHWYTU: centralny podświetlony sektor</p>
+                <p style={{ fontSize: '11px', color: '#aaa', marginTop: '8px' }}>{t.targetZoneLabel || 'Capture zone: central highlighted sector'}</p>
               </div>
 
               {/* Główny przycisk wykonawczy */}
@@ -141,17 +141,17 @@ export default function CouplerGame({ t, onBack }) {
                 style={{ width: '100%', margin: 0, padding: '14px', background: '#2c3e50', border: '2px solid #00ffca', color: '#00ffca', fontSize: '15px' }}
                 onClick={handleConnect}
               >
-                🔒 ZARYGLUJ SPRZĘG NOW
+                {t.actionButton || 'Lock the coupler now'}
               </button>
             </div>
           )}
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 DESTRUKCJA SPRZĘGU!</h3>
-              <p className="game-explanation-text">Przekroczyłeś krytyczne limity obciążeń. Nastąpiło gwałtowne rozerwanie składu.</p>
-              <p className="game-explanation-text">Zabezpieczono poprawnie: <strong>{score} osi wagonów</strong></p>
-              <button className="btn-arcade-play" onClick={startGame}>ZRESETUJ AGREGATY 🔄</button>
+              <h3>💥 {t.crashTitle || 'Coupler failure!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'You exceeded critical stress limits. The coupler tore apart.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Connected axles:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Reset systems 🔄'}</button>
             </div>
           )}
         </div>

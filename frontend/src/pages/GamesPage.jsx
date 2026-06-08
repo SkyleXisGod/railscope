@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './GamesPage.css'; // Poprawny plik CSS ze stylami gier
 import { translations } from './constants/translations';
+import { gameTranslations } from './constants/gamestranslations';
 
 // Import all games
 import MemoryGame from './games/MemoryGame';
@@ -53,14 +54,39 @@ export default function GamesPage() {
   const [activeGame, setActiveGame] = useState(null);
 
   const lang = user?.settings?.language || 'PL';
-  const t = translations[lang]?.games || translations.PL.games;
+  const pageT = translations[lang]?.games || translations.PL.games;
+  const gameT = gameTranslations[lang] || gameTranslations.EN;
+  const hasPlusAccess = ['PLUS', 'ADMIN', 'ZARZADCA'].includes(user?.role);
+  const isAdmin = ['ADMIN', 'ZARZADCA'].includes(user?.role);
 
-  // Sprawdzamy, czy użytkownik ma rolę premium
-  const isPremium = user?.role === 'PLUS';
+  const GAME_TRANSLATION_KEY = {
+    memory: 'memoryGame',
+    flappy: 'flappyTrain',
+    snake: 'snakeGame',
+    simon: 'simonSignals',
+    wagoncatcher: 'wagonCatcher',
+    clicker: 'trainClicker',
+    math: 'conductorMath',
+    maze: 'trainMaze',
+    brake: 'brakeGame',
+    furnace: 'furnaceGame',
+    radar: 'radarGame',
+    signal: 'signalGame',
+    coupler: 'couplerGame',
+    switch: 'switchGame',
+    radio: 'radioGame',
+    bridge: 'bridgeGame',
+    maintenance: 'maintenanceGame',
+    cargo: 'cargoGame',
+    speedcheck: 'speedCheckGame',
+    cargoweight: 'cargoWeightGame'
+  };
 
   const renderGame = () => {
+    const currentKey = GAME_TRANSLATION_KEY[activeGame] || 'memoryGame';
+    const gameSpecificT = gameT[currentKey] || gameTranslations.EN[currentKey];
     const props = {
-      t: translations[lang]?.app || translations.PL.app,
+      t: gameSpecificT,
       onBack: () => setActiveGame(null)
     };
 
@@ -69,7 +95,7 @@ export default function GamesPage() {
       case 'flappy': return <FlappyTrain {...props} />;
       case 'snake': return <SnakeGame {...props} />;
       case 'simon': return <SimonSignals {...props} />;
-      case 'wagoncatcher': return <WagonCatcher {...props} />; 
+      case 'wagoncatcher': return <WagonCatcher {...props} />;
       case 'clicker': return <TrainClicker {...props} />;
       case 'math': return <ConductorMath {...props} />;
       case 'maze': return <TrainMaze {...props} />;
@@ -90,33 +116,33 @@ export default function GamesPage() {
   };
 
   // Jeśli użytkownik jest premium i odpalił grę -> pełny ekran gry
-  if (activeGame && isPremium) {
+  if ((activeGame && hasPlusAccess) || (activeGame && isAdmin)) {
     return <div className="games-page fullscreen">{renderGame()}</div>;
   }
 
   return (
     <div className="premium-games-wrapper">
       {/* 1. Właściwa zawartość strony (będzie rozmyta dla zwykłych użytkowników) */}
-      <div className={`games-page ${!isPremium ? 'premium-blur-active' : ''}`}>
+      <div className={`games-page ${!hasPlusAccess ? 'premium-blur-active' : ''}`}>
         <header className="games-header">
-          <h1>{t.games_title || 'Strefa Gier Maszynisty'}</h1>
-          <p>{t.games_subtitle || 'Przetestuj swój refleks i umiejętności kolejowe'}</p>
+          <h1>{pageT.games_title || 'Strefa Gier Maszynisty'}</h1>
+          <p>{pageT.games_subtitle || 'Przetestuj swój refleks i umiejętności kolejowe'}</p>
         </header>
         
         <div className="games-grid">
           {GAMES_LIST.map((game, index) => {
-            const delay = `${(index % 4) * 0.2}s`; 
+            const delay = `${(index % 4) * 0.2}s`;
             return (
               <div 
                 key={game.id} 
                 className={`game-arcade-card ${game.ready ? 'active-game-mode' : ''}`} 
-                onClick={() => isPremium && setActiveGame(game.id)}
+                onClick={() => hasPlusAccess && setActiveGame(game.id)}
                 style={{ animationDelay: delay }} 
               >
                 <span className="game-card-emoji">{game.emoji}</span>
-                <h3 className="game-card-title">{t[game.key + '_title']}</h3>
+                <h3 className="game-card-title">{pageT[game.key + '_title']}</h3>
                 <span className="game-card-status">
-                  {game.ready ? 'ONLINE 🟢' : 'WKRÓTCE 🔒'}
+                  {game.ready ? (pageT.onlineLabel || 'ONLINE 🟢') : (pageT.comingSoonLabel || 'WKRÓTCE 🔒')}
                 </span>
               </div>
             );
@@ -125,19 +151,19 @@ export default function GamesPage() {
       </div>
 
       {/* 2. Nakładka z blokadą i przyciskiem (widoczna TYLKO gdy brak premium) */}
-      {!isPremium && (
+      {!hasPlusAccess && (
         <div className="premium-overlay-container">
           <div className="premium-lock-box">
             <div className="premium-lock-icon">🔒</div>
-            <h2 className="premium-lock-title">Strefa Premium</h2>
+            <h2 className="premium-lock-title">{pageT.premiumTitle || 'Strefa Premium'}</h2>
             <p className="premium-lock-message">
-              Przepraszamy! Sekcja gier zręcznościowych dostępna jest wyłącznie dla użytkowników posiadających aktywne konto Premium.
+              {pageT.premiumMessage || 'Przepraszamy! Sekcja gier zręcznościowych dostępna jest wyłącznie dla użytkowników posiadających aktywne konto Premium.'}
             </p>
             <button 
               className="premium-redirect-btn"
               onClick={() => window.location.href = '/pay' /* Przekierowanie do strony płatności */}
             >
-              Odblokuj Dostęp Premium 🌟
+              {pageT.premiumButton || 'Odblokuj Dostęp Premium 🌟'}
             </button>
           </div>
         </div>

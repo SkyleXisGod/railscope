@@ -1,7 +1,9 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; 
+import { useMailbox } from '../context/MailboxContext';
 import { translations } from "../pages/constants/translations";
+import Badge from "./NotificationBadge"; 
 import "./Topbar.css";
 import logo from "../assets/railscope-minature.png"; 
 
@@ -15,6 +17,15 @@ const getScrambled = (target, reveal) => {
 
 export default function Topbar({ onToggleSidebar }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMailOpen, setIsMailOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
+
+  const { unreadCount } = useMailbox();
+
+  useEffect(() => {
+    console.log("Aktualna liczba nieprzeczytanych:", unreadCount);
+  }, [unreadCount]);
+
   const [systemOnline, setSystemOnline] = useState(true);
   const [displayStatus, setDisplayStatus] = useState('LIVE SYSTEM ONLINE');
   const [statusPhase, setStatusPhase] = useState('idle');
@@ -90,7 +101,13 @@ export default function Topbar({ onToggleSidebar }) {
 
   if (!user) return null;
 
-  const userRole = user?.role === 'PLUS' ? 'RailScope PLUS' : 'RailScope USER';
+  const userRole = user?.role === 'ZARZADCA'
+    ? 'RailScope ZARZADCA'
+    : user?.role === 'ADMIN'
+    ? 'RailScope ADMIN'
+    : user?.role === 'PLUS'
+    ? 'RailScope PLUS'
+    : 'RailScope USER';
   const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
 
   return (
@@ -111,10 +128,44 @@ export default function Topbar({ onToggleSidebar }) {
           <span className={`status-label ${statusPhase}`}>{displayStatus}</span>
         </div>
 
+        <div className="mailbox-section">
+          <div 
+            className={`mailbox-trigger ${isMailOpen ? "active" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMailOpen(!isMailOpen);
+              setIsUserMenuOpen(false);
+            }}
+          >
+            <i className="fas fa-envelope mailbox-icon">📬</i>
+            {unreadCount > 0 && (
+                <span className="notification-dot">{unreadCount}</span>
+            )}
+          </div>
+
+          {isMailOpen && (
+            <div className="mailbox-dropdown">
+              <div className="dropdown-info-poczta">
+                <p className="mailbox-dropdown-title">{t.mailboxTitle}</p>
+              </div>
+              <ul className="dropdown-menu">
+                <li onClick={() => { navigate("/poczta"); setIsMailOpen(false); setHasUnread(false); }}>
+                  <i className="fas fa-inbox"></i> {t.openInbox}
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* SEKCJA PROFILU UŻYTKOWNIKA (WYCZYSZCZONA ZE STAREJ KOPERTY) */}
         <div className="user-section">
           <div 
             className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsUserMenuOpen(!isUserMenuOpen);
+              setIsMailOpen(false);
+            }}
           >
             <img 
                 src={userAvatar} 
@@ -122,6 +173,7 @@ export default function Topbar({ onToggleSidebar }) {
                 className="user-avatar" 
             />
             <span className="username">{user.username}</span>
+
             <i className={`fas fa-chevron-down arrow ${isUserMenuOpen ? "up" : ""}`}></i>
           </div>
 
@@ -138,6 +190,17 @@ export default function Topbar({ onToggleSidebar }) {
                 <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
                   <i className="fas fa-user-circle"></i> {t.my_profile}
                 </li>
+                <li onClick={() => { navigate("/ustawienia"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-cog"></i> {t.settings}
+                </li>
+                <li onClick={() => { navigate("/tickets"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-ticket-alt"></i> {t.my_tickets}
+                </li>
+                {user?.role === 'ADMIN' || user?.role === 'ZARZADCA' ? (
+                  <li onClick={() => { navigate("/admin"); setIsUserMenuOpen(false); }}>
+                    <i className="fas fa-tools"></i> {t.kr_admin_panel}
+                  </li>
+                ) : null}
                 <li className="divider"></li>
                 <li className="logout-btn" onClick={handleLogout}>
                   <i className="fas fa-sign-out-alt"></i> {t.logout}

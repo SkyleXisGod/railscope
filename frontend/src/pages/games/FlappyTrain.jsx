@@ -98,10 +98,10 @@ export default function FlappyTrain({ t, onBack }) {
 
       <div className="game-main-card" onClick={(e) => e.stopPropagation()}>
         <div className="game-top-header">
-          <h2>🚂 {t.game_flappy_title || 'Flappy Train'}</h2>
+          <h2>🚂 {t.title || 'Flappy Train'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🏆 {t.score || 'Punkty'}: <strong>{score}</strong></span>
+              <span className="hud-score">🏆 {t.scoreLabel || 'Score'}: <strong>{score}</strong></span>
             </div>
           )}
         </div>
@@ -109,11 +109,11 @@ export default function FlappyTrain({ t, onBack }) {
         <div className="game-viewport-area" onClick={handleJump} style={{ cursor: 'pointer' }}>
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Szybki Przelot</h3>
+              <h3>{t.subtitle || 'Quick aerial run'}</h3>
               <p className="game-explanation-text">
-                Utrzymuj pociąg w powietrzu! Klikaj w dowolne miejsce ekranu gry, aby skakać i omijać gigantyczne słupy trakcyjne.
+                {t.introText || 'Keep the train airborne! Tap anywhere on the game screen to jump and dodge giant traction poles.'}
               </p>
-              <button className="btn-arcade-play" onClick={startGame}>START 🚀</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'START 🚀'}</button>
             </div>
           )}
 
@@ -167,10 +167,10 @@ export default function FlappyTrain({ t, onBack }) {
 
           {gameState === 'gameover' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🛑 WYKOLEJENIE!</h3>
-              <p className="game-explanation-text">Pociąg uderzył w infrastrukturę.</p>
-              <p className="game-explanation-text">Twój ostateczny wynik to: <strong>{score}</strong> punktów.</p>
-              <button className="btn-arcade-play" onClick={startGame}>Zagraj Ponownie 🔄</button>
+              <h3>{t.gameOverTitle || 'Train wreck!'}</h3>
+              <p className="game-explanation-text">{t.gameOverText || 'The train collided with infrastructure.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Your final score is:'} <strong>{score}</strong>.</p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Play again 🔄'}</button>
             </div>
           )}
         </div>

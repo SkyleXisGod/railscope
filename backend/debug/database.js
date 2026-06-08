@@ -34,8 +34,28 @@ db.serialize(() => {
         shape_pt_lon REAL,
         shape_pt_sequence INTEGER
     )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS tickets (
+        id TEXT PRIMARY KEY,
+        username TEXT,
+        title TEXT,
+        category TEXT,
+        description TEXT,
+        status TEXT DEFAULT 'OTWARTY',
+        createdAt TEXT
+    )`);
+
+    db.run(`ALTER TABLE chat_messages RENAME COLUMN message TO text;`);
+    
     db.run(`CREATE INDEX IF NOT EXISTS idx_shapes_id ON shapes(shape_id)`);
-    db.run(`ALTER TABLE users ADD COLUMN bannedUntil DATETIME DEFAULT NULL;`);
 });
 
 export default db;

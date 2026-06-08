@@ -44,11 +44,11 @@ export default function MemoryGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🧠 {t.game_memory_title || 'Pamięć Maszynisty'}</h2>
+          <h2>🧠 {t.title || 'Pamięć Maszynisty'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🔌 Ruchy: <strong>{moves}</strong></span>
-              <span className="hud-timer">✅ Sparowane: <strong>{solved.length / 2} / 8</strong></span>
+              <span className="hud-score">🔌 {t.movesLabel || 'Ruchy'}: <strong>{moves}</strong></span>
+              <span className="hud-timer">✅ {t.pairedLabel || 'Sparowane'}: <strong>{solved.length / 2} / 8</strong></span>
             </div>
           )}
         </div>
@@ -56,18 +56,18 @@ export default function MemoryGame({ t, onBack }) {
         <div className="game-viewport-area memory">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Matryca Pamięciowa</h3>
+              <h3>{t.introTitle || 'Matryca Pamięciowa'}</h3>
               <p className="game-explanation-text">
-                Odkrywaj karty i łącz w pary identyczne symbole pociągów i infrastruktury kolejowej. Ukończ grę w jak najmniejszej liczbie ruchów!
+                {t.introText || 'Odkrywaj karty i łącz w pary identyczne symbole pociągów i infrastruktury kolejowej. Ukończ grę w jak najmniejszej liczbie ruchów!'}
               </p>
-              <button className="btn-arcade-play" onClick={startNewGame}>URUCHOM SYSTEMY</button>
+              <button className="btn-arcade-play" onClick={startNewGame}>{t.startButton || 'URUCHOM SYSTEMY'}</button>
             </div>
           )}
 
           {gameState === 'playing' && solved.length === cards.length && (
             <div className="game-overlay-screen success-theme">
               <h3>🎉 BRAWO, KOLEJARZU!</h3>
-              <p className="game-explanation-text">Wszystkie obwody pamięci zostały zsynchronizowane w <strong>{moves}</strong> ruchach!</p>
+              <p className="game-explanation-text">{t.victoryText || 'Wszystkie obwody pamięci zostały zsynchronizowane w'} <strong>{moves}</strong> {t.movesLabel || 'ruchach'}!</p>
               <button className="btn-arcade-play" onClick={startNewGame}>Zagraj Ponownie 🔄</button>
             </div>
           )}

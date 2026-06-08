@@ -40,11 +40,11 @@ export default function RadioGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📻 Radiostacja Interkomu (Strojenie)</h2>
+          <h2>📻 {t.title || 'Radiostacja Interkomu (Strojenie)'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">📡 Zgrane depesze: <strong>{score}</strong></span>
-              <span className="hud-timer">⏳ Okno sygnału: <strong>{timeLeft}s</strong></span>
+              <span className="hud-score">📡 {t.scoreLabel || 'Zgrane depesze'}: <strong>{score}</strong></span>
+              <span className="hud-timer">⏳ {t.timerLabel || 'Okno sygnału'}: <strong>{timeLeft}s</strong></span>
             </div>
           )}
         </div>
@@ -54,9 +54,9 @@ export default function RadioGame({ t, onBack }) {
             <div className="game-overlay-screen">
               <h3>Radioodbiornik Lokomotywy</h3>
               <p className="game-explanation-text">
-                Centrala nadaje pilny komunikat alarmowy na ukrytej częstotliwości. Steruj suwakiem lub przyciskami, aby dopasować parametry fali i wciśnij "ZGRAJ SYGNAŁ", zanim minie czas okna transmisyjnego!
+                {t.introText || 'Centrala nadaje pilny komunikat alarmowy na ukrytej częstotliwości. Steruj suwakiem lub przyciskami, aby dopasować parametry fali i wciśnij "ZGRAJ SYGNAŁ", zanim minie czas okna transmisyjnego!'}
               </p>
-              <button className="btn-arcade-play" onClick={startNewTransmission}>SZUKAJ SYGNAŁU 🎙️</button>
+              <button className="btn-arcade-play" onClick={startNewTransmission}>{t.startButton || 'SZUKAJ SYGNAŁU 🎙️'}</button>
             </div>
           )}
 
@@ -65,12 +65,12 @@ export default function RadioGame({ t, onBack }) {
               
               {/* Wyświetlacz Retro */}
               <div style={{ background: '#090d16', padding: '20px', borderRadius: '10px', border: '1px solid #34495e', textAlign: 'center' }}>
-                <div style={{ color: '#e67e22', fontSize: '0.85rem', letterSpacing: '2px' }}>CZĘSTOTLIWOŚĆ DOCELOWA CENTRALI</div>
+                <div style={{ color: '#e67e22', fontSize: '0.85rem', letterSpacing: '2px' }}>{t.targetFreqLabel || 'CZĘSTOTLIWOŚĆ DOCELOWA CENTRALI'}</div>
                 <div style={{ fontSize: '2.5rem', color: '#ff9f43', fontFamily: 'monospace', fontWeight: 'bold', margin: '5px 0' }}>
                   {targetFreq.toFixed(1)} <span style={{ fontSize: '1rem' }}>MHz</span>
                 </div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                  Różnica szumów: {Math.abs(currentFreq - targetFreq).toFixed(1)} MHz
+                  {t.noiseLabel || 'Różnica szumów'}: {Math.abs(currentFreq - targetFreq).toFixed(1)} MHz
                 </div>
               </div>
 
@@ -91,7 +91,7 @@ export default function RadioGame({ t, onBack }) {
               </div>
 
               <button className="btn-arcade-play" onClick={checkSignal} style={{ width: '200px', margin: '0 auto' }}>
-                ZGRAJ SYGNAŁ 📻
+                {t.playButton || 'ZGRAJ SYGNAŁ 📻'}
               </button>
             </div>
           )}
@@ -99,16 +99,16 @@ export default function RadioGame({ t, onBack }) {
           {gameState === 'success' && (
             <div className="game-overlay-screen success-theme">
               <h3>📻 DEPESZA ODEBRANA!</h3>
-              <p className="game-explanation-text">Połączenie nawiązane pomyślnie. Czystość kanału idealna.</p>
-              <button className="btn-arcade-play" onClick={startNewTransmission}>Następna Częstotliwość 🔄</button>
+              <p className="game-explanation-text">{t.successText || 'Połączenie nawiązane pomyślnie. Czystość kanału idealna.'}</p>
+              <button className="btn-arcade-play" onClick={startNewTransmission}>{t.nextButton || 'Następna Częstotliwość 🔄'}</button>
             </div>
           )}
 
           {gameState === 'timeout' && (
             <div className="game-overlay-screen game-over-theme">
               <h3>🛑 SZUMY I STATYKA...</h3>
-              <p className="game-explanation-text">Okno nadawcze zamknęło się. Utraciłeś kontakt z bazą.</p>
-              <button className="btn-arcade-play" onClick={startNewTransmission}>Szukaj Od Nowa 🔄</button>
+              <p className="game-explanation-text">{t.timeoutText || 'Okno nadawcze zamknęło się. Utraciłeś kontakt z bazą.'}</p>
+              <button className="btn-arcade-play" onClick={startNewTransmission}>{t.retryButton || 'Szukaj Od Nowa 🔄'}</button>
             </div>
           )}
         </div>

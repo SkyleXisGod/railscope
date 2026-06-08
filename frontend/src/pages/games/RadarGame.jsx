@@ -52,10 +52,10 @@ export default function RadarGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📡 Radar Dyspozytorski v2.0</h2>
+          <h2>📡 {t.title || 'Radar Dyspozytorski v2.0'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🎯 Czyste Echo: <strong>{score} pkt</strong></span>
+              <span className="hud-score">🎯 {t.scoreLabel || 'Czyste Echo'}: <strong>{score} pkt</strong></span>
             </div>
           )}
         </div>
@@ -63,11 +63,11 @@ export default function RadarGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Skaner Pola</h3>
+              <h3>{t.introTitle || 'Skaner Pola'}</h3>
               <p className="game-explanation-text">
-                Na ekranie radaru pojawiają się obwody zakłóceniowe. Klikaj bezpośrednio w czerwone punkty, aby je zneutralizować, zanim uderzą w centralny punkt dowodzenia stacji!
+                {t.introText || 'Na ekranie radaru pojawiają się obwody zakłóceniowe. Klikaj bezpośrednio w czerwone punkty, aby je zneutralizować, zanim uderzą w centralny punkt dowodzenia stacji!'}
               </p>
-              <button className="btn-arcade-play" onClick={() => { setScore(0); setBlips([]); setGameState('playing'); }}>URUCHOM SKAN 🎚️</button>
+              <button className="btn-arcade-play" onClick={() => { setScore(0); setBlips([]); setGameState('playing'); }}>{t.startButton || 'URUCHOM SKAN 🎚️'}</button>
             </div>
           )}
 
@@ -114,8 +114,8 @@ export default function RadarGame({ t, onBack }) {
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
               <h3>🛑 RADAR SFORSOWANY!</h3>
-              <p className="game-explanation-text">Anomalia uderzyła w centralny nadajnik.</p>
-              <p className="game-explanation-text">Ostateczny wynik: <strong>{score}</strong> punktów.</p>
+              <p className="game-explanation-text">{t.crashText || 'Anomalia uderzyła w centralny nadajnik.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Ostateczny wynik'}: <strong>{score}</strong>.</p>
               <button className="btn-arcade-play" onClick={() => { setScore(0); setBlips([]); setGameState('playing'); }}>Restartuj System 🔄</button>
             </div>
           )}

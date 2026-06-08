@@ -13,12 +13,13 @@ export default function PaymentPage() {
     const t = translations[lang].payment;
 
     const handleMockPayment = async () => {
+        const targetRole = ['ADMIN', 'ZARZADCA'].includes(user?.role) ? user.role : 'PLUS';
         try {
             await axios.post('http://localhost:8080/api/upgrade', {
                 id: user.id,
-                role: 'PLUS'
+                role: targetRole
             });
-            updateUser({ role: 'PLUS' });
+            updateUser({ role: targetRole });
             alert(t.success);
             navigate('/profil');
         } catch (err) {
@@ -31,7 +32,7 @@ export default function PaymentPage() {
         <div className="payment-container">
             <motion.div className="payment-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                 <div className="payment-header">
-                    <h2>Ulepsz Konto do <span className="plus-badge-anim">PLUS</span></h2>
+                    <h2>{t.title}</h2>
                     <p>{t.subtitle}</p>
                 </div>
 

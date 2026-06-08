@@ -51,11 +51,11 @@ export default function FurnaceGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🔥 Palacz Parowozu</h2>
+          <h2>🔥 {t.title || 'Palacz Parowozu'}</h2>
           {gameState === 'running' && (
             <div className="game-hud-stats">
-              <span className="hud-score">⏱️ Czas jazdy: <strong>{score}s</strong></span>
-              <span className="hud-timer">⚫ Węgiel: <strong>{coal}T</strong></span>
+              <span className="hud-score">⏱️ {t.timeLabel || 'Czas'}: <strong>{score}s</strong></span>
+              <span className="hud-timer">⚫ {t.coalLabel || 'Węgiel'}: <strong>{coal}T</strong></span>
             </div>
           )}
         </div>
@@ -63,11 +63,11 @@ export default function FurnaceGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Obsługa Kotła</h3>
+              <h3>{t.introTitle || 'Obsługa Kotła'}</h3>
               <p className="game-explanation-text">
-                Utrzymuj ciśnienie pary w optymalnym zielonym zakresie. Rzucaj węgiel, by podnosić ciśnienie, ale uważaj – jeśli wskaźnik osiągnie 100%, kocioł eksploduje!
+                {t.introText || 'Utrzymuj ciśnienie pary w optymalnym zielonym zakresie. Rzucaj węgiel, by podnosić ciśnienie, ale uważaj – jeśli wskaźnik osiągnie 100%, kocioł eksploduje!'}
               </p>
-              <button className="btn-arcade-play" onClick={startFurnace}>ODPAL KOCIOŁ 🔥</button>
+              <button className="btn-arcade-play" onClick={startFurnace}>{t.startButton || 'ODPAL KOCIOŁ 🔥'}</button>
             </div>
           )}
 
@@ -77,7 +77,7 @@ export default function FurnaceGame({ t, onBack }) {
                 {/* Pasek Ciśnienia */}
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>
-                    <span>CIŚNIENIE KOTŁA</span>
+                    <span>{t.pressureLabel || 'CIŚNIENIE KOTŁA'}</span>
                     <span style={{ color: pressure > 80 ? 'var(--danger-color)' : '#00ffca' }}>{pressure} / 100 PSI</span>
                   </div>
                   <div style={{ width: '100%', height: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
@@ -88,7 +88,7 @@ export default function FurnaceGame({ t, onBack }) {
                 {/* Pasek Temperatury */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>
-                    <span>TEMPERATURA PALENISKA</span>
+                    <span>{t.temperatureLabel || 'TEMPERATURA PALENISKA'}</span>
                     <span style={{ color: 'var(--accent-color)' }}>{temp} °C</span>
                   </div>
                   <div style={{ width: '100%', height: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
@@ -100,10 +100,10 @@ export default function FurnaceGame({ t, onBack }) {
               {/* Przyciski Akcji */}
               <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
                 <button className="btn-arcade-play" onClick={throwCoal} disabled={coal <= 0} style={{ background: '#d35400' }}>
-                  Dożuć Węgiel (1T) 🪨
+                  {t.throwCoalButton || 'Dożuć Węgiel (1T) 🪨'}
                 </button>
                 <button className="btn-arcade-play" onClick={addCoalStock} style={{ background: '#7f8c8d' }}>
-                  Zamów Dostawę 🚚
+                  {t.addCoalButton || 'Zamów Dostawę 🚚'}
                 </button>
               </div>
             </div>
@@ -111,18 +111,18 @@ export default function FurnaceGame({ t, onBack }) {
 
           {gameState === 'explode' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 KATASTROFALNY WYBUCH!</h3>
-              <p className="game-explanation-text">Ciśnienie rozsadziło ściany kotła parowozu.</p>
-              <p className="game-explanation-text">Utrzymałeś maszynę przez <strong>{score}</strong> sekund.</p>
-              <button className="btn-arcade-play" onClick={startFurnace}>Napraw i Odpal Nowy 🔄</button>
+              <h3>💥 {t.explodeTitle || 'KATASTROFALNY WYBUCH!'}</h3>
+              <p className="game-explanation-text">{t.explodeText || 'Ciśnienie rozsadziło ściany kotła parowozu.'}</p>
+              <p className="game-explanation-text">{t.runtimeText || 'Utrzymałeś maszynę przez'} <strong>{score}</strong> {t.timeLabel || 'sekund'}.</p>
+              <button className="btn-arcade-play" onClick={startFurnace}>{t.repairButton || 'Napraw i Odpal Nowy 🔄'}</button>
             </div>
           )}
 
           {gameState === 'cold' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🥶 OGIEŃ ZAGASŁ</h3>
-              <p className="game-explanation-text">Ciśnienie spadło do zera. Pociąg stanął w szczerym polu.</p>
-              <button className="btn-arcade-play" onClick={startFurnace}>Spróbuj Ponownie 🔄</button>
+              <h3>🥶 {t.coldTitle || 'OGIEŃ ZAGASŁ'}</h3>
+              <p className="game-explanation-text">{t.coldText || 'Ciśnienie spadło do zera. Pociąg stanął w szczerym polu.'}</p>
+              <button className="btn-arcade-play" onClick={startFurnace}>{t.retryButton || 'Spróbuj Ponownie 🔄'}</button>
             </div>
           )}
         </div>

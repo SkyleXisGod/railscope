@@ -9,9 +9,10 @@ import chalk from 'chalk';
 import sqlite3 from 'sqlite3'; 
 import bcrypt from 'bcrypt';   
 import { log } from "console";
-import net from 'net'; // Built-in Node module, no npm install needed
+import net from 'net'; 
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-// Create a connection to our independent log window
 let logSocket = null;
 const connectLogTerminal = () => {
     logSocket = net.connect({ port: 9123 }, () => {
@@ -71,7 +72,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
         )`, (err) => {
             if (err) logError('❌', 'Error creating users table:', err.message);
         });
-        // Tworzenie tabeli ustawień użytkowników
+        
         db.run(`CREATE TABLE IF NOT EXISTS user_settings (
             user_id INTEGER PRIMARY KEY,
             language TEXT DEFAULT 'PL',
@@ -102,7 +103,45 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
             }
         });
 
-        // Migracja dla user_settings - dodaj brakujące kolumny
+        db.run(`CREATE TABLE IF NOT EXISTS mailbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER,
+            sender TEXT,
+            subject TEXT,
+            content TEXT,
+            unread BOOLEAN DEFAULT 1,
+            tag TEXT,
+            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) logError('❌', 'Error creating mailbox table:', err.message);
+        });
+
+        db.run(`CREATE TABLE IF NOT EXISTS tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER,
+            title TEXT,
+            category TEXT,
+            description TEXT,
+            status TEXT DEFAULT 'Otwarty',
+            adminReply TEXT,
+            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, () => {
+            db.all("PRAGMA table_info(tickets)", (err, columns) => {
+                if (!err && columns.length > 0) {
+                    const hasAdminReply = columns.some(c => c.name === 'adminReply');
+                    const hasUpdatedAt = columns.some(c => c.name === 'updatedAt');
+                    
+                    if (!hasAdminReply) {
+                        db.run("ALTER TABLE tickets ADD COLUMN adminReply TEXT");
+                    }
+                    if (!hasUpdatedAt) {
+                        db.run("ALTER TABLE tickets ADD COLUMN updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP");
+                    }
+                }
+            });
+        });
+
         db.all("PRAGMA table_info(user_settings)", (err, columns) => {
             if (!err && columns) {
                 const names = columns.map(c => c.name);
@@ -167,8 +206,81 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST", "PATCH", "DELETE"]
+    }
+});
 app.use(cors());
 app.use(express.json());
+
+
+io.on('connection', (socket) => {
+    // console.log(`[CHAT] Nowe połączenie: ${socket.id}`);
+
+    // 1. Pobieranie historii czatu (ostatnie 50 wiadomości)
+    socket.on('get_chat_history', () => {
+        const query = `
+            SELECT cm.id, u.username, u.role, u.avatar_url, cm.text, 
+                   strftime('%H:%M', cm.timestamp, 'localtime') as timestamp
+            FROM chat_messages cm
+            JOIN users u ON cm.user_id = u.id
+            ORDER BY cm.id DESC LIMIT 50
+        `;
+        
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error("[CHAT ERR] Nie udało się pobrać historii:", err.message);
+                return;
+            }
+            // Odwracamy kolejność, aby najnowsze wiadomości były na dole czatu
+            socket.emit('chat_history', rows.reverse());
+        });
+    });
+
+    // 2. Odbieranie i rozsyłanie nowej wiadomości
+    socket.on('send_message', (data) => {
+        const { user_id, text } = data;
+
+        if (!user_id || !text || !text.trim()) return;
+
+        const insertQuery = `INSERT INTO chat_messages (user_id, text) VALUES (?, ?)`;
+        
+        db.run(insertQuery, [user_id, text.trim()], function(err) {
+            if (err) {
+                console.error("[CHAT ERR] Nie udało się zapisać wiadomości:", err.message);
+                return;
+            }
+
+            const lastId = this.lastID; // ID świeżo dodanego wpisu
+
+            // Pobieramy pełne dane wiadomości wraz z rolą i nickiem usera do rozesłania
+            const selectQuery = `
+                SELECT cm.id, u.username, u.role, u.avatar_url, cm.text,
+                       strftime('%H:%M', cm.timestamp, 'localtime') as timestamp
+                FROM chat_messages cm
+                JOIN users u ON cm.user_id = u.id
+                WHERE cm.id = ?
+            `;
+
+            db.get(selectQuery, [lastId], (err, row) => {
+                if (err || !row) {
+                    console.error("[CHAT ERR] Błąd pobierania nowej wiadomości:", err?.message);
+                    return;
+                }
+                // Wysyłamy do KAŻDEGO połączonego użytkownika
+                io.emit('receive_message', row);
+            });
+        });
+    });
+
+    socket.on('disconnect', () => {
+        // console.log(`[CHAT] Rozłączono: ${socket.id}`);
+    });
+});
 
 // Request/response logger so every HTTP request is visible in the backend logs
 app.use((req, res, next) => {
@@ -188,12 +300,143 @@ app.use((req, res, next) => {
     next();
 });
 
-// Global handlers to ensure uncaught errors appear in nodemon console
 process.on('uncaughtException', (err) => {
     logError('💥', 'Uncaught Exception', err && err.stack ? err.stack : err);
 });
 process.on('unhandledRejection', (reason) => {
     logError('💥', 'Unhandled Rejection', reason);
+});
+
+
+app.get("/api/tickets/:userId", (req, res) => {
+    const { userId } = req.params;
+    db.all(`SELECT * FROM tickets WHERE userId = ? ORDER BY createdAt DESC`, [userId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post("/api/tickets", (req, res) => {
+    const { userId, title, category, description } = req.body;
+    db.run(
+        `INSERT INTO tickets (userId, title, category, description, status) VALUES (?, ?, ?, ?, 'Otwarty')`,
+        [userId, title, category, description],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, ticketId: this.lastID });
+        }
+    );
+});
+
+app.get("/api/admin/tickets", (req, res) => {
+    db.all(`SELECT * FROM tickets ORDER BY createdAt DESC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/mailbox/:userId', (req, res) => {
+    const userId = req.params.userId;
+    
+    const sql = "SELECT * FROM mailbox WHERE userId = ? ORDER BY createdAt DESC";
+    
+    db.all(sql, [userId], (err, rows) => {
+        if (err) {
+            console.error('Błąd bazy danych:', err);
+            return res.status(500).json({ error: "Błąd serwera" });
+        }
+        res.json(rows);
+    });
+});
+
+app.post('/api/mailbox', (req, res) => {
+    const { userId, sender, subject, content, tag, unread } = req.body;
+    
+    const sql = `INSERT INTO mailbox (userId, sender, subject, content, tag, unread, createdAt) 
+                 VALUES (?, ?, ?, ?, ?, ?, DATETIME('now'))`;
+    
+    db.run(sql, [userId, sender, subject, content, tag, unread ? 1 : 0], function(err) {
+        if (err) {
+            console.error('Błąd zapisu do mailbox:', err);
+            return res.status(500).json({ error: "Nie udało się zapisać wiadomości" });
+        }
+        res.status(201).json({ id: this.lastID, message: "Powiadomienie wysłane!" });
+    });
+});
+
+app.put('/api/mailbox/:id/read', (req, res) => {
+    const messageId = req.params.id;
+    
+    const sql = "UPDATE mailbox SET unread = 0 WHERE id = ?";
+    
+    db.run(sql, [messageId], function(err) {
+        if (err) {
+            console.error('Błąd aktualizacji statusu:', err);
+            return res.status(500).json({ error: "Błąd serwera" });
+        }
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/mailbox/:userId/unread-count', (req, res) => {
+    const sql = "SELECT COUNT(*) as count FROM mailbox WHERE userId = ? AND unread = 1";
+    db.get(sql, [req.params.userId], (err, row) => {
+        if (err) {
+            console.error("Błąd SQL:", err);
+            return res.status(500).json({ error: "Błąd bazy" });
+        }
+        res.json({ count: row ? row.count : 0 });
+    });
+});
+
+app.patch("/api/admin/tickets/:id", (req, res) => {
+    const { status } = req.body;
+    const { id } = req.params;
+    db.run(`UPDATE tickets SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`, [status, id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.post("/api/admin/tickets/:id/reply", (req, res) => {
+    const { id } = req.params;
+    const { message, adminName } = req.body;
+    
+    const fullReply = `[${adminName}]: ${message}`;
+
+    db.run(
+        `UPDATE tickets SET adminReply = ?, status = 'W trakcie', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`, 
+        [fullReply, id], 
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, message: "Odpowiedź wysłana" });
+        }
+    );
+});
+
+app.delete("/api/admin/tickets/:id", (req, res) => {
+    const { id } = req.params;
+    db.run(`DELETE FROM tickets WHERE id = ?`, [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: "Pomyślnie usunięto zgłoszenie" });
+    });
+});
+
+app.post("/api/admin/update-user", (req, res) => {
+    const { username, bannedUntil} = req.body;
+    
+    // Upewnij się, że SQL jest poprawny
+    db.run(
+        `UPDATE users SET bannedUntil = ? WHERE username = ?`,
+        [bannedUntil, username],
+        function(err) {
+            if (err) {
+                console.error("Błąd SQL:", err);
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ success: true });
+        }
+    );
 });
 
 app.post('/api/login', (req, res) => {
@@ -448,7 +691,7 @@ const normalizeRouteTimes = (route) => {
 };
 
 const loadGTFS = () => {
-    console.clear();
+    process.stdout.write('\x1Bc');
     logInfo('🛠️', ' Loading GTFS data...');
 
     const GTFS_DIR = path.join(__dirname, "..", "gtfs");
@@ -700,8 +943,8 @@ const downloadInitialData = async () => {
 };
 
 downloadInitialData().then(() => {
-    app.listen(PORT, () => {
-        logSuccess('🚀', `Backend ready at http://localhost:${PORT}`);
+    httpServer.listen(PORT, () => {
+        logSuccess('🚀', `Backend ready at http://localhost:${PORT} (Express + WebSockets)`);
     });
 }).catch(err => {
     logError('❌', 'Critical server start error:', err);

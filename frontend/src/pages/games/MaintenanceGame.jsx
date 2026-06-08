@@ -55,12 +55,12 @@ export default function MaintenanceGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🔧 Warsztat Serwisowy (Awaria Silnika)</h2>
+          <h2>🔧 {t.title || 'Warsztat Serwisowy'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🛠️ Usunięte usterki: <strong>{score}</strong></span>
+              <span className="hud-score">🛠️ {t.scoreLabel || 'Usunięte usterki'}: <strong>{score}</strong></span>
               <span className="hud-timer" style={{ color: damage > 75 ? 'var(--danger-color)' : 'yellow' }}>
-                DEGRADACJA BLOKU: <strong>{damage}%</strong>
+                {t.damageLabel || 'Degradacja bloku'}: <strong>{damage}%</strong>
               </span>
             </div>
           )}
@@ -69,11 +69,11 @@ export default function MaintenanceGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Zarządzanie Usterkami Trakcji</h3>
+              <h3>{t.introTitle || 'Zarządzanie Usterkami Trakcji'}</h3>
               <p className="game-explanation-text">
-                W przedziale maszynowym pękają przewody i dochodzi do zwarć elektrycznych! Klikaj błyskawicznie w pojawiające się symbole awarii na pulpicie silnika trakcyjnego, aby je naprawić zanim wskaźnik uszkodzeń osiągnie 100%.
+                {t.introText || 'W przedziale maszynowym pękają przewody i dochodzi do zwarć elektrycznych! Klikaj błyskawicznie w pojawiające się symbole awarii na pulpicie silnika trakcyjnego, aby je naprawić zanim wskaźnik uszkodzeń osiągnie 100%.'}
               </p>
-              <button className="btn-arcade-play" onClick={startMaintenance}>WEJDŹ DO MASZYNOWNI 🔧</button>
+              <button className="btn-arcade-play" onClick={startMaintenance}>{t.startButton || 'WEJDŹ DO MASZYNOWNI 🔧'}</button>
             </div>
           )}
 
@@ -114,17 +114,17 @@ export default function MaintenanceGame({ t, onBack }) {
               ))}
 
               <div style={{ position: 'absolute', bottom: '15px', left: '20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                🚨 Klikaj ikony usterek na pulpicie silnika!
+                {t.fixPrompt || '🚨 Klikaj ikony usterek na pulpicie silnika!'}
               </div>
             </div>
           )}
 
           {gameState === 'broken' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 ZATARCIE SILNIKA TRAKCYJNEGO!</h3>
-              <p className="game-explanation-text">Szkody strukturalne osiągnęły 100%. Agregat prądotwórczy uległ stopieniu.</p>
-              <p className="game-explanation-text">Udało Ci się usunąć <strong>{score}</strong> awarii przed awarią krytyczną.</p>
-              <button className="btn-arcade-play" onClick={startMaintenance}>Zmontuj Nowy Blok 🔄</button>
+              <h3>💥 {t.crashTitle || 'ZATARCIE SILNIKA TRAKCYJNEGO!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'Szkody strukturalne osiągnęły 100%. Agregat prądotwórczy uległ stopieniu.'}</p>
+              <p className="game-explanation-text">{t.brokenResultText || 'Udało Ci się usunąć'} <strong>{score}</strong> {t.repairButton || 'awarii przed awarią krytyczną'}.</p>
+              <button className="btn-arcade-play" onClick={startMaintenance}>{t.repairButton || 'Zmontuj Nowy Blok 🔄'}</button>
             </div>
           )}
         </div>

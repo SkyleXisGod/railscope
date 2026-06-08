@@ -88,20 +88,20 @@ export default function SnakeGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📟 {t.game_snake_title || 'SONDAŻ MAGISTRALI'}</h2>
+          <h2>📟 {t.title || 'Train Snake'}</h2>
           {gameState === 'running' && (
-            <div>REKUPERACJA: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score} KB</span></div>
+            <div>{t.scoreLabel || 'Recovery'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score} KB</span></div>
           )}
         </div>
 
         <div className="game-viewport-area" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>⚡ KALIBRACJA STRUKTURY ŚWIATŁOWODU</h3>
+              <h3>{t.introTitle || 'Calibrate the fiber network'}</h3>
               <p className="game-explanation-text">
-                Steruj sondą czyszczącą za pomocą klawiszy strzałek. Usuwaj pakiety śmieciowych danych we mgle elektromagnetycznej. Uderzenie w rdzeń ekranu niszczy sondę.
+                {t.introText || 'Guide the cleaning probe with arrow keys. Clear rogue data packets in the electromagnetic fog. A hit to the core will destroy the probe.'}
               </p>
-              <button className="btn-arcade-play" onClick={startGame}>URUCHOM SONDĘ</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'Launch probe'}</button>
             </div>
           )}
 
@@ -146,10 +146,10 @@ export default function SnakeGame({ t, onBack }) {
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 DEKOMPRESJA SONDE!</h3>
-              <p className="game-explanation-text">Sonda uderzyła w fizyczną barierę i utraciła zasilanie pomocnicze.</p>
-              <p className="game-explanation-text">Oczyszczony rejestr: <strong>{score} bloków</strong></p>
-              <button className="btn-arcade-play" onClick={startGame}>RESTARTUJ SYSTEM NAPROWADZANIA 🔄</button>
+              <h3>💥 {t.crashTitle || 'Probe failure!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'The probe hit a physical barrier and lost auxiliary power.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Cleared blocks:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Restart guidance system 🔄'}</button>
             </div>
           )}
         </div>

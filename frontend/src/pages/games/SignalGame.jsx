@@ -55,11 +55,11 @@ export default function SignalGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🚦 Ruch Nastawni <br></br>(Kierowanie Składem)</h2>
+          <h2>🚦 {t.title || 'Signal Control'}</h2>
           {gameState === 'playing' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🎯 Przekierowano: <strong>{score}</strong></span>
-              <span className="hud-timer" style={{ color: '#00ffd5' }}>KIERUNEK CELU: <strong>TOR {targetTrack}</strong></span>
+              <span className="hud-score">🎯 {t.scoreLabel || 'Routed'}: <strong>{score}</strong></span>
+              <span className="hud-timer" style={{ color: '#00ffd5' }}>{t.targetTrackLabel || 'Target track'}: <strong>{targetTrack}</strong></span>
             </div>
           )}
         </div>
@@ -67,11 +67,11 @@ export default function SignalGame({ t, onBack }) {
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>Sterownik Ruchu</h3>
+              <h3>{t.introTitle || 'Signal operator'}</h3>
               <p className="game-explanation-text">
-                Szybko przełączaj zwrotnicę za pomocą klawiszy <strong>A</strong> (Górny tor), <strong>S</strong> (Środkowy tor) lub <strong>D</strong> (Dolny tor), tak by pociąg wjechał na żądany w nagłówku tor docelowy. Masz czas tylko dopóki skład nie minie rozjazdu!
+                {t.introText || 'Quickly switch the turnout using keys A (top track), S (middle track) or D (bottom track) so the train enters the target track shown in the header. You only have time until the train passes the switch!'}
               </p>
-              <button className="btn-arcade-play" onClick={startGame}>URUCHOM NASTAWNIĘ 🎮</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'Activate the signal 🎮'}</button>
             </div>
           )}
 
@@ -98,17 +98,17 @@ export default function SignalGame({ t, onBack }) {
                 </g>
               </svg>
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '10px' }}>
-                Wybrana zwrotnica: <strong style={{ color: 'var(--primary-color)' }}>TOR {switchTrack}</strong> (Użyj klawiszy A / S / D)
+                {t.guideText || 'Selected turnout:'} <strong style={{ color: 'var(--primary-color)' }}>TRACK {switchTrack}</strong> ({t.controlHint || 'Use keys A / S / D'})
               </div>
             </div>
           )}
 
           {gameState === 'gameover' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🛑 KATASTROFA W RUCHU LĄDOWYM!</h3>
-              <p className="game-explanation-text">Skierowałeś skład na niewłaściwy tor ekspedycyjny.</p>
-              <p className="game-explanation-text">Twój łączny wynik: <strong>{score}</strong> pociągów.</p>
-              <button className="btn-arcade-play" onClick={startGame}>Otwórz Nową Linię 🔄</button>
+              <h3>🛑 {t.crashTitle || 'Signal disaster!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'You routed the train to the wrong dispatch track.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Total routed trains:'} <strong>{score}</strong>.</p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Try again 🔄'}</button>
             </div>
           )}
         </div>

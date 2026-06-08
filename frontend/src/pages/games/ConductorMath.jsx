@@ -57,11 +57,11 @@ export default function ConductorMath({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🎫 {t.game_math_title || 'Kontrola Biletów'}</h2>
+          <h2>🎫 {t.title || 'Kontrola Biletów'}</h2>
           {gameState === 'PLAYING' && (
             <div className="game-hud-stats">
-              <span className="hud-score">🏆 {t.score || 'Punkty'}: <strong>{score}</strong></span>
-              <span className="hud-timer">⏳ Czas: <strong>{timer}s</strong></span>
+              <span className="hud-score">🏆 {t.scoreLabel || 'Punkty'}: <strong>{score}</strong></span>
+              <span className="hud-timer">⏳ {t.timerLabel || 'Czas'}: <strong>{timer}s</strong></span>
             </div>
           )}
         </div>
@@ -88,10 +88,10 @@ export default function ConductorMath({ t, onBack }) {
 
           {gameState === 'GAMEOVER' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🛑 Czas Minął!</h3>
-              <p className="game-explanation-text">Pasażer uciekł bez skasowanego biletu!</p>
-              <p className="game-explanation-text">Twój ostateczny wynik: <strong>{score}</strong> poprawnych odpowiedzi.</p>
-              <button className="btn-arcade-play" onClick={restartGame}>Sprawdź kolejny wagon 🔄</button>
+              <h3>🛑 {t.timeUpTitle || 'Czas minął'}</h3>
+              <p className="game-explanation-text">{t.timeUpText || 'Pasażer uciekł bez skasowanego biletu!'}</p>
+              <p className="game-explanation-text">{t.resultText || 'Twój ostateczny wynik:'} <strong>{score}</strong> {t.scoreLabel || 'poprawnych odpowiedzi'}.</p>
+              <button className="btn-arcade-play" onClick={restartGame}>{t.retryButton || 'Sprawdź kolejny wagon 🔄'}</button>
             </div>
           )}
         </div>

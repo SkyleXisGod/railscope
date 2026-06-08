@@ -244,12 +244,17 @@ export default function StatsPage() {
                         </div>
                         <h4 style={{ marginTop: 20 }}>{t.top_delayed_trains}</h4>
                         <div className="detail-list">
-                            {topDelayedTrains.length > 0 ? topDelayedTrains.map((train, idx) => (
-                                <div className="detail-item" key={`${train.number}-${idx}`}>
-                                    <span>{`${train.number} (${train.category})`}</span>
-                                    <strong>{train.delay} min</strong>
-                                </div>
-                            )) : (
+                            {topDelayedTrains.length > 0 ? topDelayedTrains.map((train, idx) => {
+                                // --- TUTAJ MOŻESZ DAĆ LOGA ---
+                                console.log("Dane pociągu:", train);
+                                
+                                return (
+                                    <div className="detail-item" key={`${train.number}-${idx}`}>
+                                        <span>{`${train.number} (${train.category})`}</span>
+                                        <strong>{train.delay} min</strong>
+                                    </div>
+                                );
+                            }) : (
                                 <div className="detail-item">
                                     <span>{t.no_delay_data}</span>
                                     <strong>—</strong>

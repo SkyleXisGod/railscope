@@ -107,7 +107,106 @@
     color: #ff4d4d;
 }
 
-/* Sekcja Profilu i Dropdown */
+/* ========================================= */
+/* NOWE STYLE DLA SKRZYNKI POCZTOWEJ         */
+/* ========================================= */
+.mailbox-section {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mailbox-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.mailbox-trigger:hover, .mailbox-trigger.active {
+    background: rgba(0, 255, 213, 0.08);
+    border-color: rgba(0, 255, 213, 0.3);
+}
+
+.mailbox-icon {
+    font-size: 1.25rem;
+    font-style: normal;
+}
+
+.notification-dot {
+    position: absolute;
+    top: -5px;   /* Dostosuj do ikony */
+    right: -5px; /* Dostosuj do ikony */
+    background-color: #ff4d4d;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex; /* WAŻNE: użyj flex, aby wycentrować cyfrę */
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    border: 2px solid #141414; /* Obwódka, aby kropka odcinała się od tła */
+}
+
+/* Dropdown poczty */
+.mailbox-dropdown {
+    position: absolute;
+    top: calc(100% + 15px);
+    right: 50%;
+    transform: translateX(50%);
+    width: 240px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(15px);
+    border: 1px solid #333;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    overflow: hidden;
+    z-index: 1001;
+    animation: dropdownFade 0.2s ease-out;
+}
+
+.dropdown-info-poczta {
+    padding: 12px 15px;
+    border-bottom: 1px solid #222;
+    background: rgba(255, 255, 255, 0.03);
+    text-align: center;
+}
+
+.mailbox-dropdown-title {
+    font-size: 0.9rem;
+    color: #fff;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Animacja pulsowania dla nieprzeczytanej poczty */
+@keyframes pulse-unread {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
+    }
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 8px rgba(255, 77, 77, 0);
+    }
+    100% {
+        transform: scale(0.9);
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+    }
+}
+
+/* ========================================= */
+/* SEKCJA PROFILU I DROPDOWN                 */
+/* ========================================= */
 .user-section {
     position: relative;
 }
@@ -249,4 +348,13 @@
 @keyframes dropdownFade {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pozycjonowanie komponentu Badge w strukturze Topbara */
+.topbar-badge-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    margin-right: 4px;
+    transform: scale(0.9);
 }

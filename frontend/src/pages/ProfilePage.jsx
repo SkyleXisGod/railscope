@@ -36,7 +36,14 @@ const ProfilePage = () => {
     }, [user]);
 
     const avatarSrc = form.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.username || 'user'}`;
-    const roleBadge = user?.role === 'PLUS' ? 'RailScope PLUS' : 'RailScope USER';
+    const isPlusAccess = ['PLUS', 'ADMIN', 'ZARZADCA'].includes(user?.role);
+    const roleBadge = user?.role === 'ZARZADCA'
+        ? 'RailScope ZARZADCA'
+        : user?.role === 'ADMIN'
+        ? 'RailScope ADMIN'
+        : user?.role === 'PLUS'
+        ? 'RailScope PLUS'
+        : 'RailScope USER';
 
     const handleInput = (field, value) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -100,8 +107,8 @@ return (
                             <span className="profile-status-text">{roleBadge}</span>
                         </div>
                         <div className="profile-header-actions">
-                            <button className="btn btn-primary" onClick={() => navigate('/pay')} disabled={user?.role === 'PLUS'}>
-                                {user?.role === 'PLUS' ? t.is_plus : t.upgrade_plus}
+                            <button className="btn btn-primary" onClick={() => navigate('/pay')} disabled={isPlusAccess}>
+                                {isPlusAccess ? t.is_plus : t.upgrade_plus}
                             </button>
                         </div>
                     </div>
@@ -115,7 +122,7 @@ return (
                             <label>{t.joined}</label>
                             <p>{user?.joinedDate || '2024-01-15'}</p>
                         </div>
-                                                {user?.role === 'PLUS' && (
+                                                {isPlusAccess && (
                             <>
                                 <div className="info-group">
                                     <label>{t.premium_since}</label>
@@ -127,7 +134,7 @@ return (
                                 </div>
                             </>
                         )}
-                        {user?.role !== 'PLUS' && (
+                        {!isPlusAccess && (
                             <>
                                 <div className="info-group">
                                     <label>{t.premium_since}</label>
@@ -173,16 +180,18 @@ return (
                     {message && <div className="profile-message">{message}</div>}
                 </div>
 
-                {user?.role === 'PLUS' && (
+                {isPlusAccess && (
                     <div className="profile-card card premium-section">
                         <h3 className="section-title">Premium</h3>
                         <div className="premium-info">
                             <p className="premium-status">{t.premium_active}</p>
                             <p className="premium-benefits">{t.premium_benefits}</p>
                         </div>
-                        <button className="btn btn-danger" onClick={handleCancelPremium} disabled={isCancelling}>
-                            {isCancelling ? t.saving : t.cancel_premium}
-                        </button>
+                        {!['ADMIN', 'ZARZADCA'].includes(user?.role) && (
+                            <button className="btn btn-danger" onClick={handleCancelPremium} disabled={isCancelling}>
+                                {isCancelling ? t.saving : t.cancel_premium}
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

@@ -69,17 +69,17 @@ export default function SwitchGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🎛️ {t.game_switch_title || 'Nastawnia Zwrotnic'}</h2>
+          <h2>🎛️ {t.title || 'Switchyard'}</h2>
         </div>
 
         <div className="game-viewport-area">
           {gameState === 'START' && (
             <div className="game-overlay-screen">
-              <h3>Dywizjon Ruchu Kolejowego</h3>
+              <h3>{t.introTitle || 'Rail traffic division'}</h3>
               <p className="game-explanation-text">
-                Nadjeżdża pociąg towarowy! Przestawiaj dźwignie zwrotnic tak, aby ich układ (TOR A / TOR B) zgadzał się z zaplanowanym schematem na pulpicie. Pospiesz się!
+                {t.introText || 'A freight train is approaching! Flip the turnout levers so the layout (TRACK A / TRACK B) matches the target diagram on the console. Hurry!'}
               </p>
-              <button className="btn-arcade-play" onClick={startNewGame}>URUCHOM NASTAWNIĘ 🔌</button>
+              <button className="btn-arcade-play" onClick={startNewGame}>{t.startButton || 'Activate the switchyard 🔌'}</button>
             </div>
           )}
 
@@ -88,11 +88,11 @@ export default function SwitchGame({ t, onBack }) {
               {/* Sekcja wzorca (celu) */}
               <div className="chernobyl-panel" style={{ marginBottom: '20px', width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px' }}>
-                  <span>PUNKTY: <span className="green-text">{score}</span></span>
-                  <span className={timeLeft <= 3 ? 'blink-red' : ''}>CZAS: <span className="highlight">{timeLeft}s</span></span>
+                  <span>{t.scoreLabel || 'Score'}: <span className="green-text">{score}</span></span>
+                  <span className={timeLeft <= 3 ? 'blink-red' : ''}>{t.timeLabel || 'Time'}: <span className="highlight">{timeLeft}s</span></span>
                 </div>
                 
-                <div style={{ textAlign: 'center', fontSize: '11px', color: '#aaa', marginBottom: '5px' }}>WYMAGANY UKŁAD ZWROTNIC:</div>
+                <div style={{ textAlign: 'center', fontSize: '11px', color: '#aaa', marginBottom: '5px' }}>{t.requiredLayoutLabel || 'Required turnout layout:'}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-around', background: '#0b0f12', padding: '10px', borderRadius: '5px' }}>
                   {target.map((val, idx) => (
                     <div key={idx} style={{ color: val ? '#00ffca' : '#ff0055', fontWeight: 'bold' }}>
@@ -107,7 +107,7 @@ export default function SwitchGame({ t, onBack }) {
                 {switches.map((val, idx) => (
                   <div key={idx} style={{ textAlign: 'center' }}>
                     <div style={{ color: '#00ffca', marginBottom: '15px', fontWeight: 'bold', fontSize: '10pt' }}>
-                      DŹWIGNIA {idx + 1}
+                      {t.leverLabel || 'Lever'} {idx + 1}
                     </div>
                     <div className="industrial-switch-slot" onClick={() => toggleSwitch(idx)}>
                       <div className={`industrial-lever-shaft ${val ? 'pulled-down' : 'pulled-up'}`}>
@@ -115,7 +115,7 @@ export default function SwitchGame({ t, onBack }) {
                       </div>
                     </div>
                     <div style={{ marginTop: '15px', color: val ? '#00ffca' : '#ff0055', fontWeight: 'bold', fontSize: '11pt' }}>
-                      {val ? 'TOR B' : 'TOR A'}
+                      {val ? t.trackBLabel || 'Track B' : t.trackALabel || 'Track A'}
                     </div>
                   </div>
                 ))}
@@ -125,10 +125,10 @@ export default function SwitchGame({ t, onBack }) {
 
           {gameState === 'GAMEOVER' && (
             <div className="game-overlay-screen game-over-theme" style={{ textAlign: 'center' }}>
-              <h3 className="blink-red">💥 KATASTROFA KOLEJOWA!</h3>
-              <p className="game-explanation-text">Skład towarowy wypadł z szyn z powodu błędnego lub zbyt późnego ustawienia zwrotnic.</p>
-              <p className="game-explanation-text" style={{ fontSize: '1.2rem' }}>Ostateczny wynik: <strong>{score}</strong></p>
-              <button className="btn-arcade-play" onClick={startNewGame}>RESETUJ SYGNAŁY 🔄</button>
+              <h3 className="blink-red">💥 {t.crashTitle || 'Rail disaster!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'The freight train derailed due to a wrong or late switch setting.'}</p>
+              <p className="game-explanation-text" style={{ fontSize: '1.2rem' }}>{t.scoreText || 'Final score:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={startNewGame}>{t.retryButton || 'Reset signals 🔄'}</button>
             </div>
           )}
         </div>

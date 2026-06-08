@@ -34,8 +34,8 @@ export default function TrainClicker({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>⚙️ {t.game_clicker_title || 'STACJA SPREŻAREK'}</h2>
-          <div>SYSTEM: <span style={{ color: compressors > 0 ? '#00ffca' : '#aaa' }}>{compressors > 0 ? 'AUTOMATYCZNY' : 'MANUALNY'}</span></div>
+          <h2>⚙️ {t.title || 'Train Clicker'}</h2>
+          <div>{t.systemLabel || 'System'}: <span style={{ color: compressors > 0 ? '#00ffca' : '#aaa' }}>{compressors > 0 ? t.automaticLabel || 'Automatic' : t.manualLabel || 'Manual'}</span></div>
         </div>
 
         <div className="game-viewport-area">
@@ -43,11 +43,11 @@ export default function TrainClicker({ t, onBack }) {
             
             {/* Przemysłowy wskaźnik zgromadzonego ciśnienia */}
             <div style={{ background: '#141b24', border: '1px solid #2c3e50', borderRadius: '8px', padding: '15px', textAlign: 'center' }}>
-              <div style={{ fontSize: '11px', color: '#aaa', letterSpacing: '1px' }}>ZMAGAZYNOWANE CIŚNIENIE AKUMULATORA</div>
+              <div style={{ fontSize: '11px', color: '#aaa', letterSpacing: '1px' }}>{t.pressureLabel || 'Stored pressure'}</div>
               <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffca', margin: '5px 0', fontFamily: 'monospace' }}>
                 {pressure} <span style={{ fontSize: '16px', color: '#fff' }}>BAR</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#778ca3' }}>Wydajność stacji: +{compressors} BAR/s</div>
+              <div style={{ fontSize: '11px', color: '#778ca3' }}>{t.activeCompressorsText || 'Active compressors'}: +{compressors} BAR/s</div>
             </div>
 
             {/* Centralny wielki przycisk tłoczni */}
@@ -73,7 +73,7 @@ export default function TrainClicker({ t, onBack }) {
                 onClick={handleManualPump}
               >
                 <span style={{ fontSize: '24px', marginBottom: '4px' }}>🏋️‍♂️</span>
-                TŁOCZ
+                {t.pumpButton || 'Pump'}
               </button>
             </div>
 
@@ -95,11 +95,11 @@ export default function TrainClicker({ t, onBack }) {
                 }}
                 onClick={buyCompressor}
               >
-                <span>🚀 INSTALUJ KOMPRESOR POMOCNICZY (+1 BAR/s)</span>
+                <span>🚀 {t.buyButton || 'Install supporting compressor (+1 BAR/s)'}</span>
                 <span style={{ fontWeight: 'bold', color: '#00ffca' }}>{nextCost} BAR</span>
               </button>
               <div style={{ fontSize: '10px', color: '#556270', textAlign: 'center', marginTop: '2px' }}>
-                Aktywne agregaty ssąco-tłoczące: {compressors} szt.
+                {t.activeCompressorsText || 'Active compressors'}: {compressors}.
               </div>
             </div>
 

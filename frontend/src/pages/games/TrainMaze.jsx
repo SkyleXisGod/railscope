@@ -94,20 +94,20 @@ export default function TrainMaze({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🚂 {t.game_maze_title || 'LABIRYNT KOLEJOWY'}</h2>
-          <div>TRASA: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{currentMap.name.toUpperCase()}</span></div>
+          <h2>🚂 {t.title || 'Train Maze'}</h2>
+          <div>{t.routeLabel || 'Route'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{currentMap.name.toUpperCase()}</span></div>
         </div>
 
         <div className="game-viewport-area maze">
           
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>🗺️ Nawigacja Przejazdu</h3>
+              <h3>{t.introTitle || 'Rail navigation'}</h3>
               <p className="game-explanation-text">
-                Przeprowadź bezpiecznie skład pociągu przez zablokowane szlaki. Doprowadź maszynę do stacji końcowej przed upływem czasu.
+                {t.introText || 'Guide the train safely through blocked tracks. Reach the terminal station before time runs out.'}
               </p>
               <button className="btn-arcade-play" onClick={startNewGame}>
-                URUCHOM SILNIK 🔋
+                {t.startButton || 'Fire up the engine 🔋'}
               </button>
             </div>
           )}
@@ -116,8 +116,8 @@ export default function TrainMaze({ t, onBack }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', padding: '10px', boxSizing: 'border-box' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '360px', marginBottom: '10px', fontSize: '11px', letterSpacing: '1px' }}>
-                <div>PUNKTY: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
-                <div>CZAS REAKCJI: <span style={{ color: timeLeft < 10 ? '#ff0055' : '#00ffca', fontWeight: 'bold' }}>{timeLeft}s</span></div>
+                <div>{t.pointsLabel || 'Points'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
+                <div>{t.reactionTimeLabel || 'Reaction time'}: <span style={{ color: timeLeft < 10 ? '#ff0055' : '#00ffca', fontWeight: 'bold' }}>{timeLeft}s</span></div>
               </div>
 
               {/* DYNAMICZNY GRID: Liczba kolumn generuje się automatycznie na podstawie szerokości tablicy */}
@@ -170,21 +170,21 @@ export default function TrainMaze({ t, onBack }) {
 
           {gameState === 'success' && (
             <div className="game-overlay-screen success-theme">
-              <h3>🎉 STACJA OSIĄGNIĘTA!</h3>
-              <p className="game-explanation-text">Skład dotarł do celu zgodnie z rozkładem jazdy. Tor wolny.</p>
+              <h3>🎉 {t.successTitle || 'Station reached!'}</h3>
+              <p className="game-explanation-text">{t.successText || 'The train arrived on schedule. Track clear.'}</p>
               <button className="btn-arcade-play" onClick={startNewGame}>
-                KOLEJNY KURS 🔄
+                {t.nextButton || 'Next run 🔄'}
               </button>
             </div>
           )}
 
           {gameState === 'timeout' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🛑 OPÓŹNIENIE SKŁADU</h3>
-              <p className="game-explanation-text">Limit czasu minął. Pociąg utknął na zablokowanym szlaku węzłowym.</p>
-              <p className="game-explanation-text">Twój ostateczny wynik: <strong>{score}</strong></p>
+              <h3>🛑 {t.timeoutTitle || 'Train delay'}</h3>
+              <p className="game-explanation-text">{t.timeoutText || 'Time ran out. The train stalled on a blocked junction.'}</p>
+              <p className="game-explanation-text">{t.finalScoreText || 'Your final score:'} <strong>{score}</strong></p>
               <button className="btn-arcade-play" onClick={startNewGame}>
-                SPRÓBUJ PONOWNIE 🔄
+                {t.retryButton || 'Try again 🔄'}
               </button>
             </div>
           )}

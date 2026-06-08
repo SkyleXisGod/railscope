@@ -2,6 +2,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+export const isPlusAccess = (role) => ['PLUS', 'ADMIN', 'ZARZADCA'].includes(role);
+export const isAdminRole = (role) => ['ADMIN', 'ZARZADCA'].includes(role);
+export const normalizeRoleUpdate = (currentRole, requestedRole) => {
+    if (isAdminRole(currentRole)) return currentRole;
+    return requestedRole || currentRole || 'USER';
+};
+
 const applyTheme = (settings = {}) => {
     const theme = settings.theme || settings.primary || '#00ffd5';
     const accent = settings.accentColor || settings.accent_color || theme;
@@ -40,7 +47,7 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('railscope_user');
         if (savedUser) {
             const parsedUser = JSON.parse(savedUser);
-            setUser(parsedUser);
+            setUser({ ...parsedUser, role: parsedUser.role || 'USER' });
             applyTheme(parsedUser.settings || {});
             if (parsedUser.settings?.theme) setTheme(parsedUser.settings.theme);
         }
@@ -48,10 +55,11 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (userData) => {
-        setUser(userData);
-        localStorage.setItem('railscope_user', JSON.stringify(userData));
-        applyTheme(userData.settings || {});
-        if (userData.settings?.theme) setTheme(userData.settings.theme);
+        const normalizedUserData = { ...userData, role: userData.role || 'USER' };
+        setUser(normalizedUserData);
+        localStorage.setItem('railscope_user', JSON.stringify(normalizedUserData));
+        applyTheme(normalizedUserData.settings || {});
+        if (normalizedUserData.settings?.theme) setTheme(normalizedUserData.settings.theme);
     };
 
     const logout = () => {
@@ -62,7 +70,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (newFields) => {
-        const updatedUser = { ...user, ...newFields };
+        const normalizedRole = normalizeRoleUpdate(user?.role, newFields.role);
+        const updatedUser = { ...user, ...newFields, role: normalizedRole };
         setUser(updatedUser);
         localStorage.setItem('railscope_user', JSON.stringify(updatedUser));
     };

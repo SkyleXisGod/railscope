@@ -73,19 +73,19 @@ export default function SpeedCheckGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>📸 WERYFIKACJA PRĘDKOŚCI TRASY</h2>
-          <div>ZALICZONE PUNKTY KONTROLNE: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
+          <h2>📸 {t.title || 'Speed verification'}</h2>
+          <div>{t.checkpointsLabel || 'Checkpoints cleared'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
         </div>
 
         <div className="game-viewport-area">
           
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>📉 Kontrola Prędkości Drogowej</h3>
+              <h3>{t.introTitle || 'Road speed control'}</h3>
               <p className="game-explanation-text">
-                Zbliżasz się do punktu pomiarowego! Dostosuj prędkość składu tak, aby nie przekroczyć narzuconego limitu. Nie jedź też zbyt wolno, by nie tamować ruchu.
+                {t.introText || 'You are approaching a speed check. Adjust your train speed so you do not exceed the limit. Do not go too slow either or you will block the line.'}
               </p>
-              <button className="btn-arcade-play" onClick={startTest}>ROZPOCZNIJ ZBLIŻENIE 🚇</button>
+              <button className="btn-arcade-play" onClick={startTest}>{t.startButton || 'Begin approach 🚇'}</button>
             </div>
           )}
 
@@ -95,7 +95,7 @@ export default function SpeedCheckGame({ t, onBack }) {
               {/* Pasek dystansu do fotoradaru */}
               <div style={{ width: '100%', maxWidth: '320px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>
-                  <span>DYSTANS DO RADARU:</span>
+                  <span>{t.distanceLabel || 'Distance to radar:'}</span>
                   <span style={{ color: '#ffa502', fontWeight: 'bold' }}>{Math.round(distanceLeft)} m</span>
                 </div>
                 <div style={{ height: '6px', background: '#141b24', borderRadius: '3px', overflow: 'hidden' }}>
@@ -106,13 +106,13 @@ export default function SpeedCheckGame({ t, onBack }) {
               {/* Wyświetlacz prędkości maszynisty */}
               <div style={{ display: 'flex', gap: '20px', marginBottom: '25px', justifyContent: 'center', width: '100%' }}>
                 <div style={{ background: '#11161b', border: '2px solid #ff4757', padding: '10px 15px', borderRadius: '8px', textAlign: 'center', minWidth: '100px' }}>
-                  <div style={{ fontSize: '10px', color: '#ff4757' }}>OGRANICZENIE</div>
+                  <div style={{ fontSize: '10px', color: '#ff4757' }}>{t.speedLimitLabel || 'Speed limit'}</div>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>{targetSpeed}</div>
                   <div style={{ fontSize: '9px', color: '#777' }}>km/h</div>
                 </div>
 
                 <div style={{ background: '#11161b', border: `2px solid ${currentSpeed > targetSpeed ? '#ff4757' : '#00ffca'}`, padding: '10px 15px', borderRadius: '8px', textAlign: 'center', minWidth: '100px' }}>
-                  <div style={{ fontSize: '10px', color: '#aaa' }}>TWOJA PRĘDKOŚĆ</div>
+                  <div style={{ fontSize: '10px', color: '#aaa' }}>{t.yourSpeedLabel || 'Your speed'}</div>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: currentSpeed > targetSpeed ? '#ff4757' : '#00ffca' }}>{Math.round(currentSpeed)}</div>
                   <div style={{ fontSize: '9px', color: '#777' }}>km/h</div>
                 </div>
@@ -123,31 +123,31 @@ export default function SpeedCheckGame({ t, onBack }) {
                 onClick={applyBrake} 
                 style={{ width: '220px', background: '#c0392b', border: '1px solid #ff4757' }}
               >
-                HAMUJ AWARYJNIE 🚨
+                {t.brakeButton || 'Emergency brake 🚨'}
               </button>
-              <div style={{ fontSize: '10px', color: '#556270', marginTop: '10px' }}>Wskazówka: Możesz też używać [SPACJI] na klawiaturze!</div>
+              <div style={{ fontSize: '10px', color: '#556270', marginTop: '10px' }}>{t.hintText || 'Tip: you can also use [SPACE] on your keyboard!'}</div>
 
             </div>
           )}
 
           {gameState === 'success' && (
             <div className="game-overlay-screen success-theme">
-              <h3>🟢 PRĘDKOŚĆ PRAWIDŁOWA</h3>
-              <p className="game-explanation-text">Minąłeś radar z idealną prędkością. System zarejestrował prawidłowy przejazd.</p>
-              <button className="btn-arcade-play" onClick={startTest}>NASTĘPNY SEKTOR 🔄</button>
+              <h3>🟢 {t.successTitle || 'Perfect speed'}</h3>
+              <p className="game-explanation-text">{t.successText || 'You passed the radar at the ideal speed. The system logged a clean run.'}</p>
+              <button className="btn-arcade-play" onClick={startTest}>{t.nextButton || 'Next sector 🔄'}</button>
             </div>
           )}
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🚨 MANDAT I BLOKADA TRASY</h3>
+              <h3>🚨 {t.failTitle || 'Too fast / too slow'}</h3>
               <p className="game-explanation-text">
                 {currentSpeed > targetSpeed 
-                  ? `Przekroczyłeś dozwoloną prędkość o ${Math.round(currentSpeed - targetSpeed)} km/h! System automatycznie zablokował skład.` 
-                  : 'Zwolniłeś zbyt mocno! Skład z tyłu musiał gwałtownie hamować, wywołując alarm linii.'}
+                  ? `${t.failTextHigh || 'You exceeded the speed limit.'} ${t.penaltyText || 'A penalty was applied.'}`
+                  : `${t.failTextLow || 'You slowed down too much.'} ${t.penaltyText || 'A penalty was applied.'}`}
               </p>
-              <p className="game-explanation-text">Punkty karne na koncie. Zaliczone radary: <strong>{score}</strong></p>
-              <button className="btn-arcade-play" onClick={() => { setScore(0); startTest(); }}>PONÓW JAZDĘ 🔄</button>
+              <p className="game-explanation-text">{t.scoreText || 'Penalty points'}: <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={() => { setScore(0); startTest(); }}>{t.retryButton || 'Try again 🔄'}</button>
             </div>
           )}
 

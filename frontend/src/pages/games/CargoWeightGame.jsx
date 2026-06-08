@@ -65,19 +65,19 @@ export default function CargoWeightGame({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>⚖️ TERMINAL ZAŁADUNKU MASOWEGO</h2>
-          <div>SFORMOWANE SKŁADY: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
+          <h2>⚖️ {t.title || 'TERMINAL ZAŁADUNKU MASOWEGO'}</h2>
+          <div>{t.scoreLabel || 'SFORMOWANE SKŁADY'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
         </div>
 
         <div className="game-viewport-area">
           
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>🌾 Dozowanie Tonażu Składu</h3>
+              <h3>{t.introTitle || '🌾 Dozowanie Tonażu Składu'}</h3>
               <p className="game-explanation-text">
-                Napełnij po kolei 3 wagony towarowe. Zatrzymaj zsyp przyciskiem blokady, gdy poziom surowca znajdzie się jak najbliżej <strong>linii kreskowanej</strong>. Przeładowanie uszkodzi osie!
+                {t.introText || 'Napełnij po kolei 3 wagony towarowe. Zatrzymaj zsyp przyciskiem blokady, gdy poziom surowca znajdzie się jak najbliżej linii kreskowanej. Przeładowanie uszkodzi osie!'}
               </p>
-              <button className="btn-arcade-play" onClick={startLoading}>OTWÓRZ ZSYPY 📑</button>
+              <button className="btn-arcade-play" onClick={startLoading}>{t.startButton || 'OTWÓRZ ZSYPY 📑'}</button>
             </div>
           )}
 
@@ -85,7 +85,7 @@ export default function CargoWeightGame({ t, onBack }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '15px', boxSizing: 'border-box' }}>
               
               <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '20px', letterSpacing: '1px' }}>
-                STATUS: {activeWagon < 3 ? `ŁADOWANIE WAGONU NR ${activeWagon + 1}...` : 'ANALIZA OSI...'}
+                {t.loadingStatus || 'STATUS'}: {activeWagon < 3 ? `${t.lockButton || 'ŁADOWANIE WAGONU NR'} ${activeWagon + 1}...` : 'ANALIZA OSI...'}
               </div>
 
               {/* Wizualizacja 3 wagonów obok siebie */}
@@ -93,7 +93,7 @@ export default function CargoWeightGame({ t, onBack }) {
                 
                 {/* Przerywana linia docelowej wagi */}
                 <div style={{ position: 'absolute', bottom: `${targetWeight}%`, left: 0, width: '100%', borderTop: '2px dashed #00ffca', zIndex: 5 }}>
-                  <span style={{ fontSize: '8px', color: '#00ffca', background: '#11161b', padding: '0 4px', position: 'absolute', top: '-12px', right: '10px' }}>LIMIT OSI</span>
+                  <span style={{ fontSize: '8px', color: '#00ffca', background: '#11161b', padding: '0 4px', position: 'absolute', top: '-12px', right: '10px' }}>{t.axleLimitLabel || 'Axle limit'}</span>
                 </div>
 
                 {wagons.map((weight, idx) => {
@@ -129,7 +129,7 @@ export default function CargoWeightGame({ t, onBack }) {
                 disabled={activeWagon > 2}
                 style={{ width: '220px' }}
               >
-                🔒 ODETNIJ ZSYP WAGONU
+                {t.lockButton || '🔒 ODETNIJ ZSYP WAGONU'}
               </button>
 
             </div>
@@ -137,20 +137,20 @@ export default function CargoWeightGame({ t, onBack }) {
 
           {gameState === 'success' && (
             <div className="game-overlay-screen success-theme">
-              <h3>🎉 WYWAŻENIE OPTYMALNE!</h3>
-              <p className="game-explanation-text">Wszystkie sekcje załadowane równomiernie. Nacisk na szyny w normie.</p>
-              <button className="btn-arcade-play" onClick={startLoading}>KOLEJNY SKŁAD 🔄</button>
+              <h3>🎉 {t.successTitle || 'WYWAŻENIE OPTYMALNE!'}</h3>
+              <p className="game-explanation-text">{t.successText || 'Wszystkie sekcje załadowane równomiernie. Nacisk na szyny w normie.'}</p>
+              <button className="btn-arcade-play" onClick={startLoading}>{t.nextButton || 'KOLEJNY SKŁAD 🔄'}</button>
             </div>
           )}
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>🛑 USZKODZENIE RESORÓW / SKOS</h3>
+              <h3>🛑 {t.crashTitle || 'USZKODZENIE RESORÓW / SKOS'}</h3>
               <p className="game-explanation-text">
-                Wprowadziłeś pociąg w stan zagrożenia. Jeden z wagonów został przeładowany lub niedoładowany, co grozi wykolejeniem na zakręcie.
+                {t.crashText || 'Wprowadziłeś pociąg w stan zagrożenia. Jeden z wagonów został przeładowany lub niedoładowany, co grozi wykolejeniem na zakręcie.'}
               </p>
-              <p className="game-explanation-text">Skutecznie odprawione pociągi: <strong>{score}</strong></p>
-              <button className="btn-arcade-play" onClick={() => { setScore(0); startLoading(); }}>WYCZYŚĆ TERMINAL 🔄</button>
+              <p className="game-explanation-text">{t.scoreText || 'Skutecznie odprawione pociągi:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={() => { setScore(0); startLoading(); }}>{t.resetButton || 'WYCZYŚĆ TERMINAL 🔄'}</button>
             </div>
           )}
 

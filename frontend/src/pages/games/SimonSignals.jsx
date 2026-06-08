@@ -28,9 +28,7 @@ export default function SimonSignals({ t, onBack }) {
 
   const playSequence = async (currentSeq) => {
     setIsPlayingSequence(true);
-    setStatusMessage('REPRODUKCJA SEKWENCJI DIAGNOSTYCZNEJ...');
-    await new Promise(resolve => setTimeout(resolve, 600));
-
+      setStatusMessage(t.playingStatus || 'Replaying sequence...');
     for (let i = 0; i < currentSeq.length; i++) {
       const color = currentSeq[i];
       setActiveColor(color);
@@ -40,7 +38,7 @@ export default function SimonSignals({ t, onBack }) {
     }
 
     setIsPlayingSequence(false);
-    setStatusMessage('POTWIERDŹ SEKCJĘ SYGNAŁOWĄ!');
+    setStatusMessage(t.confirmSection || 'Confirm the signal sequence!');
   };
 
   const handleColorClick = (color) => {
@@ -74,20 +72,20 @@ export default function SimonSignals({ t, onBack }) {
 
       <div className="game-main-card">
         <div className="game-top-header">
-          <h2>🚨 {t.game_simon_title || 'REPLIKATOR SYGNAŁÓW'}</h2>
+          <h2>🚨 {t.title || 'Simon Signals'}</h2>
           {gameState === 'running' && (
-            <div>ZALICZONE BLOKI: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
+            <div>{t.scoreLabel || 'Cleared blocks'}: <span style={{ color: '#00ffca', fontWeight: 'bold' }}>{score}</span></div>
           )}
         </div>
 
         <div className="game-viewport-area">
           {gameState === 'idle' && (
             <div className="game-overlay-screen">
-              <h3>🚨 SYNCHRONIZACJA SYGNALIZATORÓW</h3>
+              <h3>{t.introTitle || 'Synchronize the signal array'}</h3>
               <p className="game-explanation-text">
-                Odtwórz precyzyjnie sekwencję błysków przekaźników automatyki. Każda pomyłka przerywa obwód i generuje krytyczne spięcie magistrali głównej.
+                {t.introText || 'Replay the precise flash sequence of the automation relays. Any mistake breaks the circuit and causes a critical overload on the main bus.'}
               </p>
-              <button className="btn-arcade-play" onClick={startGame}>SPRAWDŹ SYGNAŁY</button>
+              <button className="btn-arcade-play" onClick={startGame}>{t.startButton || 'Check signals'}</button>
             </div>
           )}
 
@@ -123,17 +121,17 @@ export default function SimonSignals({ t, onBack }) {
               </div>
 
               <div style={{ fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
-                INTERFEJS KONTROLNY MAGISTRALI SEKWENCYJNEJ
+                {t.interfaceLabel || 'Sequential signal panel interface'}
               </div>
             </div>
           )}
 
           {gameState === 'crashed' && (
             <div className="game-overlay-screen game-over-theme">
-              <h3>💥 PRZECIĄŻENIE MODUŁU!</h3>
-              <p className="game-explanation-text">Wprowadzono niepoprawny kod weryfikacyjny. Przekaźniki uległy stopieniu.</p>
-              <p className="game-explanation-text">Zweryfikowane węzły: <strong>{score}</strong></p>
-              <button className="btn-arcade-play" onClick={startGame}>ZRESETUJ PRZEKAŹNIKI 🔄</button>
+              <h3>💥 {t.crashTitle || 'Module overload!'}</h3>
+              <p className="game-explanation-text">{t.crashText || 'An invalid verification code was entered. Relays have overheated.'}</p>
+              <p className="game-explanation-text">{t.scoreText || 'Verified nodes:'} <strong>{score}</strong></p>
+              <button className="btn-arcade-play" onClick={startGame}>{t.retryButton || 'Reset relays 🔄'}</button>
             </div>
           )}
         </div>
