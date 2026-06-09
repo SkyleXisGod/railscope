@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
     };
 
     return (
-        <div className="auth-page-container"> {/* Główny kontener centrujący i nakładający tło */}
+        <div className="auth-page-container"> 
             <motion.div 
                 className="auth-card"
                 initial={{ opacity: 0, y: 20 }}
@@ -114,10 +114,8 @@ export default function ResetPasswordPage() {
                 </div>
             </motion.div>
 
-            {/* Dekoracyjne kółka w tle, identyczne jak na ekranie logowania */}
             <div className="auth-bg-decoration">
-                <div className="circle circle-1"></div>
-                <div className="circle circle-2"></div>
+                <div className="auth-map-bg"></div>
             </div>
         </div>
     );

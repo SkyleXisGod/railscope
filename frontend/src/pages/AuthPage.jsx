@@ -7,7 +7,7 @@ import './AuthPage.css';
 import { translations } from './constants/translations';
 
 export default function AuthPage() {
-    const [viewMode, setViewMode] = useState('login'); // dostępne tryby: 'login', 'register', 'forgot'
+    const [viewMode, setViewMode] = useState('login');  
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
@@ -28,7 +28,6 @@ export default function AuthPage() {
         setError('');
         setSuccessMessage('');
         
-        // 1. Obsługa resetowania hasła
         if (viewMode === 'forgot') {
             try {
                 const res = await axios.post(`http://localhost:8080/api/forgot-password`, { email: formData.email });
@@ -42,7 +41,6 @@ export default function AuthPage() {
             return;
         }
 
-        // 2. Obsługa Logowania / Rejestracji
         const endpoint = viewMode === 'login' ? 'login' : 'register';
         
         try {
@@ -62,8 +60,7 @@ export default function AuthPage() {
             setLoading(false);
         }
     };
-
-    // Pomocnicze teksty nagłówków dla trybu resetu (używają fallbacku, jeśli nie ma ich w translations)
+    
     const getSubtitle = () => {
         if (viewMode === 'login') return 'Autoryzacja dostępu do sieci';
         if (viewMode === 'register') return 'Tworzenie nowego profilu operatora';
@@ -174,8 +171,6 @@ export default function AuthPage() {
 
             <div className="auth-bg-decoration">
                 <div className="auth-map-bg"></div>
-                <div className="circle circle-1"></div>
-                <div className="circle circle-2"></div>
             </div>
         </div>
     );

@@ -157,122 +157,50 @@
     filter: blur(80px);
 }
 
-.circle-1 {
-    width: 400px;
-    height: 400px;
-    background: rgba(0, 255, 213, 0.1);
-    top: -100px;
-    right: -100px;
-}
-
-.circle-2 {
-    width: 300px;
-    height: 300px;
-    background: rgba(243, 156, 18, 0.05);
-    bottom: -50px;
-    left: -50px;
-}
-
-/* ==========================================================================
-   ANIMOWANA MAPA W TLE (INFINITE PANNING MAP) - NAPRAWIONA I KOMPLETNA
-   ========================================================================== */
-
-.auth-map-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: block !important;
-    
-    /* Warstwa 1: Siatka kropkowa | Warstwa 2: Wektorowa mapa świata */
-    background-image: 
-        url('https://www.transparenttextures.com/patterns/black-thread.png'), 
-        url('https://pub-c5e31b5cdafb419a916a6113b294dfaa.r2.dev/world-map-vector.svg');
-    
-    /* Pierwsze tło powtarza się wszędzie, mapa tylko poziomo (oś X) */
-    background-repeat: repeat, repeat-x;
-    
-    /* Mapa skaluje się do pełnej wysokości okna, szerokość zachowuje proporcje */
-    background-size: auto, auto 100%;
-    
-    /* Początkowe pozycje dla obu warstw */
-    background-position: 0 0, 0 0;
-    
-    /* Dopasowanie klimatu do RailScope (subtelny cyjan w tle) */
-    opacity: 0.12; 
-    filter: hue-rotate(140deg) brightness(0.9) blur(0.3px);
-    
-    /* Nieskończona animacja: 140 sekund na pełne przejście */
-    animation: panMapContinuous 140s linear infinite !important;
-    
-    pointer-events: none;
-    z-index: 1; /* Mapa idzie na sam spód dekoracji */
-}
-
-/* Klucz animacji obsługujący poprawnie dwa tła (przesuwamy tylko mapę świata) */
-@keyframes panMapContinuous {
-    from {
-        background-position: 0 0, 0 0;
-    }
-    to {
-        background-position: 0 0, -2000px 0; 
-    }
-}
-
-/* ==========================================================================
-   POPRAWKA WARSTWOWOŚCI (Z-INDEX)
-   ========================================================================== */
-
-.auth-card {
-    position: relative;
-    z-index: 10; /* Okno logowania najwyżej, żeby można było klikać inputy */
-}
-
 .auth-bg-decoration {
     position: absolute;
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
-    z-index: 2; /* Dekoracje nad mapą, ale pod formularzem */
+    z-index: 1; 
+    overflow: hidden;
+    background-color: #0f121a;
 }
 
-.circle {
+.auth-map-bg {
     position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    z-index: 3; /* Neonowe kółka świecą bezpośrednio NAD mapą */
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    
+    background-color: #00ffd5; 
+    
+    -webkit-mask-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg');
+    mask-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg');
+    
+    -webkit-mask-size: 2000px 100%;
+    mask-size: 2000px 100%;
+    -webkit-mask-repeat: repeat-x;
+    mask-repeat: repeat-x;
+    opacity: 0.15; 
+    animation: mapScroll 60s linear infinite;
+    pointer-events: none;
 }
 
-.circle-1 {
-    width: 400px;
-    height: 400px;
-    background: rgba(0, 255, 213, 0.1);
-    top: -100px;
-    right: -100px;
+@keyframes mapScroll {
+    0% { 
+        -webkit-mask-position: 0 0; 
+        mask-position: 0 0; 
+    }
+    100% { 
+        -webkit-mask-position: -2000px 0; 
+        mask-position: -2000px 0; 
+    }
 }
 
-.circle-2 {
-    width: 300px;
-    height: 300px;
-    background: rgba(243, 156, 18, 0.05);
-    bottom: -50px;
-    left: -50px;
-}
-
-/* Spinner ładowania */
-.spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    border-top: 3px solid #00ffd5;
-    border-radius: 50%;
-    display: inline-block;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.auth-card {
+    position: relative;
+    z-index: 10;
 }
