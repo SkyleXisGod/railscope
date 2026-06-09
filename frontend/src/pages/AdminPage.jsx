@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth, socket } from '../context/AuthContext';
 import { translations, adm_translations } from './constants/translations';
 import { sendMailboxNotification, NOTIFICATION_TYPES } from './scripts/MailboxService';
 import axios from 'axios';
@@ -7,6 +7,7 @@ import './AdminPage.css';
 
 export default function AdminPage() {
     const { user } = useAuth();
+    const [onlineUsers, setOnlineUsers] = useState([]);
     const [activeTab, setActiveTab] = useState('users'); 
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,6 +23,31 @@ export default function AdminPage() {
     const lang = user?.settings?.language || 'PL';
     const baseTrans = adm_translations[lang] || adm_translations.PL || {};
     const t = baseTrans.admin ? baseTrans.admin : baseTrans;
+    const [visibleCount, setVisibleCount] = useState(100);
+    const [pageSize, setPageSize] = useState(100);
+
+    useEffect(() => {
+        setVisibleCount(pageSize);
+    }, [searchQuery, filterRole, sortBy, pageSize]);
+
+    useEffect(() => {
+        const handleStatusUpdate = (onlineIds) => {
+            const cleanIds = Array.isArray(onlineIds) ? onlineIds.map(id => Number(id)) : [];
+            setOnlineUsers(cleanIds);
+        };
+
+        socket.on('users_status_update', handleStatusUpdate);
+
+        socket.emit('request_status_update');
+
+        if (user && user.id) {
+            socket.emit('user_ident', { id: user.id, username: user.username, role: user.role });
+        }
+
+        return () => {
+            socket.off('users_status_update', handleStatusUpdate);
+        };
+    }, [user]);
 
     useEffect(() => {
         if (activeTab === 'users') {
@@ -96,7 +122,7 @@ export default function AdminPage() {
                 alert(err.response?.data?.error || t.unbanError || 'Nie udało się odbanować użytkownika.');
             }
         }
-    }
+    };
 
     const handleSaveEdit = async (e) => {
         e.preventDefault();
@@ -128,7 +154,7 @@ export default function AdminPage() {
 
             if (!wasBanned && isNowBanned) {
                 await sendMailboxNotification(NOTIFICATION_TYPES.USER_BAN, targetId, {
-                    bannedUntil: newBannedUntil, // przekazujemy czysty ISO string, formatowaniem zajmie się serwis
+                    bannedUntil: newBannedUntil,
                     forcedLang: userTargetLang
                 });
             } else if (wasBanned && !isNowBanned) {
@@ -156,6 +182,7 @@ export default function AdminPage() {
             alert(err.response?.data?.error || t.saveError || "Nie udało się zaktualizować użytkownika.");
         }
     };
+
     const fetchTickets = async () => {
         setLoading(true);
         try {
@@ -176,7 +203,7 @@ export default function AdminPage() {
             if (targetTicket && newStatus === 'Zamknięty') {
                 await sendMailboxNotification(NOTIFICATION_TYPES.TICKET_CLOSED, targetTicket.userId, {
                     ticketTitle: targetTicket.title,
-                    forcedLang: targetTicket.userLanguage || null // jeśli ticket posiada zapisany język autora
+                    forcedLang: targetTicket.userLanguage || null 
                 });
             }
             if (targetTicket && newStatus === 'W trakcie') {
@@ -195,16 +222,16 @@ export default function AdminPage() {
 
     const handleDeleteTicket = async (id) => {
         if (!window.confirm("Usunąć to zgłoszenie na stałe?")) return;
-         const targetTicket = ticketsList.find(t => t.id === id);
+        const targetTicket = ticketsList.find(t => t.id === id);
         try {
             await sendMailboxNotification(NOTIFICATION_TYPES.TICKET_DELETED, targetTicket.userId, {
-                    t: t,
-                    ticketTitle: targetTicket.title
-                });
+                t: t,
+                ticketTitle: targetTicket.title
+            });
             await axios.delete(`http://localhost:8080/api/admin/tickets/${id}`);
             fetchTickets();
         } catch (err) {
-            alert("Błąd usuwania zgłoszenia");
+            alert("Błąd zgłoszenia");
         }
     };
 
@@ -258,46 +285,73 @@ export default function AdminPage() {
 
     const roleWeight = { ZARZADCA: 4, ADMIN: 3, PLUS: 2, USER: 1 };
 
-    const processedUsers = usersList
-        .filter(u => 
-            (u.username && u.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
-        .filter(u => {
-            if (filterRole === 'all') return true;
-            if (filterRole === 'banned') return isBanned(u.bannedUntil);
-            return u.role === filterRole;
-        })
-        .sort((a, b) => {
+    const { processedUsers, groupedUsers } = useMemo(() => {
+        const filtered = usersList
+            .filter(u => 
+                (u.username && u.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+            )
+            .filter(u => {
+                if (filterRole === 'all') return true;
+                if (filterRole === 'banned') return bannedUntil && new Date(bannedUntil) > new Date();
+                return u.role === filterRole;
+            });
+
+        filtered.sort((a, b) => {
+            if (sortBy === 'online_alpha') {
+                const aOnline = a.id && onlineUsers.some(id => Number(id) === Number(a.id)) ? 1 : 0;
+                const bOnline = b.id && onlineUsers.some(id => Number(id) === Number(b.id)) ? 1 : 0;
+                if (bOnline !== aOnline) return bOnline - aOnline;
+                return (a.username || '').localeCompare(b.username || '');
+            }
             if (sortBy === 'alpha') return (a.username || '').localeCompare(b.username || '');
             if (sortBy === 'id') return a.id - b.id;
             if (sortBy === 'banned') {
-                const aBanned = isBanned(a.bannedUntil) ? 1 : 0;
-                const bBanned = isBanned(b.bannedUntil) ? 1 : 0;
-                return bBanned - aBanned; 
+                const isABanned = a.bannedUntil && new Date(a.bannedUntil) > new Date() ? 1 : 0;
+                const isBBanned = b.bannedUntil && new Date(b.bannedUntil) > new Date() ? 1 : 0;
+                return isBBanned - isABanned; 
             }
-            const weightA = roleWeight[a.role] || 0;
-            const weightB = roleWeight[b.role] || 0;
+            const weightA = { ZARZADCA: 4, ADMIN: 3, PLUS: 2, USER: 1 }[a.role] || 0;
+            const weightB = { ZARZADCA: 4, ADMIN: 3, PLUS: 2, USER: 1 }[b.role] || 0;
             if (weightB !== weightA) return weightB - weightA;
             return (a.username || '').localeCompare(b.username || '');
         });
 
+        const grouped = { ZARZADCA: [], ADMIN: [], PLUS: [], USER: [] };
+        filtered.forEach(u => {
+            if (grouped[u.role]) {
+                grouped[u.role].push(u);
+            } else {
+                if (!grouped[u.role]) grouped[u.role] = [];
+                grouped[u.role].push(u);
+            }
+        });
+
+        return {
+            processedUsers: filtered,
+            groupedUsers: grouped
+        };
+    }, [usersList, searchQuery, filterRole, sortBy, onlineUsers]);
+
+    const displayedUsers = processedUsers.slice(0, visibleCount);
+
     const renderUserRow = (u) => {
         const banned = isBanned(u.bannedUntil);
         const hasAccess = canEditTarget(u.role);
+        
+        const isOnline = u.id && onlineUsers.some(id => Number(id) === Number(u.id));
 
         return (
-            <tr key={u.id} className={`admin-table-row ${banned ? 'row-banned' : ''}`}>
+            <tr key={u.id} className={`admin-table-row ${banned ? 'row-banned' : ''} ${isOnline ? 'row-online' : 'row-offline'}`}>
                 <td className="id-cell">#{u.id}</td>
                 <td className="name-cell">{u.username || '—'}</td>
                 <td className="email-cell">{u.email}</td>
                 <td>
-                    <span className={`role-badge role-${u.role}`}>
-                        {u.role}
-                    </span>
-                    {banned && (
-                        <span className="banned-badge">{t.banned}</span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
+                        <span className={`role-badge role-${u.role.toLowerCase()}`}>{u.role}</span>
+                        {banned && <span style={{color: 'var(--danger-color)', fontSize: '0.8rem'}}>({t.bannedStatus || 'Zbanowany'})</span>}
+                    </div>
                 </td>
                 <td className="actions-cell">
                     {hasAccess ? (
@@ -323,35 +377,46 @@ export default function AdminPage() {
     };
 
     const renderTableBody = () => {
-        if (processedUsers.length === 0) {
-            return (
-                <tr>
-                    <td colSpan="5" className="empty-state">{t.noResults}</td>
+    if (processedUsers.length === 0) {
+        return (
+            <tr>
+                <td colSpan="5" className="empty-state">{t.noResults}</td>
+            </tr>
+        );
+    }
+
+    if (!groupByRole) {
+        return processedUsers.slice(0, visibleCount).map(u => renderUserRow(u));
+    }
+
+    const rolesOrder = ['ZARZADCA', 'ADMIN', 'PLUS', 'USER'];
+
+    return rolesOrder.map(role => {
+        const usersInRole = groupedUsers[role] || [];
+        if (usersInRole.length === 0) return null;
+
+        const usersToRender = usersInRole.slice(0, pageSize);
+
+        return (
+            <React.Fragment key={role}>
+                <tr className="role-group-header-row">
+                    <td colSpan="5" className="role-group-header-cell" style={{ background: '#24242b', color: '#00ffd5', fontWeight: 'bold', padding: '10px 15px' }}>
+                        {(t.roleGroup || 'Grupa: {role}').replace('{role}', role)} ({usersInRole.length})
+                    </td>
                 </tr>
-            );
-        }
-
-        if (!groupByRole) {
-            return processedUsers.map(u => renderUserRow(u));
-        }
-
-        const rolesOrder = ['ZARZADCA', 'ADMIN', 'PLUS', 'USER'];
-        return rolesOrder.map(role => {
-            const usersInRole = processedUsers.filter(u => u.role === role);
-            if (usersInRole.length === 0) return null;
-
-            return (
-                <React.Fragment key={role}>
-                    <tr className="role-group-header-row">
-                        <td colSpan="5" className="role-group-header-cell">
-                            {(t.roleGroup || 'Grupa: {role}').replace('{role}', role)}
+                {usersToRender.map(u => renderUserRow(u))}
+                
+                {usersInRole.length > pageSize && (
+                    <tr className="role-group-limit-info-row">
+                        <td colSpan="5" style={{ textAlign: 'center', color: '#888894', fontSize: '0.85rem', padding: '8px', background: '#1e1e24' }}>
+                            {t.lenghtmessage.replace('{pageSize}', pageSize).replace('{usersInRole.length}', usersInRole.length).replace('{role}', role)}
                         </td>
                     </tr>
-                    {usersInRole.map(u => renderUserRow(u))}
-                </React.Fragment>
-            );
-        });
-    };
+                )}
+            </React.Fragment>
+        );
+    });
+};
 
     return (
         <div className="admin-container">
@@ -425,7 +490,7 @@ export default function AdminPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         <div className="admin-stats-badge">
-                            {t.userCount} <span>{usersList.length}</span>
+                            {t.userCount || 'Użytkownicy:'} <span>{processedUsers.length}</span>
                         </div>
                     </div>
 
@@ -446,6 +511,7 @@ export default function AdminPage() {
                                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                                     <option value="default">{t.sortDefault}</option>
                                     <option value="alpha">{t.sortAlpha}</option>
+                                    <option value="online_alpha">{t.sortOnline}</option>
                                     <option value="id">{t.sortId}</option>
                                     <option value="banned">{t.sortBanned}</option>
                                 </select>
@@ -453,7 +519,7 @@ export default function AdminPage() {
 
                             <div className="admin-input-group">
                                 <label>{t.filterRoleLabel}</label>
-                                <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
+                                <select value={filterRole} onChange={(e) => setSortBy(e.target.value)}>
                                     <option value="all">{t.allRoles}</option>
                                     <option value="banned">{t.onlyBanned}</option>
                                     <option value="USER">USER</option>
@@ -500,6 +566,41 @@ export default function AdminPage() {
                             </table>
                         )}
                     </div>
+
+                    {!loading && (
+                        <div className="pagination-container">
+                            <div className="pagination-limit">
+                                <span>{t.resultsPerPage || 'Wyników na stronie:'}</span>
+                                <select 
+                                    value={pageSize} 
+                                    onChange={(e) => {
+                                        const nextSize = Number(e.target.value);
+                                        setPageSize(nextSize);
+                                        setVisibleCount(nextSize);
+                                    }}
+                                    className="pagination-select"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={100}>100</option>
+                                    <option value={500}>500</option>
+                                </select>
+                                <span className="pagination-info">
+                                    {t.shownX} {Math.min(visibleCount, processedUsers.length)} {t.shownOfY} {processedUsers.length}
+                                </span>
+                            </div>
+
+                            {processedUsers.length > visibleCount && (
+                                <button 
+                                    className="load-more-btn" 
+                                    onClick={() => setVisibleCount(prev => prev + pageSize)}
+                                >
+                                    {t.loadMore || 'Pokaż więcej'} (+{pageSize})
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </>
             )}
 

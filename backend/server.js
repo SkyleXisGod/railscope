@@ -12,6 +12,9 @@ import { log } from "console";
 import net from 'net'; 
 import { createServer } from "http";
 import { Server } from "socket.io";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+dotenv.config();
 
 // 0. Log system with optional external log terminal
 
@@ -58,6 +61,14 @@ const logError = (emoji, text, err) => {
 };
 
 // 1. Database setup and connection
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 const db = new sqlite3.Database('./railscope.db', (err) => {
     if (err) logError('❌', 'Database connection error:', err.message);
@@ -144,6 +155,10 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
             });
         });
 
+        // db.run(`ALTER TABLE mailbox ADD COLUMN folder TEXT DEFAULT 'inbox'`);
+
+        // db.run(`ALTER TABLE mailbox ADD COLUMN deletedAt TEXT`);
+
         db.all("PRAGMA table_info(user_settings)", (err, columns) => {
             if (!err && columns) {
                 const names = columns.map(c => c.name);
@@ -194,6 +209,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
 
 // 2. Express server and Socket.IO setup
 const serverStartTime = Date.now();
+const activeUsers = new Map();
 
 let plkApiRequestsCount = 0;
 
@@ -204,10 +220,19 @@ axios.interceptors.request.use(config => {
     return config;
 });
 
+setInterval(() => {
+    db.run(`DELETE FROM mailbox WHERE folder = 'trash' AND datetime(deletedAt, '+12 hours') < datetime('now')`, function(err) {
+        if (err) {
+            console.error("❌ Błąd automatycznego opróżniania kosza maili:", err.message);
+        } else if (this.changes > 0) {
+            console.log(`🧹 [Kosz Mailbox] Automatycznie usunięto ${this.changes} wiadomości (starsze niż 12h).`);
+        }
+    });
+}, 10 * 60 * 1000);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-dotenv.config();
+const todosFilePath = path.join(__dirname, 'todos.json');
 const app = express();
 
 const httpServer = createServer(app);
@@ -220,62 +245,152 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-// 3. Socket.IO event handling for chat and logging
+const broadcastOnlineStatus = () => {
+    const onlineUserIds = Array.from(new Set(Array.from(activeUsers.values())
+        .map(u => u.userId)
+        .filter(id => id))); 
+
+        logFeed('🟢', `Użytkownicy w sesji: ${onlineUserIds.length}.`);
+    
+    io.emit('users_status_update', onlineUserIds);
+};
+
+const activeUserSockets = new Map();
 
 io.on('connection', (socket) => {
-    logFeed('🔌', `New client connected: ${socket.id}`);
+
+    socket.on('user_ident', (userData) => {
+        if (userData && userData.id) {
+            const userId = Number(userData.id);
+
+            activeUsers.set(socket.id, {
+                userId: userId,
+                username: userData.username,
+                role: userData.role
+            });
+
+            if (activeUserSockets.has(userId)) {
+                const oldSocketId = activeUserSockets.get(userId);
+                
+                if (oldSocketId !== socket.id) {
+                    // Powiadamiamy starą sesję
+                    io.to(oldSocketId).emit('force_logout', { 
+                        reason: 'Zalogowano się z innego urządzenia lub przeglądarki.' 
+                    });
+                    
+                    logFeed('⚠️', `Wymuszono wylogowanie z poprzedniej sesji: Użytkownik ${userData.username} (ID: ${userId}).`);
+                    
+                    const oldSocket = io.sockets.sockets.get(oldSocketId);
+                    if (oldSocket) {
+                        oldSocket.disconnect(true);
+                    }
+                }
+            }
+
+            activeUserSockets.set(userId, socket.id);
+            
+            logFeed('🟢', `Sesja aktywna: Użytkownik ${userData.username} (ID: ${userId}) jest ONLINE.`);
+                
+            broadcastOnlineStatus();
+        }
+    });
+
     socket.on('get_chat_history', () => {
         const query = `
-            SELECT cm.id, u.username, u.role, u.avatar_url, cm.text, 
-                   strftime('%H:%M', cm.timestamp, 'localtime') as timestamp
+            SELECT 
+                cm.id, 
+                cm.user_id AS senderId, 
+                cm.text, 
+                cm.timestamp,
+                u.username, 
+                u.role 
             FROM chat_messages cm
-            JOIN users u ON cm.user_id = u.id
-            ORDER BY cm.id DESC LIMIT 50
+            LEFT JOIN users u ON cm.user_id = u.id
+            ORDER BY cm.id ASC 
+            LIMIT 100
         `;
-        
+
         db.all(query, [], (err, rows) => {
             if (err) {
-                console.error("[CHAT ERR] Nie udało się pobrać historii:", err.message);
+                console.error("❌ Błąd pobierania historii czatu z bazy:", err.message);
                 return;
             }
-            socket.emit('chat_history', rows.reverse());
+            socket.emit('chat_history', rows);
         });
     });
 
     socket.on('send_message', (data) => {
-        const { user_id, text } = data;
-
-        if (!user_id || !text || !text.trim()) return;
-
-        const insertQuery = `INSERT INTO chat_messages (user_id, text) VALUES (?, ?)`;
+        const { senderId, text } = data;
         
-        db.run(insertQuery, [user_id, text.trim()], function(err) {
-            if (err) {
-                console.error("[CHAT ERR] Nie udało się zapisać wiadomości:", err.message);
+        if (!text || !text.trim() || !senderId) return;
+
+        db.get(`SELECT username, role FROM users WHERE id = ?`, [senderId], (err, userRow) => {
+            if (err || !userRow) {
+                console.error("❌ Nie można zweryfikować użytkownika czatu o ID:", senderId);
                 return;
             }
 
-            const lastId = this.lastID; 
-            const selectQuery = `
-                SELECT cm.id, u.username, u.role, u.avatar_url, cm.text,
-                       strftime('%H:%M', cm.timestamp, 'localtime') as timestamp
-                FROM chat_messages cm
-                JOIN users u ON cm.user_id = u.id
-                WHERE cm.id = ?
-            `;
+            const username = userRow.username;
+            const role = userRow.role || 'USER';
+            const timestamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+            const cleanText = text.trim();
 
-            db.get(selectQuery, [lastId], (err, row) => {
-                if (err || !row) {
-                    console.error("[CHAT ERR] Błąd pobierania nowej wiadomości:", err?.message);
-                    return;
+            db.run(
+                `INSERT INTO chat_messages (user_id, text, timestamp) VALUES (?, ?, ?)`,
+                [senderId, cleanText, timestamp],
+                function(insertErr) {
+                    if (insertErr) {
+                        db.run(
+                            `INSERT INTO chat_messages (user_id, text) VALUES (?, ?)`,
+                            [senderId, cleanText],
+                            function(fallbackErr) {
+                                if (fallbackErr) {
+                                    console.error("❌ Krytyczny błąd zapisu w czacie:", fallbackErr.message);
+                                    return;
+                                }
+                                io.emit('receive_message', {
+                                    id: this.lastID,
+                                    senderId,
+                                    username,
+                                    role,
+                                    text: cleanText,
+                                    timestamp
+                                });
+                            }
+                        );
+                        return;
+                    }
+                    
+                    io.emit('receive_message', {
+                        id: this.lastID,
+                        senderId,
+                        username,  
+                        role,      
+                        text: cleanText,
+                        timestamp
+                    });
                 }
-                io.emit('receive_message', row);
-            });
+            );
         });
     });
 
     socket.on('disconnect', () => {
-        logFeed('🔌', `Client disconnected: ${socket.id}`);
+        const userSession = activeUsers.get(socket.id);
+        
+        if (userSession) {
+            const userId = userSession.userId;
+            logFeed('🔴', `Sesja zakończona: Użytkownik ${userSession.username} (ID: ${userId}) jest OFFLINE.`);
+
+            activeUsers.delete(socket.id);
+
+            if (activeUserSockets.get(userId) === socket.id) {
+                activeUserSockets.delete(userId);
+            }
+
+            broadcastOnlineStatus();
+        } else {
+            logFeed('🔌', `Rozłączono niezidentyfikowanego klienta (Socket ID: ${socket.id})`);
+        }
     });
 });
 
@@ -338,7 +453,7 @@ app.get("/api/admin/tickets", (req, res) => {
     });
 });
 
-// 8. API endpoints for specific user mailbox (notifications)
+// 8. API endpoints for specific user mailbox, sending mailbox notifications, sending mailbox to another user and deleting mailboxes
 
 app.get('/api/mailbox/:userId', (req, res) => {
     const userId = req.params.userId;
@@ -351,6 +466,58 @@ app.get('/api/mailbox/:userId', (req, res) => {
             return res.status(500).json({ error: "Błąd serwera" });
         }
         res.json(rows);
+    });
+});
+
+app.post('/api/mailbox', (req, res) => {
+    const { senderId, sender, to, subject, content, tag } = req.body;
+
+    if (!to || !subject || !content) {
+        return res.status(400).json({ error: "Wszystkie pola formularza są wymagane." });
+    }
+
+    db.get(`SELECT id, username FROM users WHERE email = ?`, [to.trim()], (err, recipient) => {
+        if (err) return res.status(500).json({ error: "Błąd bazy danych przy szukaniu odbiorcy." });
+        if (!recipient) {
+            return res.status(404).json({ error: "Użytkownik o podanym adresie e-mail nie istnieje." });
+        }
+
+        db.run(
+            `INSERT INTO mailbox (userId, sender, subject, content, tag, folder) VALUES (?, ?, ?, ?, ?, 'inbox')`,
+            [recipient.id, sender, subject, content, tag || 'Użytkownik'],
+            function (err1) {
+                if (err1) return res.status(500).json({ error: err1.message });
+
+                db.run(
+                    `INSERT INTO mailbox (userId, sender, subject, content, tag, folder, unread) VALUES (?, ?, ?, ?, ?, 'sent', 0)`,
+                    [senderId, `Do: ${to.trim()}`, subject, content, tag || 'Użytkownik'],
+                    function (err2) {
+                        if (err2) return res.status(500).json({ error: err2.message });
+                        res.json({ success: true });
+                    }
+                );
+            }
+        );
+    });
+});
+
+app.post('/api/mailbox/:id/delete', (req, res) => {
+    const { id } = req.params;
+
+    db.get(`SELECT folder FROM mailbox WHERE id = ?`, [id], (err, row) => {
+        if (err || !row) return res.status(404).json({ error: "Wiadomość nie istnieje." });
+
+        if (row.folder === 'trash') {
+            db.run(`DELETE FROM mailbox WHERE id = ?`, [id], (err2) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ success: true, permanent: true });
+            });
+        } else {
+            db.run(`UPDATE mailbox SET folder = 'trash', deletedAt = CURRENT_TIMESTAMP WHERE id = ?`, [id], (err2) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ success: true, permanent: false });
+            });
+        }
     });
 });
 
@@ -369,33 +536,32 @@ app.post('/api/mailbox', (req, res) => {
         }
         res.status(201).json({ id: this.lastID, message: "Powiadomienie wysłane!" });
     });
+    logFeed('🎫', `Wysłano powiadomienie w sprawie ticketu: ${userId} - ${subject} [${tag}]`);
 });
 
 // 10. API endpoint for marking a message as read
 
-app.put('/api/mailbox/:id/read', (req, res) => {
-    const messageId = req.params.id;
-    
-    const sql = "UPDATE mailbox SET unread = 0 WHERE id = ?";
-    
-    db.run(sql, [messageId], function(err) {
+app.put('/api/mailbox/read/:id', (req, res) => {
+    const { id } = req.params;
+
+    const sql = `UPDATE mailbox SET unread = 0 WHERE id = ?`;
+
+    db.run(sql, [id], function(err) {
         if (err) {
-            console.error('Błąd aktualizacji statusu:', err);
-            return res.status(500).json({ error: "Błąd serwera" });
+            console.error("Błąd podczas aktualizacji statusu wiadomości:", err.message);
+            return res.status(500).json({ error: "Błąd bazy danych przy oznaczaniu jako przeczytane" });
         }
-        res.json({ success: true });
+        
+        res.json({ success: true, message: "Wiadomość została oznaczona jako przeczytana" });
     });
 });
 
 // 11. API endpoint for getting count of unread messages
 
 app.get('/api/mailbox/:userId/unread-count', (req, res) => {
-    const sql = "SELECT COUNT(*) as count FROM mailbox WHERE userId = ? AND unread = 1";
-    db.get(sql, [req.params.userId], (err, row) => {
-        if (err) {
-            console.error("Błąd SQL:", err);
-            return res.status(500).json({ error: "Błąd bazy" });
-        }
+    const { userId } = req.params;
+    db.get(`SELECT COUNT(*) as count FROM mailbox WHERE userId = ? AND unread = 1 AND folder = 'inbox'`, [userId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ count: row ? row.count : 0 });
     });
 });
@@ -489,6 +655,8 @@ app.post('/api/login', (req, res) => {
             if (!userSafeData.role) userSafeData.role = 'USER';
             logFeed('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
+
+            // Sesja / Session / User / Użytkownik / Logowanie / Sesja na podstawie JSON
         });
     });
 });
@@ -1552,7 +1720,138 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 25. THE END
+// 25. API endpoints for user todo list
+
+const readTodosFromFile = () => {
+    if (!fs.existsSync(todosFilePath)) {
+        const defaultTodos = [
+            { id: 1, text: "--------------------------------", done: false },
+        ];
+        fs.writeFileSync(todosFilePath, JSON.stringify(defaultTodos, null, 2));
+        return defaultTodos;
+    }
+    const data = fs.readFileSync(todosFilePath, 'utf8');
+    return JSON.parse(data);
+};
+
+const writeTodosToFile = (todos) => {
+    fs.writeFileSync(todosFilePath, JSON.stringify(todos, null, 2));
+};
+
+app.get('/api/todos', (req, res) => {
+    try {
+        const todos = readTodosFromFile();
+        res.json(todos);
+    } catch (err) {
+        res.status(500).json({ error: "Błąd odczytu pliku zadań" });
+    }
+});
+
+app.post('/api/todos', (req, res) => {
+    try {
+        const { todos } = req.body;
+        if (!Array.isArray(todos)) return res.status(400).json({ error: "Nieprawidłowy format danych" });
+        
+        writeTodosToFile(todos);
+        res.json({ success: true, todos });
+    } catch (err) {
+        res.status(500).json({ error: "Błąd zapisu do pliku" });
+    }
+});
+
+// 26. Email reset password
+
+app.post('/api/forgot-password', (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Adres email jest wymagany" });
+
+    db.get("SELECT id, username FROM users WHERE email = ?", [email], (err, user) => {
+        if (err) return res.status(500).json({ error: "Błąd bazy danych" });
+        if (!user) {
+            return res.json({ success: true, message: "Jeśli email istnieje w systemie, wysłano link resetujący." });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = Date.now() + 15 * 60 * 1000; // 15 minut
+
+        db.run("ALTER TABLE users ADD COLUMN resetToken TEXT", () => {});
+        db.run("ALTER TABLE users ADD COLUMN resetExpires INTEGER", () => {});
+
+        db.run(
+            "UPDATE users SET resetToken = ?, resetExpires = ? WHERE id = ?",
+            [token, expires, user.id],
+            async (updateErr) => {
+                if (updateErr) return res.status(500).json({ error: "Błąd zapisu tokenu" });
+
+                const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+                const mailOptions = {
+                    from: `"RailScope System" <${process.env.EMAIL_USER}>`,
+                    to: email,
+                    subject: '➡ Resetowanie hasła w systemie RailScope',
+                    html: `
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f121a; color: #ecf0f1; padding: 30px; border-radius: 12px; max-width: 600px; margin: auto;">
+                            <h2 style="color: #00ffd5; text-align: center; border-bottom: 1px solid #2c3545; padding-bottom: 15px;">RailScope</h2>
+                            <p>Witaj <strong>${user.username}</strong>,</p>
+                            <p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta w aplikacji RailScope.</p>
+                            <p>Kliknij w poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 15 minut:</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="${resetLink}" style="background: linear-gradient(135deg, #00ffd5 0%, #00bfa5 100%); color: #141414; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 255, 213, 0.3);">Resetuj hasło</a>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #95a5a6;">Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę wiadomość.</p>
+                            <hr style="border: none; border-top: 1px solid #2c3545; margin-top: 25px;">
+                            <p style="font-size: 0.75rem; text-align: center; color: #666;">Wiadomość wygenerowana automatycznie przez system RailScope.</p>
+                        </div>
+                    `
+                };
+
+                try {
+                    await transporter.sendMail(mailOptions);
+                    res.json({ success: true, message: "Jeśli email istnieje w systemie, wysłano link resetujący." });
+                } catch (mailErr) {
+                    console.error("Błąd wysyłki maila:", mailErr);
+                    res.status(500).json({ error: "Błąd podczas wysyłania wiadomości e-mail" });
+                }
+            }
+        );
+    });
+});
+
+app.post('/api/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token oraz nowe hasło są wymagane." });
+    }
+
+    const currentTime = Date.now();
+
+    db.get(
+        "SELECT id FROM users WHERE resetToken = ? AND resetExpires > ?",
+        [token, currentTime],
+        async (err, user) => {
+            if (err) return res.status(500).json({ error: "Błąd bazy danych" });
+            if (!user) return res.status(400).json({ error: "Token jest nieprawidłowy lub wygasł." });
+
+            try {
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+                db.run(
+                    "UPDATE users SET password = ?, resetToken = NULL, resetExpires = NULL WHERE id = ?",
+                    [hashedPassword, user.id],
+                    (updateErr) => {
+                        if (updateErr) return res.status(500).json({ error: "Błąd podczas aktualizacji hasła" });
+                        res.json({ success: true, message: "Hasło zostało pomyślnie zmienione. Możesz się zalogować." });
+                    }
+                );
+            } catch (hashErr) {
+                res.status(500).json({ error: "Błąd szyfrowania hasła" });
+            }
+        }
+    );
+});
+
+// 27. THE END
 
 /* Insert portal logo lol
 

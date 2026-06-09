@@ -20,37 +20,48 @@ import AdminPage from "./pages/AdminPage";
 import TicketsPage from "./pages/TicketsPage";
 import LiveChatPage from "./pages/LiveChat";
 import Mailbox from "./pages/Mailbox";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import axios from "axios";
 
 function AdminTodoPopup() {
   const [isOpen, setIsOpen] = useState(false);
-  const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem("railscope_admin_todos");
-    return saved ? JSON.parse(saved) : [
-      { id: 1, text: "Mailbox - skrzynka pocztowa użytkowników.", done: false },
-      { id: 2, text: "Livechat - czat na żywo pomiędzy użytkownikami ( PREMIUM! )", done: false },
-      { id: 3, text: "System ticketowy - zgłoszenia problemów i sugestii od użytkowników.", done: false },
-      { id: 4, text: "System powiadomień - informowanie użytkowników o ważnych wydarzeniach i aktualizacjach.", done: false }
-    ];
-  });
+  const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState("");
 
+
   useEffect(() => {
-    localStorage.setItem("railscope_admin_todos", JSON.stringify(todos));
-  }, [todos]);
+    axios.get("http://localhost:8080/api/todos")
+      .then(res => {
+        setTodos(res.data);
+      })
+      .catch(err => console.error("Błąd ładowania zadań z pliku:", err));
+  }, []);
+
+  const saveTodosToBackend = (updatedTodos) => {
+    axios.post("http://localhost:8080/api/todos", { todos: updatedTodos })
+      .catch(err => console.error("Błąd podczas synchronizacji z plikiem JSON:", err));
+  };
 
   const addTodo = (e) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
-    setTodos([...todos, { id: Date.now(), text: newTodo.trim(), done: false }]);
+    
+    const updated = [...todos, { id: Date.now(), text: newTodo.trim(), done: false }];
+    setTodos(updated);
+    saveTodosToBackend(updated); 
     setNewTodo("");
   };
 
   const toggleTodo = (id) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, done: !t.done } : t));
+    const updated = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+    setTodos(updated);
+    saveTodosToBackend(updated); 
   };
 
   const deleteTodo = (id) => {
-    setTodos(todos.filter(t => t.id !== id));
+    const updated = todos.filter(t => t.id !== id);
+    setTodos(updated);
+    saveTodosToBackend(updated); 
   };
 
   return (
@@ -240,7 +251,7 @@ function AppContent() {
   };
 
   // Sprawdzamy, czy zalogowany użytkownik to konkretnie Twoje konto admina/zarządcy
-  const isTargetAdminAccount = user?.email === "1@1";
+  const isTargetAdminAccount = user?.id === 2;
 
   return (
     <>
@@ -298,6 +309,7 @@ function AppContent() {
                 <Route path="/tickets" element={<PrivateRoute><PageWrapper><TicketsPage /></PageWrapper></PrivateRoute>} />
                 <Route path="/livechat" element={<PrivateRoute><PageWrapper><LiveChatPage /></PageWrapper></PrivateRoute>} />
                 <Route path="/poczta" element={<PrivateRoute><PageWrapper><Mailbox /></PageWrapper></PrivateRoute>} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/auth" element={<Navigate to="/" />} />
                 <Route path="*" element={user ? <Navigate to="/" /> : <Navigate to="/auth" />} />
               </Routes>

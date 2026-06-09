@@ -287,12 +287,26 @@ export const translations = {
             inbox: 'Odebrane',
             sent: 'Wysłane',
             trash: 'Kosz',
-            noMessage: 'Wybierz wiadomość z listy, aby przeczytać',
+            nomessage: 'Wybierz wiadomość z listy, aby przeczytać',
             from: 'Od:',
             date: 'Data:',
             loading: 'Ładowanie wiadomości...',
-            empty: 'Brak wiadomości.',
-            unreadDot: '🔴'
+            emptyfolder: 'Brak wiadomości.',
+            unreadDot: '🔴',
+            deletepermanently: "❌ Usuń trwale",
+            movetotrash: "🗑️ Przenieś do kosza",
+            loading: "Ładowanie...",    
+            noMessage: "Brak wiadomości w tym folderze",
+            from: "Od:",
+            date: "Data:",
+            newMessageTitle: "Nowa wiadomość",
+            cancel: "Anuluj",
+            send: "Wyślij",
+            sendError: "Nie udało się wysłać wiadomości.",
+            recipientLabel: "E-mail odbiorcy:",
+            recipientPlaceholder: "np. jan.kowalski@domain.pl",
+            subjectLabel: "Temat:",
+            contentLabel: "Treść:"
         }
     },
     EN: {
@@ -597,8 +611,23 @@ export const translations = {
             from: 'From:',
             date: 'Date:',
             loading: 'Loading messages...',
-            empty: 'No messages.',
-            unreadDot: '🔴'
+            emptyfolder: 'No messages.',
+            unreadDot: '🔴',
+            deletepermanently: "❌ Delete permanently",
+            movetotrash: "🗑️ Move to trash",
+            loading: "Loading...",    
+            noMessage: "No messages in this folder",
+            from: "From:",
+            date: "Date:",
+            newMessageTitle: "New Message",
+            cancel: "Cancel",
+            send: "Send",
+            sendError: "Failed to send messages.",
+            recipientLabel: "Recipient's E-mail:",
+            recipientPlaceholder: "e.g. jan.kowalski@domain.pl",
+            subjectLabel: "Subject:",
+            contentLabel: "Content:",
+            nomessageselected: "Select a message from the list to read."
         }
     },
     RU: {
@@ -912,7 +941,21 @@ export const translations = {
             date: 'Дата:',
             loading: 'Загрузка сообщений...',
             empty: 'Нет сообщений.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Удалить навсегда",
+            movetotrash: "🗑️ Переместить в корзину",
+            loading: "Загрузка...",    
+            noMessage: "Выберите сообщение из списка для чтения",
+            from: "От:",
+            date: "Дата:",
+            newMessageTitle: "Новое сообщение",
+            cancel: "Отмена",
+            send: "Отправить",
+            sendError: "Не удалось отправить сообщения.",
+            recipientLabel: "E-mail получателя:",
+            recipientPlaceholder: "например jan.kowalski@domain.pl",
+            subjectLabel: "Тема:",    
+            contentLabel: "Содержание:"
         }
     },
     IT: {
@@ -1224,7 +1267,21 @@ export const translations = {
             date: 'Data:',
             loading: 'Caricamento messaggi...',
             empty: 'Nessun messaggio.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Elimina definitivamente",
+            movetotrash: "🗑️ Sposta nel cestino",
+            loading: "Caricamento...",    
+            noMessage: "Nessun messaggio in questa cartella",
+            from: "Da:",
+            date: "Data:",
+            newMessageTitle: "Nuovo Messaggio",
+            cancel: "Annulla",
+            send: "Invia",
+            sendError: "Impossibile inviare i messaggi.",
+            recipientLabel: "E-mail del destinatario:",
+            recipientPlaceholder: "ad es. jan.kowalski@domain.pl",
+            subjectLabel: "Oggetto:",    
+            contentLabel: "Contenuto:"
         }
     },
     ES: {
@@ -1538,7 +1595,21 @@ export const translations = {
             date: 'Fecha:',
             loading: 'Cargando mensajes...',
             empty: 'No hay mensajes.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Borrar permanentemente",
+            movetotrash: "🗑️ Mover a la papelera",
+            loading: "Cargando...",    
+            noMessage: "No hay mensajes en esta carpeta",
+            from: "De:",
+            date: "Fecha:",
+            newMessageTitle: "Nuevo Mensaje",
+            cancel: "Cancelar",
+            send: "Enviar",
+            sendError: "No se pudieron enviar los mensajes.",
+            recipientLabel: "E-mail del destinatario:",    
+            recipientPlaceholder: "ej. jan.kowalski@domain.pl",
+            subjectLabel: "Asunto:",
+            contentLabel: "Contenido:"
         }
     },
     OLD_PL: {
@@ -1851,7 +1922,21 @@ export const translations = {
             date: 'Dnia:',
             loading: 'Wypatrywanie gońców na gościńcu...',
             empty: 'Pusto w skrzynce, cisza w królestwie.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Usuń na zawsze",
+            movetotrash: "🗑️ Przenieś do kosza",
+            loading: "Ładowanie...",    
+            noMessage: "Wybierz wiadomość z listy, aby ją przeczytać",
+            from: "Kto śle:",
+            date: "Dnia:",
+            newMessageTitle: "Nowa wiadomość",
+            cancel: "Anuluj",
+            send: "Wyślij",
+            sendError: "Nie udało się wysłać wiadomości.",
+            recipientLabel: "Gołąb odbiorcy:",
+            recipientPlaceholder: "np. jan.kowalski@domain.pl",
+            subjectLabel: "Temat:",
+            contentLabel: "Treść:"
         }
     },
     US_FREEDOM: {
@@ -2165,7 +2250,22 @@ export const translations = {
             date: 'Timestamp:',
             loading: 'Tapping lines...',
             empty: 'Radio silence.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Delete permanently",
+            movetotrash: "🗑️ Move to trash",
+            loading: "Loading...",    
+            noMessage: "No messages in this folder",
+            from: "From:",
+            date: "Date:",
+            newMessageTitle: "New Message",
+            cancel: "Cancel",
+            send: "Send",
+            sendError: "Failed to send messages.",
+            recipientLabel: "Recipient's E-mail:",
+            recipientPlaceholder: "e.g. jan.kowalski@domain.pl",
+            subjectLabel: "Subject:",
+            contentLabel: "Content:",
+            nomessageselected: "Select a message from the list to read."
         }
     },
     DE: {
@@ -2469,7 +2569,21 @@ export const translations = {
             date: 'Datum:',
             loading: 'Lade Nachrichten...',
             empty: 'Keine Nachrichten.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Nachricht dauerhaft löschen",
+            movetotrash: "🗑️ In den Papierkorb verschieben",
+            loading: "Lade...",    
+            noMessage: "Keine Nachrichten in diesem Ordner",
+            from: "Von:",
+            date: "Datum:",
+            newMessageTitle: "Neue Nachricht",
+            cancel: "Abbrechen",
+            send: "Senden",
+            sendError: "Nachrichten konnten nicht gesendet werden.",
+            recipientLabel: "Empfänger E-Mail:",
+            recipientPlaceholder: "z.B. jan.kowalski@domain.pl",
+            subjectLabel: "Betreff:",
+            contentLabel: "Inhalt:"
         }
     },
     JP: {
@@ -2775,7 +2889,21 @@ export const translations = {
             date: '日付:',
             loading: 'メッセージを読み込み中...',
             empty: 'メッセージはありません。',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ メッセージを完全に削除",
+            movetotrash: "🗑️ メッセージをゴミ箱に移動",
+            loading: "読み込み中...",    
+            noMessage: "このフォルダにメッセージはありません",
+            from: "送信元:",
+            date: "日付:",
+            newMessageTitle: "新規メッセージ",
+            cancel: "キャンセル",
+            send: "送信",
+            sendError: "メッセージを送信できませんでした。",    
+            recipientLabel: "宛先メールアドレス:",
+            recipientPlaceholder: "例：jan.kowalski@domain.pl",
+            subjectLabel: "件名:",
+            contentLabel: "内容:"
         }
     },
     PIRATE: {
@@ -3081,7 +3209,21 @@ export const translations = {
             date: 'Date:',
             loading: 'Fetching scrolls from the sea...',
             empty: 'The chest be empty.',
-            unreadDot: '🔴'
+            unreadDot: '🔴',
+            deletepermanently: "❌ Delete permanently",
+            movetotrash: "🗑️ Move to trash",
+            loading: "Loading...",    
+            noMessage: "No messages in this folder",
+            from: "From:",
+            date: "Date:",
+            newMessageTitle: "New Message",
+            cancel: "Cancel",
+            send: "Send",
+            sendError: "Failed to send messages.",
+            recipientLabel: "Recipient's E-mail:",
+            recipientPlaceholder: "e.g. jan.kowalski@domain.pl",
+            subjectLabel: "Subject:",    
+            contentLabel: "Content:"
         }
     },
 };
@@ -3139,7 +3281,13 @@ export const adm_translations = {
         ticketReplyLabel: 'Treść odpowiedzi (widoczna dla gracza)',
         ticketReplyPlaceholder: 'Wpisz odpowiedź...',
         ticketSendReply: 'Wyślij Odpowiedź',
-        roleGroup: 'Rola: {role}'
+        roleGroup: 'Rola: {role}',
+        resultsPerPage: "Wyników na stronę:",
+        loadMore: "Pokaż więcej",
+        shownOfY: " z ",
+        shownX: "Pokazano: ",
+        sortOnline: "Online najpierw ( Alfabetycznie )",
+        lenghtmessage: "Pokazano pierwsze {pageSize} z {usersInRole.length} użytkowników z rangi {role}. Zwiększ limit na stronie, aby zobaczyć więcej.",
     },
     US_FREEDOM: {
         adminTitle: '🦅 RailScope Freedom Command Center 🦅',
@@ -3193,7 +3341,13 @@ export const adm_translations = {
         ticketReplyLabel: 'Message content (will be dropped via helicopter to the civilian)',
         ticketReplyPlaceholder: 'Type freedom here...',
         ticketSendReply: 'Send Capitalist Reply 🚀',
-        roleGroup: 'Rank: {role}'
+        shownOfY: ' of ',
+        shownX: 'Shown:',
+        loadMore: 'Load more',
+        resultsPerPage: 'Results per page:',
+        sortOnline: 'Online first ( Alphabetical )',
+        roleGroup: 'Rank: {role}',
+        lenghtmessage: "Shown first {pageSize} of {usersInRole.length} users from rank {role}. Increase page size to see more."
     },
     JP: {
         adminTitle: 'RailScope 管理パネル',
@@ -3247,7 +3401,13 @@ export const adm_translations = {
         ticketReplyLabel: '返信内容 (プレイヤーの画面に表示されます)',
         ticketReplyPlaceholder: 'ここに返信内容を入力してください...',
         ticketSendReply: '返信を送信する',
-        roleGroup: 'ロール: {role}'
+        shownOfY: ' / ',
+        shownX: '表示中:',
+        loadMore: 'もっと読み込む',
+        resultsPerPage: 'ページあたりの結果数:',
+        sortOnline: 'オンライン順 ( アルファベット順 )',
+        roleGroup: 'ロール: {role}',
+        lenghtmessage: "最初から {pageSize} 件の {usersInRole.length} 人のユーザーを表示しています。ページサイズを増やすとさらに表示できます。"
     },
     IT: {
         adminTitle: 'Pannello di Amministrazione RailScope',
@@ -3301,7 +3461,13 @@ export const adm_translations = {
         ticketReplyLabel: 'Contenuto della risposta (visibile al giocatore)',
         ticketReplyPlaceholder: 'Scrivi qui la tua risposta...',
         ticketSendReply: 'Invia Risposta',
-        roleGroup: 'Ruolo: {role}'
+        shownOfY: ' di ',
+        shownX: 'Mostrati:',
+        loadMore: 'Carica altri',
+        resultsPerPage: 'Risultati per pagina:',
+        sortOnline: 'Prima online ( Alfabetico )',
+        roleGroup: 'Ruolo: {role}',
+        lenghtmessage: "Mostrati per primo {pageSize} di {usersInRole.length} utenti dal rango {role}. Aumenta la dimensione della pagina per vedere di più."
     },
     RU: {
         adminTitle: 'Панель администратора RailScope',
@@ -3355,7 +3521,13 @@ export const adm_translations = {
         ticketReplyLabel: 'Содержимое ответа (будет видно игроку)',
         ticketReplyPlaceholder: 'Введите текст ответа...',
         ticketSendReply: 'Отправить ответ',
-        roleGroup: 'Роль: {role}'
+        shownOfY: ' из ',
+        shownX: 'Показано:',
+        loadMore: 'Загрузить еще',
+        resultsPerPage: 'Результатов на странице:',
+        sortOnline: 'Первые в сети ( Алфавит )',
+        roleGroup: 'Роль: {role}',
+        lenghtmessage: "Показано первые {pageSize} из {usersInRole.length} пользователей с рангом {role}. Увеличьте размер страницы, чтобы увидеть больше."
     },
     OLD_PL: {
         adminTitle: 'Zarządzenie i Zwierzchność Najwyższa RailScope',
@@ -3409,6 +3581,12 @@ export const adm_translations = {
         ticketReplyLabel: 'Orędzie do poddanego (widne dla piszącego kmiecia)',
         ticketReplyPlaceholder: 'Wypisz dekret swój i wolę królewską...',
         ticketSendReply: 'Poślij gońca z dekretem',
+        shownOfY: ' z ',
+        shownX: 'Pokazano:',
+        loadMore: 'Pokaż więcej',
+        resultsPerPage: 'Wyników na stronie:',
+        sortOnline: 'Najpierw Online (Alfabetycznie)',
+        lenghtmessage: "Pokazano pierwsze {pageSize} z {usersInRole.length} użytkowników z rangi {role}. Zwiększ limit na stronie, aby zobaczyć więcej.",
         roleGroup: 'Stan: {role}'
     },
     EN: {
@@ -3443,6 +3621,7 @@ export const adm_translations = {
         groupByLabel: 'Group by Roles',
         filterRoleLabel: 'Filter Role:',
         sortDefault: 'Default (Rank + Alphabetical)',
+        sortOnline: 'Online first ( Alphabetical )',
         sortAlpha: 'Alphabetical (A-Z)',
         sortId: 'Registration Order (ID)',
         sortBanned: 'Banned users first',
@@ -3463,7 +3642,12 @@ export const adm_translations = {
         ticketReplyLabel: 'Reply content (visible to player)',
         ticketReplyPlaceholder: 'Type your reply...',
         ticketSendReply: 'Send Reply',
-        roleGroup: 'Role: {role}'
+        roleGroup: 'Role: {role}',
+        resultsPerPage: "Results per page:",
+        loadMore: "Load more",
+        shownX: "Shown:",
+        lenghtmessage: "Shown first {pageSize} of {usersInRole.length} users from rank {role}. Increase page size to see more.",
+        shownOfY: " of "
     },
     DE: {
         adminTitle: 'Admin-Panel',
@@ -3517,6 +3701,12 @@ export const adm_translations = {
         ticketReplyLabel: 'Antwortinhalt (für Spieler sichtbar)',
         ticketReplyPlaceholder: 'Geben Sie Ihre Antwort ein...',
         ticketSendReply: 'Antwort senden',
+        shownOfY: ' von ',
+        shownX: 'Angezeigt:',
+        loadMore: 'Mehr laden',
+        resultsPerPage: 'Ergebnisse pro Seite:',    
+        sortOnline: 'Online zuerst ( Alphabetisch )',
+        lenghtmessage: "Ersten {pageSize} von {usersInRole.length} Benutzern aus Rang {role} angezeigt. Erhöhen Sie die Seitengröße, um mehr zu sehen.",
         roleGroup: 'Rolle: {role}'
     },
     ES: {
@@ -3571,6 +3761,12 @@ export const adm_translations = {
         ticketReplyLabel: 'Contenido de la respuesta (visible para el jugador)',
         ticketReplyPlaceholder: 'Escribe tu respuesta...',
         ticketSendReply: 'Enviar respuesta',    
+        shownOfY: ' de ',
+        shownX: 'Mostrado:',
+        loadMore: 'Cargar más',
+        resultsPerPage: 'Resultados por página:',
+        sortOnline: 'Primero en línea ( Alfabético )',
+        lenghtmessage: "Mostrado primero {pageSize} de {usersInRole.length} usuarios del rango {role}. Aumenta el tamaño de la página para ver más.",
         roleGroup: 'Rol: {role}'
     },
     OLD_PL: {
@@ -3610,6 +3806,12 @@ export const adm_translations = {
         sortBanned: 'Najpierw wyklęte sługi',
         allRoles: 'Wszelkie stany',
         onlyBanned: 'Jeno wyklęci',
+        shownOfY: ' z ',
+        shownX: 'Pokazano:',
+        loadMore: 'Pokaż więcej',
+        resultsPerPage: 'Wyników na stronie:',
+        sortOnline: 'Najpierw Online (Alfabetycznie)',
+        lenghtmessage: "Pokazano pierwsze {pageSize} z {usersInRole.length} użytkowników z rangi {role}. Zwiększ limit na stronie, aby zobaczyć więcej.",
         roleGroup: 'Stan: {role}'
     },
     PIRATE: {
@@ -3664,14 +3866,20 @@ export const adm_translations = {
         ticketReplyLabel: 'Reply Content (visible to player)',
         ticketReplyPlaceholder: 'Write your reply...',
         ticketSendReply: 'Send Reply',
+        shownOfY: ' of ',
+        shownX: 'Shown:',
+        loadMore: 'Load more',
+        resultsPerPage: 'Results per page:',
+        sortOnline: 'Online first ( Alphabetical )',
+        lenghtmessage: "Shown first {pageSize} of {usersInRole.length} users from rank {role}. Increase page size to see more.",
         roleGroup: 'Rank: {role}'
     }
 };
 
 export const mailbox_translations = {
     PL: {
-        admin_reply_subject: "Odpowiedź kapitana na zgłoszenie",
-        admin_reply_content: "Otrzymałeś odpowiedź na zgłoszenie \"{ticketTitle}\". Check your logbook!",
+        admin_reply_subject: "Odpowiedź na zgłoszenie",
+        admin_reply_content: "Otrzymałeś odpowiedź na zgłoszenie \"{ticketTitle}\".",
         
         ticket_deleted_subject: "Zgłoszenie usunięte z rejestru",
         ticket_deleted_content: "Twoje zgłoszenie \"{ticketTitle}\" zostało permanentnie usunięte przez administrację.",
@@ -3682,10 +3890,10 @@ export const mailbox_translations = {
         ticket_in_progress_subject: "Zgłoszenie w trakcie realizacji",
         ticket_in_progress_content: "Sprawa \"{ticketTitle}\" trafiła na warsztat i jest aktualnie przetwarzana.",
         
-        ticket_created_subject: "Zgłoszenie trafiło na pokład",
+        ticket_created_subject: "Zgłoszenie trafiło do administracji",
         ticket_created_content: "Dziękujemy za zgłoszenie: \"{ticketTitle}\". Zajmiemy się nim niezwłocznie.",
         
-        user_ban_subject: "Konto zablokowane (Marooned!)",
+        user_ban_subject: "Konto zablokowane",
         user_ban_content: "Twoje konto zostało zawieszone przez administratora do: {bannedUntil}.",
         
         user_unban_subject: "Konto odblokowane",
@@ -3727,7 +3935,7 @@ export const mailbox_translations = {
         
         role_changed_subject: "Ship rank updated",
         role_changed_content: "Your system rank has been changed to: {newRole}.",
-        
+
         profile_updated_subject: "Profile data modification",
         profile_updated_content: "Your basic profile data (username or messenger address) has been updated by the administrator."
     }

@@ -1,6 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import io from 'socket.io-client';
 
 const AuthContext = createContext();
+
+// Globalna instancja socketu dla całego ekosystemu RailScope (port 8080)
+export const socket = io('http://localhost:8080', {
+    autoConnect: true,
+    reconnection: true
+});
 
 export const isPlusAccess = (role) => ['PLUS', 'ADMIN', 'ZARZADCA'].includes(role);
 export const isAdminRole = (role) => ['ADMIN', 'ZARZADCA'].includes(role);
@@ -44,12 +51,36 @@ export const AuthProvider = ({ children }) => {
     const [theme, setTheme] = useState('#00ffd5');
 
     useEffect(() => {
+        if (!socket) return;
+
+        const handleForceLogout = (data) => {
+            socket.disconnect();
+
+            logout();
+
+            alert(data.reason || 'Zostałeś wylogowany, ponieważ wykryto logowanie z innej sesji.');
+
+            window.location.href = '/login';
+        };
+
+        socket.on('force_logout', handleForceLogout);
+
+        return () => {
+            socket.off('force_logout', handleForceLogout);
+        };
+    }, []);
+
+    useEffect(() => {
         const savedUser = localStorage.getItem('railscope_user');
         if (savedUser) {
             const parsedUser = JSON.parse(savedUser);
-            setUser({ ...parsedUser, role: parsedUser.role || 'USER' });
+            const fullUser = { ...parsedUser, role: parsedUser.role || 'USER' };
+            setUser(fullUser);
             applyTheme(parsedUser.settings || {});
             if (parsedUser.settings?.theme) setTheme(parsedUser.settings.theme);
+            
+            // Informowanie serwera o obecności po odświeżeniu aplikacji
+            socket.emit('user_ident', fullUser);
         }
         setLoading(false);
     }, []);
@@ -60,9 +91,14 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('railscope_user', JSON.stringify(normalizedUserData));
         applyTheme(normalizedUserData.settings || {});
         if (normalizedUserData.settings?.theme) setTheme(normalizedUserData.settings.theme);
+        
+        // Zgłoszenie sesji online natychmiast po zalogowaniu
+        socket.emit('user_ident', normalizedUserData);
     };
 
     const logout = () => {
+        // Poinformowanie serwera o wylogowaniu przed wyczyszczeniem stanu
+        socket.emit('user_logout');
         setUser(null);
         setTheme('#00ffd5');
         applyTheme('#00ffd5');

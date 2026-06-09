@@ -98,8 +98,10 @@ const triggerAutoBan = async () => {
 
         if (socketRef.current && user) {
             socketRef.current.emit('send_message', {
-                user_id: user.id, 
-                text: newMessage.trim()
+                senderId: user.id,
+                text: newMessage.trim(),
+                username: user.username, 
+                role: user.role || 'USER'
             });
         }
 

@@ -164,6 +164,10 @@
 
 .msg-tag.system { background: rgba(0, 191, 255, 0.15); color: #00bfff; }
 .msg-tag.tech { background: rgba(0, 255, 213, 0.15); color: #00ffd5; }
+.msg-tag.admin { background: rgba(255, 0, 0, 0.15); color: #ff0000; }
+.msg-tag.zarzadca { background: rgba(255, 0, 85, 0.15); color: #ff0055; }
+.msg-tag.support { background: rgba(0, 255, 100, 0.15); color: #00ff64; }
+.msg-tag.użytkownik { background: rgba(0, 255, 213, 0.15); color: #00ffd5; }
 
 .reader-panel {
     flex: 1;
@@ -206,4 +210,122 @@
     align-items: center;
     height: 100%;
     color: #555;
+}
+
+/* Przycisk usuwania w panelu czytnika */
+.mailbox-delete-btn {
+    background: rgba(255, 0, 85, 0.1);
+    border: 1px solid #ff0055;
+    color: #ff0055;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mailbox-delete-btn:hover {
+    background: #ff0055;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Modal do komponowania nowych wiadomości */
+.mailbox-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.mailbox-modal-card {
+    background: #1c1c21;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    max-width: 550px;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.mailbox-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.mailbox-input-group label {
+    font-size: 0.85rem;
+    color: #00ffd5;
+    font-weight: 600;
+}
+
+.mailbox-input-group input, 
+.mailbox-input-group textarea {
+    background: #121215;
+    border: 1px solid #2e2e34;
+    border-radius: 8px;
+    padding: 10px;
+    color: #fff;
+    font-family: inherit;
+}
+
+.mailbox-input-group input:focus, 
+.mailbox-input-group textarea:focus {
+    outline: none;
+    border-color: #00ffd5;
+    box-shadow: 0 0 8px rgba(0, 255, 213, 0.2);
+}
+
+.mailbox-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.mailbox-modal-actions .cancel-btn {
+    background: transparent;
+    border: 1px solid #3a3a42;
+    color: #aaa;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.mailbox-modal-actions .submit-btn {
+    background: linear-gradient(135deg, #00ffd5 0%, #00bfa5 100%);
+    border: none;
+    color: #141414;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Alerty o błędach w bazie */
+.mailbox-error-alert {
+    background: rgba(255, 0, 85, 0.15);
+    border-left: 4px solid #ff0055;
+    color: #ff4081;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+.mailbox-info-text {
+    text-align: center;
+    color: #555;
+    margin-top: 40px;
+    font-style: italic;
 }

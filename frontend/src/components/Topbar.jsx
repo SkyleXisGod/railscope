@@ -29,6 +29,8 @@ export default function Topbar({ onToggleSidebar }) {
   const [systemOnline, setSystemOnline] = useState(true);
   const [displayStatus, setDisplayStatus] = useState('LIVE SYSTEM ONLINE');
   const [statusPhase, setStatusPhase] = useState('idle');
+  const [isGlitching, setIsGlitching] = useState(false); // Nowy stan do animacji wibracji CSS
+
   const statusIntervalRef = useRef(null);
   const statusTimeoutRef = useRef(null);
   const currentTargetRef = useRef(displayStatus);
@@ -63,6 +65,42 @@ export default function Topbar({ onToggleSidebar }) {
       }, delay);
     }, 300);
   };
+
+  // --- EFEKT AUTOMATYCZNEGO GLITCHOWANIA CO JAKIŚ CZAS ---
+  useEffect(() => {
+    const triggerRandomGlitch = () => {
+      // Nie glitchuj, jeśli aktualnie trwa pełna animacja zmiany statusu (online/offline)
+      if (statusPhase === 'scramble' || statusPhase === 'fade') return;
+
+      const targetText = currentTargetRef.current;
+      setIsGlitching(true);
+      
+      let glitchTicks = 0;
+      // Szybki interwał zmieniający losowe litery przez ok. 300-400ms
+      const glitchInterval = setInterval(() => {
+        // Losowo miksujemy litery (odkrywając np. tylko połowę tekstu, żeby zachować czytelność)
+        const halfLength = Math.floor(targetText.length / 2);
+        setDisplayStatus(getScrambled(targetText, Math.floor(Math.random() * halfLength) + 2));
+        
+        glitchTicks++;
+        if (glitchTicks > 8) { // Okazjonalne 8 mignięć
+          clearInterval(glitchInterval);
+          setDisplayStatus(targetText);
+          setIsGlitching(false);
+        }
+      }, 40);
+    };
+
+    // Odpala glitch co losowy czas między 7 a 15 sekund, żeby nie było to zbyt monotonne
+    const intervalId = setInterval(() => {
+      if (Math.random() > 0.3) { // 70% szans na wywołanie w danym interwale
+        triggerRandomGlitch();
+      }
+    }, 8000);
+
+    return () => clearInterval(intervalId);
+  }, [statusPhase]);
+  // ------------------------------------------------------
 
   useEffect(() => {
     const checkSystemStatus = async () => {
@@ -123,7 +161,8 @@ export default function Topbar({ onToggleSidebar }) {
       </div>
 
       <div className="topbar-right">
-        <div className={`system-status ${systemOnline ? 'online' : 'offline'}`}>
+        {/* Dynamicznie doklejamy klasę 'glitch-active' gdy stan isGlitching jest true */}
+        <div className={`system-status ${systemOnline ? 'online' : 'offline'} ${isGlitching ? 'glitch-active' : ''}`}>
           <span className={`status-dot ${systemOnline ? 'active' : 'inactive'}`}></span>
           <span className={`status-label ${statusPhase}`}>{displayStatus}</span>
         </div>
@@ -187,17 +226,17 @@ export default function Topbar({ onToggleSidebar }) {
               </div>
               <ul className="dropdown-menu">
                 <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
-                  <i className="fas fa-user-circle"></i> {t.my_profile}
+                  <i className="fas fa-user-circle"></i> 👤 {t.my_profile}
                 </li>
                 <li onClick={() => { navigate("/ustawienia"); setIsUserMenuOpen(false); }}>
-                  <i className="fas fa-cog"></i> {t.settings}
+                  <i className="fas fa-cog"></i> ⚙️ {t.settings}
                 </li>
                 <li onClick={() => { navigate("/tickets"); setIsUserMenuOpen(false); }}>
-                  <i className="fas fa-ticket-alt"></i> {t.my_tickets}
+                  <i className="fas fa-ticket-alt"></i> 📧 {t.my_tickets}
                 </li>
                 {user?.role === 'ADMIN' || user?.role === 'ZARZADCA' ? (
                   <li onClick={() => { navigate("/admin"); setIsUserMenuOpen(false); }}>
-                    <i className="fas fa-tools"></i> {t.kr_admin_panel}
+                    <i className="fas fa-tools"></i> 🛡️ {t.kr_admin_panel}
                   </li>
                 ) : null}
                 <li className="divider"></li>

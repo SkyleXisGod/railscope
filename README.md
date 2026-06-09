@@ -1,8 +1,8 @@
 # 🚄 RailScope (Testing Branch)
 
-RailScope to zaawansowana aplikacja webowa oparta na React i Vite, przeznaczona dla miłośników kolei, automatyki kolejowej oraz symulacji. Oferuje m.in. dynamiczne mapy, statystyki pojazdów, bazy danych stacji, system autoryzacji Supabase oraz dedykowaną strefę gier zręcznościowych (Tavern/Arcade) z pełnym systemem lokalizacji w 10 językach.
+RailScope to zaawansowana aplikacja webowa oparta na React i Vite, przeznaczona dla miłośników kolei, automatyki kolejowej oraz symulacji. Oferuje m.in. dynamiczne mapy, statystyki pojazdów, bazy danych stacji, system autoryzacji oraz dedykowaną strefę gier zręcznościowych (Tavern/Arcade) z pełnym systemem lokalizacji w 10 językach.
 
-Ta gałąź (testing) służy do wdrażania i testowania nowych mechanik, systemów tłumaczeń oraz optymalizacji komponentów gier przed połączeniem z głównym wydaniem.
+Ta gałąź służy do wdrażania i testowania nowych mechanik, systemów tłumaczeń oraz optymalizacji komponentów gier przed połączeniem z głównym wydaniem.
 
 ---
 
@@ -21,7 +21,7 @@ Zanim przejdziesz do instalacji, upewnij się, że na Twoim komputerze zainstalo
 ### Krok 1: Klonowanie repozytorium
 Otwórz terminal (np. Git Bash, CMD lub terminal wbudowany w VS Code) i pobierz repozytorium, przechodząc od razu na odpowiednią gałąź testową:
 
-git clone -b testing https://github.com/SkyleXisGod/railscope.git
+git clone https://github.com/SkyleXisGod/railscope.git
 
 # Wejdź do katalogu projektu
 cd railscope
@@ -29,10 +29,14 @@ cd railscope
 ---
 
 ### Krok 2: Instalacja zależności (Pakietów)
-Wszystkie pakiety instalujemy w głównym katalogu projektu, gdzie znajduje się plik package.json:
+Wszystkie pakiety instalujemy w głównym katalogu ( i podfolderach backend / frontend ) projektu, gdzie znajduje się plik package.json:
 
 npm install
-
+cd backend
+npm install
+cd ..
+cd frontend
+npm install
 ---
 
 ### Krok 3: Konfiguracja plików środowiskowych .env

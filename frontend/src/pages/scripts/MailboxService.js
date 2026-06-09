@@ -1,8 +1,6 @@
-// MailboxService.js
 import axios from 'axios';
 import { mailbox_translations } from '../constants/translations';
 
-// Spójne klucze (bez spacji, dopasowane do wywołań w AdminPage)
 export const NOTIFICATION_TYPES = {
     ADMIN_REPLY: 'ADMIN_REPLY',
     TICKET_CLOSED: 'TICKET_CLOSED',
@@ -58,52 +56,61 @@ export const sendMailboxNotification = async (type, recipientId, data = {}) => {
         case NOTIFICATION_TYPES.ADMIN_REPLY:
             subject = mt.admin_reply_subject;
             content = mt.admin_reply_content.replace('{ticketTitle}', ticketTitle);
-            tag = "Tech";
+            tag = "Support";
             break;
 
         case NOTIFICATION_TYPES.TICKET_DELETED:
             subject = mt.ticket_deleted_subject;
             content = mt.ticket_deleted_content.replace('{ticketTitle}', ticketTitle);
+            tag = "Support";
             break;
 
         case NOTIFICATION_TYPES.TICKET_CLOSED:
             subject = mt.ticket_closed_subject;
             content = mt.ticket_closed_content.replace('{ticketTitle}', ticketTitle);
+            tag = "Support";
             break;
 
         case NOTIFICATION_TYPES.TICKET_IN_PROGRESS:
             subject = mt.ticket_in_progress_subject;
             content = mt.ticket_in_progress_content.replace('{ticketTitle}', ticketTitle);
+            tag = "Support";
             break;
 
         case NOTIFICATION_TYPES.TICKET_CREATED:
             subject = mt.ticket_created_subject;
             content = mt.ticket_created_content.replace('{ticketTitle}', ticketTitle);
+            tag = "System";
             break;
 
         case NOTIFICATION_TYPES.USER_BAN:
             subject = mt.user_ban_subject;
             content = mt.user_ban_content.replace('{bannedUntil}', formattedBanDate);
+            tag = "Admin";
             break;
 
         case NOTIFICATION_TYPES.USER_UNBAN:
             subject = mt.user_unban_subject;
             content = mt.user_unban_content;
+            tag = "Admin";
             break;
 
         case NOTIFICATION_TYPES.BAN_MODIFIED:
             subject = mt.ban_modified_subject;
             content = mt.ban_modified_content.replace('{bannedUntil}', formattedBanDate);
+            tag = "Admin";
             break;
 
         case NOTIFICATION_TYPES.ROLE_CHANGED:
             subject = mt.role_changed_subject;
             content = mt.role_changed_content.replace('{newRole}', newRole);
+            tag = "Admin";
             break;
 
         case NOTIFICATION_TYPES.PROFILE_UPDATED_BY_ADMIN:
             subject = mt.profile_updated_subject;
             content = mt.profile_updated_content;
+            tag = "Admin";
             break;
 
         default:

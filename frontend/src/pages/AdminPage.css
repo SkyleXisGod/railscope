@@ -153,11 +153,13 @@
 
 .admin-list-wrapper {
     flex: 1;
+    overflow-x: hidden;
     overflow-y: auto;
     padding-bottom: 40px;
 }
 
 .admin-table {
+    table-layout: fixed;
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 8px; 
@@ -165,6 +167,7 @@
 }
 
 .admin-table th {
+    text-overflow: ellipsis;
     text-align: left;
     color: var(--text-secondary);
     padding: 10px 24px;
@@ -638,3 +641,101 @@
 .btn-work:hover { background: #ffbc33; }
 .btn-close { background: rgba(255, 255, 255, 0.1); color: #fff; }
 .btn-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* Stylizacja statusu Online/Offline */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge.online {
+  background-color: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+}
+
+.status-badge.offline {
+  background-color: rgba(149, 165, 166, 0.15);
+  color: #95a5a6;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.admin-table-row.row-online .status-dot {
+    background-color: #2ecc71 !important;
+    box-shadow: 0 0 8px #2ecc71;
+}
+
+.admin-table-row.row-offline .status-dot {
+    background-color: #ff0000 !important;
+    box-shadow: none;
+}
+
+.pagination-container {
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 0;
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-limit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.pagination-select {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    font-weight: 600;
+}
+
+.pagination-select:focus {
+    border-color: #00ffd5; /* Kolor przewodni aplikacji */
+}
+
+.pagination-info {
+    margin-left: 15px;
+    font-weight: 500;
+}
+
+.load-more-btn {
+    background: rgba(0, 255, 213, 0.1);
+    color: #00ffd5;
+    border: 1px solid rgba(0, 255, 213, 0.3);
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.load-more-btn:hover {
+    background: rgba(0, 255, 213, 0.2);
+    border-color: #00ffd5;
+    transform: translateY(-1px);
+}
+
+.load-more-btn:active {
+    transform: translateY(0);
+}
