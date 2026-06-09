@@ -3667,3 +3667,68 @@ export const adm_translations = {
         roleGroup: 'Rank: {role}'
     }
 };
+
+export const mailbox_translations = {
+    PL: {
+        admin_reply_subject: "Odpowiedź kapitana na zgłoszenie",
+        admin_reply_content: "Otrzymałeś odpowiedź na zgłoszenie \"{ticketTitle}\". Check your logbook!",
+        
+        ticket_deleted_subject: "Zgłoszenie usunięte z rejestru",
+        ticket_deleted_content: "Twoje zgłoszenie \"{ticketTitle}\" zostało permanentnie usunięte przez administrację.",
+        
+        ticket_closed_subject: "Zgłoszenie zamknięte",
+        ticket_closed_content: "Zgłoszenie \"{ticketTitle}\" zostało pomyślnie rozwiązane i zamknięte.",
+        
+        ticket_in_progress_subject: "Zgłoszenie w trakcie realizacji",
+        ticket_in_progress_content: "Sprawa \"{ticketTitle}\" trafiła na warsztat i jest aktualnie przetwarzana.",
+        
+        ticket_created_subject: "Zgłoszenie trafiło na pokład",
+        ticket_created_content: "Dziękujemy za zgłoszenie: \"{ticketTitle}\". Zajmiemy się nim niezwłocznie.",
+        
+        user_ban_subject: "Konto zablokowane (Marooned!)",
+        user_ban_content: "Twoje konto zostało zawieszone przez administratora do: {bannedUntil}.",
+        
+        user_unban_subject: "Konto odblokowane",
+        user_unban_content: "Wróciłeś na pokład! Twoje konto zostało pomyślnie odblokowane przez administratora.",
+        
+        ban_modified_subject: "Zmiana wyroku blokady konta",
+        ban_modified_content: "Administrator zmodyfikował czas trwania blokady Twojego konta. Nowa data końcowa to: {bannedUntil}.",
+        
+        role_changed_subject: "Aktualizacja rangi na okręcie",
+        role_changed_content: "Twoja ranga systemowa została zmieniona na: {newRole}.",
+        
+        profile_updated_subject: "Modyfikacja danych profilu",
+        profile_updated_content: "Twoje podstawowe dane profilowe (nazwa użytkownika lub e-mail) zostały zaktualizowane przez administratora."
+    },
+    EN: {
+        admin_reply_subject: "Captain's response to your ticket",
+        admin_reply_content: "You have received a reply to your ticket \"{ticketTitle}\". Check your logbook!",
+        
+        ticket_deleted_subject: "Ticket removed from logs",
+        ticket_deleted_content: "Your ticket \"{ticketTitle}\" has been permanently removed by the administration.",
+        
+        ticket_closed_subject: "Ticket closed",
+        ticket_closed_content: "The ticket \"{ticketTitle}\" has been successfully resolved and closed.",
+        
+        ticket_in_progress_subject: "Ticket in progress",
+        ticket_in_progress_content: "The case \"{ticketTitle}\" is now being processed by our crew.",
+        
+        ticket_created_subject: "Ticket brought aboard",
+        ticket_created_content: "Thank you for submitting a ticket: \"{ticketTitle}\". We will look into it shortly.",
+        
+        user_ban_subject: "Account suspended (Marooned!)",
+        user_ban_content: "Your account has been suspended by the administrator until: {bannedUntil}.",
+        
+        user_unban_subject: "Account reinstated",
+        user_unban_content: "Welcome back aboard! Your account has been successfully unbanned by the administrator.",
+        
+        ban_modified_subject: "Sentencing update (Ban modified)",
+        ban_modified_content: "The administrator has modified your suspension period. The new end date is: {bannedUntil}.",
+        
+        role_changed_subject: "Ship rank updated",
+        role_changed_content: "Your system rank has been changed to: {newRole}.",
+        
+        profile_updated_subject: "Profile data modification",
+        profile_updated_content: "Your basic profile data (username or messenger address) has been updated by the administrator."
+    }
+};

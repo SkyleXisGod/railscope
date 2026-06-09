@@ -13,6 +13,8 @@ import net from 'net';
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+// 0. Log system with optional external log terminal
+
 let logSocket = null;
 const connectLogTerminal = () => {
     logSocket = net.connect({ port: 9123 }, () => {
@@ -54,6 +56,9 @@ const logError = (emoji, text, err) => {
     if (err) console.error(`${tag} ${emoji} ${text}`, err);
     else console.error(`${tag} ${emoji} ${text}`);
 };
+
+// 1. Database setup and connection
+
 const db = new sqlite3.Database('./railscope.db', (err) => {
     if (err) logError('❌', 'Database connection error:', err.message);
     else {
@@ -187,6 +192,7 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
     }
 });
 
+// 2. Express server and Socket.IO setup
 const serverStartTime = Date.now();
 
 let plkApiRequestsCount = 0;
@@ -214,9 +220,10 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+// 3. Socket.IO event handling for chat and logging
 
 io.on('connection', (socket) => {
-    feedLog('🔌', `New client connected: ${socket.id}`);
+    logFeed('🔌', `New client connected: ${socket.id}`);
     socket.on('get_chat_history', () => {
         const query = `
             SELECT cm.id, u.username, u.role, u.avatar_url, cm.text, 
@@ -268,9 +275,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        feedLog('🔌', `Client disconnected: ${socket.id}`);
+        logFeed('🔌', `Client disconnected: ${socket.id}`);
     });
 });
+
+// 4. API Endpoint for Message Handling
 
 app.use((req, res, next) => {
     const inboundMsg = `➡️ HTTP ${req.method} ${req.originalUrl}`;
@@ -295,6 +304,7 @@ process.on('unhandledRejection', (reason) => {
     logError('💥', 'Unhandled Rejection', reason);
 });
 
+// 5. API endpoints for showing tickets by user 
 
 app.get("/api/tickets/:userId", (req, res) => {
     const { userId } = req.params;
@@ -303,6 +313,8 @@ app.get("/api/tickets/:userId", (req, res) => {
         res.json(rows);
     });
 });
+
+// 6. API endpoints for creating tickets
 
 app.post("/api/tickets", (req, res) => {
     const { userId, title, category, description } = req.body;
@@ -314,8 +326,10 @@ app.post("/api/tickets", (req, res) => {
             res.json({ success: true, ticketId: this.lastID });
         }
     );
-    feedLog('🎫', `Nowe zgłoszenie od użytkownika ID: ${userId} - ${title} [${category}]`);
+    logFeed('🎫', `Nowe zgłoszenie od użytkownika ID: ${userId} - ${title} [${category}]`);
 });
+
+// 7. API endpoints for admin to view all tickets
 
 app.get("/api/admin/tickets", (req, res) => {
     db.all(`SELECT * FROM tickets ORDER BY createdAt DESC`, [], (err, rows) => {
@@ -323,6 +337,8 @@ app.get("/api/admin/tickets", (req, res) => {
         res.json(rows);
     });
 });
+
+// 8. API endpoints for specific user mailbox (notifications)
 
 app.get('/api/mailbox/:userId', (req, res) => {
     const userId = req.params.userId;
@@ -337,6 +353,8 @@ app.get('/api/mailbox/:userId', (req, res) => {
         res.json(rows);
     });
 });
+
+// 9. API endpoint for sending a notification to a user (e.g., after admin replies to ticket)
 
 app.post('/api/mailbox', (req, res) => {
     const { userId, sender, subject, content, tag, unread } = req.body;
@@ -353,6 +371,8 @@ app.post('/api/mailbox', (req, res) => {
     });
 });
 
+// 10. API endpoint for marking a message as read
+
 app.put('/api/mailbox/:id/read', (req, res) => {
     const messageId = req.params.id;
     
@@ -367,6 +387,8 @@ app.put('/api/mailbox/:id/read', (req, res) => {
     });
 });
 
+// 11. API endpoint for getting count of unread messages
+
 app.get('/api/mailbox/:userId/unread-count', (req, res) => {
     const sql = "SELECT COUNT(*) as count FROM mailbox WHERE userId = ? AND unread = 1";
     db.get(sql, [req.params.userId], (err, row) => {
@@ -377,6 +399,8 @@ app.get('/api/mailbox/:userId/unread-count', (req, res) => {
         res.json({ count: row ? row.count : 0 });
     });
 });
+
+// 12. API endpoints for admin to update ticket status, reply, and delete tickets
 
 app.patch("/api/admin/tickets/:id", (req, res) => {
     const { status } = req.body;
@@ -402,7 +426,7 @@ app.post("/api/admin/tickets/:id/reply", (req, res) => {
         }
     );
 
-    feedLog('💬', `Admin ${adminName} odpowiedział na zgłoszenie ID: ${id} - ${message}`);
+    logFeed('💬', `Admin ${adminName} odpowiedział na zgłoszenie ID: ${id} - ${message}`);
 });
 
 app.delete("/api/admin/tickets/:id", (req, res) => {
@@ -412,8 +436,10 @@ app.delete("/api/admin/tickets/:id", (req, res) => {
         res.json({ success: true, message: "Pomyślnie usunięto zgłoszenie" });
     });
     
-    feedLog('🗑️', `Zgłoszenie ID: ${id} zostało usunięte przez administratora.`);
+    logFeed('🗑️', `Zgłoszenie ID: ${id} zostało usunięte przez administratora.`);
 });
+
+// 13. API endpoint for admin to ban/unban users
 
 app.post("/api/admin/update-user", (req, res) => {
     const { username, bannedUntil} = req.body;
@@ -430,8 +456,10 @@ app.post("/api/admin/update-user", (req, res) => {
         }
     );
 
-    feedLog('⛔', `Użytkownik ${username} został zbanowany do ${bannedUntil ? bannedUntil : 'odwołania'}.`);
+    logFeed('⛔', `Użytkownik ${username} został zbanowany do ${bannedUntil ? bannedUntil : 'odwołania'}.`);
 });
+
+// 14. API endpoints for user authentication, login, register and profile management
 
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
@@ -459,7 +487,7 @@ app.post('/api/login', (req, res) => {
             const userSettings = settings || defaultSettings;
             const { password, ...userSafeData } = user;
             if (!userSafeData.role) userSafeData.role = 'USER';
-            feedLog('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
+            logFeed('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
         });
     });
@@ -480,7 +508,7 @@ app.post('/api/register', async (req, res) => {
             db.run(`INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)`, [userId], (settingsErr) => {
                 if (settingsErr) logError('❌', 'Error creating user settings:', settingsErr.message);
             });
-            feedLog('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
+            logFeed('🆕', `Utworzono konto: ${username || '—'} [ ${email} ]`);
             res.status(201).json({ message: "Account created successfully." });
         });
     } catch (error) {
@@ -543,6 +571,8 @@ app.post('/api/update-profile', async (req, res) => {
     });
 });
 
+// 15. API endpoint for saving user settings
+
 app.post('/api/settings', (req, res) => {
     const { userId, language, theme, accentColor, animations, textColor, textOutline, backgroundMode, mapTheme } = req.body;
     
@@ -560,6 +590,8 @@ app.post('/api/settings', (req, res) => {
         res.json({ message: "Settings saved" });
     });
 });
+
+// 16. API endpoint for deleting account, upgrading user account to premium and cancelling premium subscription
 
 app.delete('/api/users/:id', (req, res) => {
     const { id } = req.params;
@@ -595,12 +627,16 @@ app.post('/api/cancel-premium', (req, res) => {
     });
 });
 
+// 17. API endpoint for fetching PLK API usage statistics (number of requests made by this backend)
+
 app.get("/api/statistics", (req, res) => {
     res.json({
         sessionRequests: plkApiRequestsCount,
         message: "PLK API does not provide a limit-check endpoint. Returning the number of requests made by this backend since last restart."
     });
 });
+
+// 18. Easter egg 
 
 app.post('/api/secret-unlock', (req, res) => {
     const { userId, message } = req.body;
@@ -609,6 +645,8 @@ app.post('/api/secret-unlock', (req, res) => {
 
     res.status(200).json({ success: true });
 });
+
+// 19. GTFS data loading and processing
 
 const PORT = 8080;
 const DATA_DIR = path.join(__dirname, "data");
@@ -776,6 +814,8 @@ const loadGTFS = () => {
     }
 };
 
+// 20. Building in-memory indexes for stations, schedules, and categories
+
 const buildIndexes = () => {
     logInfo('🛠️', ' Building RailScope indexes...');
     trainInfoMap.clear();
@@ -891,6 +931,8 @@ const buildIndexes = () => {
     }
 };
 
+// 21. Initial data download and server startup constants and function
+
 const PLK_API_KEY = process.env.PLK_API_KEY;
 const BASE_URL = process.env.PLK_BASE_URL;
 const plkHeaders = { 'X-API-Key': PLK_API_KEY };
@@ -937,6 +979,8 @@ downloadInitialData().then(() => {
 }).catch(err => {
     logError('❌', 'Critical server start error:', err);
 });
+
+// 22. API endpoints for health check, stations list, timetable for a station, and train search
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", uptime: Math.floor((Date.now() - serverStartTime) / 1000) });
@@ -1170,6 +1214,7 @@ app.get("/api/stations/:id", (req, res) => {
     }
 });
 
+// 23. API endpoints for admin user management and statistics
 app.get('/api/admin/users', (req, res) => {
     db.all(`SELECT id, username, email, role, avatar, premiumDate, bannedUntil FROM users`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: "Database error" });
@@ -1221,6 +1266,8 @@ app.delete('/api/users/:id', (req, res) => {
         });
     });
 });
+
+// 24. API endpoint for statistics
 
 app.get("/api/stats", async (req, res) => {
     try {
@@ -1504,3 +1551,30 @@ app.get("/api/stats", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+// 25. THE END
+
+/* Insert portal logo lol
+
+.,-:;//;:=,
+         . :H@@@MM@M#H/.,+%;,
+      ,/X+ +M@@M@MM%=,-%HMMM@X/,
+     -+@MM; $M@@MH+-,;XMMMM@MMMM@+-
+    ;@M@@M- XM@X;. -+XXXXXHHH@M@M#@/.
+  ,%MM@@MH ,@%=            .---=-=:=,.
+  -@#@@@MX .,              -%HX$$%%%+;
+ =-./@M@M$                  .;@MMMM@MM:
+ X@/ -$MM/                    .+MM@@@M$
+,@M@H: :@:                    . -X#@@@@-
+,@@@MMX, .                    /H- ;@M@M=
+.H@@@@M@+,                    %MM+..%#$.
+ /MMMM@MMH/.                  XM@MH; -;
+  /%+%$XHH@$=              , .H@@@@MX,
+   .=--------.           -%H.,@@@@@MX,
+   .%MM@@@HHHXX$$$%+- .:$MMX -M@@MM%.
+     =XMMM@MM@MM#H;,-+HMM@M+ /MMMX=
+       =%@M@M#@$-.=$@MM@@@M; %M%=
+         ,:+$+-,/H#MMMMMMM@- -,
+               =++%%%%+/:-.                   
+
+*/

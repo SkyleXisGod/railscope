@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { translations, adm_translations } from './constants/translations';
+import { sendMailboxNotification, NOTIFICATION_TYPES } from './scripts/MailboxService';
 import axios from 'axios';
 import './AdminPage.css';
 
@@ -82,32 +83,79 @@ export default function AdminPage() {
                 };
 
                 await axios.put(`http://localhost:8080/api/admin/users/${targetId}`, payload);
+                
                 setUsersList(usersList.map(u => u.id === targetId ? { ...u, bannedUntil: null } : u));
+                
+                await sendMailboxNotification(NOTIFICATION_TYPES.USER_UNBAN, targetId, {
+                    t: t
+                });
+                
+                alert(t.unbanSuccess || 'Użytkownik został pomyślnie odblokowany.');
             } catch (err) {
                 console.error(t.errorUnban || 'Błąd odbanowywania', err);
                 alert(err.response?.data?.error || t.unbanError || 'Nie udało się odbanować użytkownika.');
             }
         }
-    };
+    }
 
     const handleSaveEdit = async (e) => {
         e.preventDefault();
         try {
+            const targetId = editingUser.id;
+            const newBannedUntil = editForm.bannedUntil ? new Date(editForm.bannedUntil).toISOString() : null;
+
             const payload = {
                 ...editForm,
                 callerRole: user.role,
-                bannedUntil: editForm.bannedUntil ? new Date(editForm.bannedUntil).toISOString() : null
+                bannedUntil: newBannedUntil
             };
 
-            await axios.put(`http://localhost:8080/api/admin/users/${editingUser.id}`, payload);
-            setUsersList(usersList.map(u => u.id === editingUser.id ? { ...u, ...payload } : u));
+            await axios.put(`http://localhost:8080/api/admin/users/${targetId}`, payload);
+            
+            setUsersList(usersList.map(u => u.id === targetId ? { ...u, ...payload } : u));
+
+            const userTargetLang = editingUser?.settings?.language || editingUser?.language || null;
+
+            if (editingUser.role !== editForm.role) {
+                await sendMailboxNotification(NOTIFICATION_TYPES.ROLE_CHANGED, targetId, {
+                    newRole: editForm.role,
+                    forcedLang: userTargetLang
+                });
+            }
+
+            const wasBanned = editingUser.bannedUntil && new Date(editingUser.bannedUntil) > new Date();
+            const isNowBanned = newBannedUntil && new Date(newBannedUntil) > new Date();
+
+            if (!wasBanned && isNowBanned) {
+                await sendMailboxNotification(NOTIFICATION_TYPES.USER_BAN, targetId, {
+                    bannedUntil: newBannedUntil, // przekazujemy czysty ISO string, formatowaniem zajmie się serwis
+                    forcedLang: userTargetLang
+                });
+            } else if (wasBanned && !isNowBanned) {
+                await sendMailboxNotification(NOTIFICATION_TYPES.USER_UNBAN, targetId, {
+                    forcedLang: userTargetLang
+                });
+            } else if (wasBanned && isNowBanned && editingUser.bannedUntil !== newBannedUntil) {
+                await sendMailboxNotification(NOTIFICATION_TYPES.BAN_MODIFIED, targetId, {
+                    bannedUntil: newBannedUntil,
+                    forcedLang: userTargetLang
+                });
+            }
+
+            if (editingUser.username !== editForm.username || editingUser.email !== editForm.email) {
+                await sendMailboxNotification(NOTIFICATION_TYPES.PROFILE_UPDATED_BY_ADMIN, targetId, {
+                    forcedLang: userTargetLang
+                });
+            }
+
             setEditingUser(null);
+            alert(t.saveSuccess || "Dane użytkownika zostały pomyślnie zaktualizowane.");
+
         } catch (err) {
-            console.error("Błąd edycji", err);
+            console.error("Błąd edycji użytkownika:", err);
             alert(err.response?.data?.error || t.saveError || "Nie udało się zaktualizować użytkownika.");
         }
     };
-
     const fetchTickets = async () => {
         setLoading(true);
         try {
@@ -123,15 +171,36 @@ export default function AdminPage() {
     const handleStatusChange = async (id, newStatus) => {
         try {
             await axios.patch(`http://localhost:8080/api/admin/tickets/${id}`, { status: newStatus });
+            
+            const targetTicket = ticketsList.find(t => t.id === id);
+            if (targetTicket && newStatus === 'Zamknięty') {
+                await sendMailboxNotification(NOTIFICATION_TYPES.TICKET_CLOSED, targetTicket.userId, {
+                    ticketTitle: targetTicket.title,
+                    forcedLang: targetTicket.userLanguage || null // jeśli ticket posiada zapisany język autora
+                });
+            }
+            if (targetTicket && newStatus === 'W trakcie') {
+                await sendMailboxNotification(NOTIFICATION_TYPES.TICKET_IN_PROGRESS, targetTicket.userId, {
+                    ticketTitle: targetTicket.title,
+                    forcedLang: targetTicket.userLanguage || null
+                });
+            }
+
             fetchTickets();
         } catch (err) {
+            console.error(err);
             alert("Błąd zmiany statusu");
         }
     };
 
     const handleDeleteTicket = async (id) => {
         if (!window.confirm("Usunąć to zgłoszenie na stałe?")) return;
+         const targetTicket = ticketsList.find(t => t.id === id);
         try {
+            await sendMailboxNotification(NOTIFICATION_TYPES.TICKET_DELETED, targetTicket.userId, {
+                    t: t,
+                    ticketTitle: targetTicket.title
+                });
             await axios.delete(`http://localhost:8080/api/admin/tickets/${id}`);
             fetchTickets();
         } catch (err) {
@@ -141,15 +210,29 @@ export default function AdminPage() {
 
     const handleSendReply = async () => {
         if (!replyModal.message.trim()) return;
+        
+        const targetTicket = ticketsList.find(ticket => ticket.id === replyModal.ticketId);
+        if (!targetTicket) {
+            alert("Nie znaleziono powiązanego zgłoszenia.");
+            return;
+        }
+
         try {
             await axios.post(`http://localhost:8080/api/admin/tickets/${replyModal.ticketId}/reply`, {
                 message: replyModal.message,
                 adminName: user.username
             });
+
+            await sendMailboxNotification(NOTIFICATION_TYPES.ADMIN_REPLY, targetTicket.userId, {
+                t: t,
+                ticketTitle: targetTicket.title
+            });
+
             setReplyModal({ isOpen: false, ticketId: null, message: '' });
             fetchTickets();
             alert("Odpowiedź została wysłana!");
         } catch (err) {
+            console.error(err);
             alert("Błąd podczas wysyłania odpowiedzi");
         }
     };
@@ -474,6 +557,7 @@ export default function AdminPage() {
                     )}
                 </div>
             )}
+            
             {editingUser && (
                 <div className="admin-modal-overlay">
                     <div className="admin-modal-card">
@@ -526,10 +610,11 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+            
             {replyModal.isOpen && (
                 <div className="admin-modal-overlay">
                     <div className="admin-modal-card">
-                        <h2>{t.ticketReplyTitle.replace('{id}', replyModal.ticketId)}</h2>
+                        <h2>{t.ticketReplyTitle ? t.ticketReplyTitle.replace('{id}', replyModal.ticketId) : `Odpowiedź na zgłoszenie #${replyModal.ticketId}`}</h2>
                         <div className="admin-input-group" style={{ marginTop: '15px' }}>
                             <label>{t.ticketReplyLabel}</label>
                             <textarea 

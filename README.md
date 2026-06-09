@@ -69,6 +69,7 @@ Zgodnie z architekturą repozytorium, kluczowe elementy znajdują się w katalog
 * src/pages/ – Dedykowany katalog zawierający pliki podstron.
 * src/pages/constants/ – Pliki konfiguracyjne, w tym system lokalizacji tłumaczeń translations.js.
 * src/pages/games/ - Pliki gier na podstronie GamesPage.jsx.
+* src/pages/scripts/ - Pliki skryptów, np. obsługa poczty mailowej.
 * src/pages/games/mazemaps – Pliki map do gry MazeGame.jsx na podstronie GamesPage.jsx.
 
 ---
