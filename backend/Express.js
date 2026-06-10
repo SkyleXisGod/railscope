@@ -44,5 +44,5 @@ app.post('/api/settings', (req, res) => {
     });
 });
 
-const PORT = 8080;
+const PORT = process.ebv.PORT || 8080;
 app.listen(PORT, () => console.log(`RailScope server running on port ${PORT}`));

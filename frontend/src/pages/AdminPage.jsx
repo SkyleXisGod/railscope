@@ -124,64 +124,71 @@ export default function AdminPage() {
         }
     };
 
-    const handleSaveEdit = async (e) => {
-        e.preventDefault();
-        try {
-            const targetId = editingUser.id;
-            const newBannedUntil = editForm.bannedUntil ? new Date(editForm.bannedUntil).toISOString() : null;
+const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    try {
+        const targetId = editingUser.id;
+        const newBannedUntil = editForm.bannedUntil ? new Date(editForm.bannedUntil).toISOString() : null;
 
-            const payload = {
-                ...editForm,
-                callerRole: user.role,
-                bannedUntil: newBannedUntil
-            };
+        const payload = {
+            username: editForm.username,
+            email: editForm.email,
+            role: editForm.role,
+            bannedUntil: newBannedUntil,
+            callerRole: user.role 
+        };
 
-            await axios.put(`http://localhost:8080/api/admin/users/${targetId}`, payload);
-            
-            setUsersList(usersList.map(u => u.id === targetId ? { ...u, ...payload } : u));
+        await axios.put(`http://localhost:8080/api/admin/users/${targetId}`, payload);
 
-            const userTargetLang = editingUser?.settings?.language || editingUser?.language || null;
+        setUsersList(usersList.map(u => u.id === targetId ? { 
+            ...u, 
+            username: editForm.username,
+            email: editForm.email,
+            role: editForm.role,
+            bannedUntil: newBannedUntil
+        } : u));
 
-            if (editingUser.role !== editForm.role) {
-                await sendMailboxNotification(NOTIFICATION_TYPES.ROLE_CHANGED, targetId, {
-                    newRole: editForm.role,
-                    forcedLang: userTargetLang
-                });
-            }
-
-            const wasBanned = editingUser.bannedUntil && new Date(editingUser.bannedUntil) > new Date();
-            const isNowBanned = newBannedUntil && new Date(newBannedUntil) > new Date();
-
-            if (!wasBanned && isNowBanned) {
-                await sendMailboxNotification(NOTIFICATION_TYPES.USER_BAN, targetId, {
-                    bannedUntil: newBannedUntil,
-                    forcedLang: userTargetLang
-                });
-            } else if (wasBanned && !isNowBanned) {
-                await sendMailboxNotification(NOTIFICATION_TYPES.USER_UNBAN, targetId, {
-                    forcedLang: userTargetLang
-                });
-            } else if (wasBanned && isNowBanned && editingUser.bannedUntil !== newBannedUntil) {
-                await sendMailboxNotification(NOTIFICATION_TYPES.BAN_MODIFIED, targetId, {
-                    bannedUntil: newBannedUntil,
-                    forcedLang: userTargetLang
-                });
-            }
-
-            if (editingUser.username !== editForm.username || editingUser.email !== editForm.email) {
-                await sendMailboxNotification(NOTIFICATION_TYPES.PROFILE_UPDATED_BY_ADMIN, targetId, {
-                    forcedLang: userTargetLang
-                });
-            }
-
-            setEditingUser(null);
-            alert(t.saveSuccess || "Dane użytkownika zostały pomyślnie zaktualizowane.");
-
-        } catch (err) {
-            console.error("Błąd edycji użytkownika:", err);
-            alert(err.response?.data?.error || t.saveError || "Nie udało się zaktualizować użytkownika.");
+        const userTargetLang = editingUser?.settings?.language || editingUser?.language || 'PL';
+        
+        if (editingUser.role !== editForm.role) {
+            await sendMailboxNotification(NOTIFICATION_TYPES.ROLE_CHANGED, targetId, {
+                newRole: editForm.role,
+                forcedLang: userTargetLang
+            });
         }
-    };
+
+        const wasBanned = editingUser.bannedUntil && new Date(editingUser.bannedUntil) > new Date();
+        const isNowBanned = newBannedUntil && new Date(newBannedUntil) > new Date();
+
+        if (!wasBanned && isNowBanned) {
+            await sendMailboxNotification(NOTIFICATION_TYPES.USER_BAN, targetId, {
+                bannedUntil: newBannedUntil,
+                forcedLang: userTargetLang
+            });
+        } else if (wasBanned && !isNowBanned) {
+            await sendMailboxNotification(NOTIFICATION_TYPES.USER_UNBAN, targetId, {
+                forcedLang: userTargetLang
+            });
+        } else if (wasBanned && isNowBanned && editingUser.bannedUntil !== newBannedUntil) {
+            await sendMailboxNotification(NOTIFICATION_TYPES.BAN_MODIFIED, targetId, {
+                bannedUntil: newBannedUntil,
+                forcedLang: userTargetLang
+            });
+        }
+
+        if (editingUser.username !== editForm.username || editingUser.email !== editForm.email) {
+            await sendMailboxNotification(NOTIFICATION_TYPES.PROFILE_UPDATED_BY_ADMIN, targetId, {
+                forcedLang: userTargetLang
+            });
+        }
+        setEditingUser(null);
+        alert(t.saveSuccess || "Dane użytkownika zostały pomyślnie zaktualizowane, a powiadomienia wysłane.");
+
+    } catch (err) {
+        console.error("Błąd edycji użytkownika:", err);
+        alert(err.response?.data?.error || t.saveError || "Nie udało się zaktualizować użytkownika.");
+    }
+};
 
     const fetchTickets = async () => {
         setLoading(true);

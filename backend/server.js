@@ -469,36 +469,57 @@ app.get('/api/mailbox/:userId', (req, res) => {
     });
 });
 
-app.post('/api/mailbox', (req, res) => {
-    const { senderId, sender, to, subject, content, tag } = req.body;
+app.post("/api/mailbox", (req, res) => {
+    let { to, userId, sender, subject, content, tag, folder } = req.body;
 
-    if (!to || !subject || !content) {
-        return res.status(400).json({ error: "Wszystkie pola formularza są wymagane." });
+    // 1. Zabezpieczenie przed brakującymi polami (odporność na błąd 400)
+    if (!subject) subject = "Powiadomienie systemowe";
+    if (!content) content = "Treść powiadomienia została zaktualizowana przez system.";
+    if (!sender) sender = "System";
+    if (!tag) tag = "system";
+    if (!folder) folder = "inbox";
+
+    // Wspólna funkcja wykonująca zapis do bazy danych
+    const insertMessage = (targetUserId) => {
+        const query = `
+            INSERT INTO mailbox (userId, sender, subject, content, unread, tag, folder) 
+            VALUES (?, ?, ?, ?, 1, ?, ?)
+        `;
+        db.run(query, [targetUserId, sender, subject, content, tag, folder], function (err) {
+            if (err) {
+                console.error("❌ Błąd zapisu wiadomości w DB:", err.message);
+                return res.status(500).json({ error: "Nie udało się zapisać powiadomienia w bazie danych." });
+            }
+
+            // Powiadomienie w czasie rzeczywistym przez Socket.io o nowej wiadomości
+            if (typeof io !== 'undefined') {
+                io.emit("mailbox_update", { userId: targetUserId });
+            }
+
+            return res.json({ success: true, message: "Powiadomienie dostarczone pomyślnie." });
+        });
+    };
+
+    // Scenariusz A: Wywołanie z MailboxService (posiada bezpośrednio userId)
+    if (userId) {
+        return insertMessage(parseInt(userId));
     }
 
-    db.get(`SELECT id, username FROM users WHERE email = ?`, [to.trim()], (err, recipient) => {
-        if (err) return res.status(500).json({ error: "Błąd bazy danych przy szukaniu odbiorcy." });
-        if (!recipient) {
-            return res.status(404).json({ error: "Użytkownik o podanym adresie e-mail nie istnieje." });
-        }
-
-        db.run(
-            `INSERT INTO mailbox (userId, sender, subject, content, tag, folder) VALUES (?, ?, ?, ?, ?, 'inbox')`,
-            [recipient.id, sender, subject, content, tag || 'Użytkownik'],
-            function (err1) {
-                if (err1) return res.status(500).json({ error: err1.message });
-
-                db.run(
-                    `INSERT INTO mailbox (userId, sender, subject, content, tag, folder, unread) VALUES (?, ?, ?, ?, ?, 'sent', 0)`,
-                    [senderId, `Do: ${to.trim()}`, subject, content, tag || 'Użytkownik'],
-                    function (err2) {
-                        if (err2) return res.status(500).json({ error: err2.message });
-                        res.json({ success: true });
-                    }
-                );
+    // Scenariusz B: Wywołanie z formularza Mailbox.jsx (posiada nazwę użytkownika w polu 'to')
+    if (to) {
+        db.get("SELECT id FROM users WHERE username = ?", [to], (err, row) => {
+            if (err || !row) {
+                // Koło ratunkowe: jeśli 'to' jest ID przekazanym jako string (np. "33")
+                if (!isNaN(to)) {
+                    return insertMessage(parseInt(to));
+                }
+                return res.status(404).json({ error: "Nie znaleziono odbiorcy o podanej nazwie." });
             }
-        );
-    });
+            return insertMessage(row.id);
+        });
+    } else {
+        return res.status(400).json({ error: "Brak zdefiniowanego odbiorcy (wymagane pole 'to' lub 'userId')." });
+    }
 });
 
 app.post('/api/mailbox/:id/delete', (req, res) => {
@@ -1390,30 +1411,80 @@ app.get('/api/admin/users', (req, res) => {
     });
 });
 
-app.put('/api/admin/users/:id', (req, res) => {
-    const { username, email, role, bannedUntil, callerRole } = req.body; 
-    const targetId = req.params.id;
+app.put("/api/admin/users/:id", (req, res) => {
+    const { id } = req.params;
+    const { username, email, role, bannedUntil } = req.body;
 
-    db.get(`SELECT role FROM users WHERE id = ?`, [targetId], (err, targetUser) => {
-        if (err || !targetUser) return res.status(404).json({ error: "Nie znaleziono użytkownika" });
+    // Automatyczna bezpieczna migracja - dodaje kolumnę jeśli nie istnieje w railscope.db
+    db.run("ALTER TABLE users ADD COLUMN bannedUntil TEXT", () => {
+        // Ignorujemy błąd, jeśli kolumna już istnieje, i przechodzimy do aktualizacji
+        
+        const query = `
+            UPDATE users 
+            SET username = ?, email = ?, role = ?, bannedUntil = ? 
+            WHERE id = ?
+        `;
+        
+        db.run(query, [username, email, role, bannedUntil, id], function (err) {
+            if (err) {
+                console.error("❌ Błąd podczas aktualizacji użytkownika w DB:", err.message);
+                return res.status(500).json({ error: "Błąd wewnętrzny bazy danych podczas zapisu." });
+            }
 
-        if (targetUser.role === 'ZARZADCA') {
-            return res.status(403).json({ error: "Konto Zarządcy jest zablokowane do edycji systemowej." });
+            // Poinformuj system przez Socket.io o zmianie danych (opcjonalne, dla real-time)
+            if (typeof io !== 'undefined') {
+                io.emit("user_updated", { id: parseInt(id), username, role });
+            }
+
+            res.json({ 
+                success: true, 
+                message: "Dane użytkownika zostały pomyślnie zaktualizowane w bazie." 
+            });
+        });
+    });
+});
+
+app.put("/api/users/:id", (req, res) => {
+    const { id } = req.params;
+    const { username, email, role, bannedUntil } = req.body;
+
+
+    const userUpdateQuery = "UPDATE users SET username = ?, email = ?, role = ?, bannedUntil = ? WHERE id = ?";
+    const userParams = [username, email, role, bannedUntil, id];
+
+    db.run(userUpdateQuery, userParams, function (err) {
+        if (err) {
+            console.error("❌ Błąd DB podczas aktualizacji użytkownika:", err.message);
+            return res.status(500).json({ error: "Nie udało się zaktualizować danych użytkownika w bazie." });
         }
 
-        if (callerRole === 'ADMIN') {
-            if (targetUser.role === 'ADMIN') {
-                return res.status(403).json({ error: "Admin nie może edytować innego Admina." });
-            }
-            if (role === 'ADMIN' || role === 'ZARZADCA') {
-                return res.status(403).json({ error: "Brak uprawnień do nadania tej roli." });
-            }
-        }
+        const mailboxQuery = `
+            INSERT INTO mailbox (userId, sender, subject, content, unread, folder, tag) 
+            VALUES (?, 'System', ?, ?, 1, 'inbox', 'system')
+        `;
+        
+        const subject = "Aktualizacja statusu konta";
+        const content = `Twoje konto zostało zmodyfikowane przez administrację. Aktualna rola w systemie: ${role}.`;
 
-        db.run(`UPDATE users SET username = ?, email = ?, role = ?, bannedUntil = ? WHERE id = ?`, 
-        [username, email, role, bannedUntil, targetId], function(err) {
-            if (err) return res.status(500).json({ error: "Błąd bazy danych" });
-            res.json({ message: "Użytkownik zaktualizowany" });
+        db.run(mailboxQuery, [id, subject, content], function (mailboxErr) {
+            if (mailboxErr) {
+                console.error("❌ Błąd DB podczas generowania maila systemowego:", mailboxErr.message);
+                return res.status(200).json({ 
+                    success: true, 
+                    message: "Dane zaktualizowane, ale wystąpił problem z wysyłką powiadomienia do skrzynki." 
+                });
+            }
+
+            if (typeof io !== 'undefined') {
+                io.emit("mailbox_update", { userId: id });
+                io.emit("user_updated", { id, role });
+                console.log(`🔔 Wysłano powiadomienie socket dla użytkownika o ID: ${id}`);
+            }
+
+            res.json({ 
+                success: true, 
+                message: "Użytkownik został pomyślnie zaktualizowany, a powiadomienie trafiło do jego skrzynki!" 
+            });
         });
     });
 });
@@ -1789,17 +1860,45 @@ app.post('/api/forgot-password', (req, res) => {
                     to: email,
                     subject: '➡ Resetowanie hasła w systemie RailScope',
                     html: `
-                        <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f121a; color: #ecf0f1; padding: 30px; border-radius: 12px; max-width: 600px; margin: auto;">
-                            <h2 style="color: #00ffd5; text-align: center; border-bottom: 1px solid #2c3545; padding-bottom: 15px;">RailScope</h2>
-                            <p>Witaj <strong>${user.username}</strong>,</p>
-                            <p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta w aplikacji RailScope.</p>
-                            <p>Kliknij w poniższy przycisk, aby ustawić nowe hasło. Link jest ważny przez 15 minut:</p>
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="${resetLink}" style="background: linear-gradient(135deg, #00ffd5 0%, #00bfa5 100%); color: #141414; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 255, 213, 0.3);">Resetuj hasło</a>
+                        <div style="padding: 40px 20px; font-family: 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;">
+                            <div style="max-width: 520px; margin: 0 auto; background-color: #141822; border: 1px solid #2c3545; border-radius: 16px; padding: 40px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
+                                
+                                <div style="text-align: center; margin-bottom: 35px; border-bottom: 1px solid #2c3545; padding-bottom: 25px;">
+                                    <span style="font-size: 26px; font-weight: 800; letter-spacing: 4px; color: #ffffff; text-transform: uppercase;">
+                                        Rail<span style="color: #00ffd5;">Scope</span>
+                                    </span>
+                                </div>
+
+                                <div style="color: #ecf0f1; font-size: 15px; line-height: 1.6;">
+                                    <p style="margin-top: 0; margin-bottom: 16px; font-size: 17px; color: #ffffff;">
+                                        Witaj, <strong style="color: #00ffd5;">${user.username}</strong>!
+                                    </p>
+                                    <p style="color: #9ba9bf; margin-bottom: 24px;">
+                                        Otrzymaliśmy zgłoszenie dotyczące resetowania hasła do Twojego konta w systemie RailScope. Jeśli to Ty wysłałeś tę prośbę, kliknij poniższy przycisk, aby bezpiecznie zdefiniować nowe dane logowania.
+                                    </p>
+                                    
+                                    <div style="text-align: center; margin: 35px 0;">
+                                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #00ffd5 0%, #00bfa5 100%); color: #0f121a; padding: 14px 32px; font-weight: bold; font-size: 14px; text-decoration: none; border-radius: 8px; letter-spacing: 0.5px; box-shadow: 0 4px 20px rgba(0, 255, 213, 0.25); text-transform: uppercase;">
+                                            Resetuj hasło
+                                        </a>
+                                    </div>
+
+                                    <div style="background-color: rgba(44, 53, 69, 0.2); border-left: 3px solid #00ffd5; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 30px;">
+                                        <p style="margin: 0; font-size: 13px; color: #9ba9bf; line-height: 1.5;">
+                                            ⏱️ Ten link autoryzacyjny wygaśnie automatycznie za <strong style="color: #ffffff;">15 minut</strong>.<br>
+                                            🔒 Jeżeli ta akcja nie była zainicjowana przez Ciebie, zignoruj tę wiadomość – Twoje aktualne hasło pozostanie całkowicie bezpieczne.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div style="border-top: 1px solid #2c3545; padding-top: 20px; text-align: center;">
+                                    <p style="font-size: 11px; color: #526077; margin: 0; letter-spacing: 0.5px; line-height: 1.4;">
+                                        Wiadomość została wygenerowana automatycznie przez moduł bezpieczeństwa RailScope.<br>
+                                        Prosimy nie odpowiadać na tego maila.
+                                    </p>
+                                </div>
+
                             </div>
-                            <p style="font-size: 0.85rem; color: #95a5a6;">Jeśli to nie Ty prosiłeś o reset hasła, możesz bezpiecznie zignorować tę wiadomość.</p>
-                            <hr style="border: none; border-top: 1px solid #2c3545; margin-top: 25px;">
-                            <p style="font-size: 0.75rem; text-align: center; color: #666;">Wiadomość wygenerowana automatycznie przez system RailScope.</p>
                         </div>
                     `
                 };

@@ -6,6 +6,27 @@ import { motion } from 'framer-motion';
 import './AuthPage.css';
 import { translations } from './constants/translations';
 
+// Funkcja kalkulująca siłę hasła (0-4 punkty)
+const getPasswordStrength = (pass) => {
+    let score = 0;
+    if (!pass) return 0;
+    if (pass.length >= 6) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+    return score;
+};
+
+const getStrengthLabel = (score) => {
+    switch(score) {
+        case 1: return <span style={{color: '#ff4d4d'}}>Słabe (min. 6 znaków)</span>;
+        case 2: return <span style={{color: '#f39c12'}}>Średnie (dodaj cyfrę/wielką literę)</span>;
+        case 3: return <span style={{color: '#f1c40f'}}>Dobre (dodaj znak specjalny)</span>;
+        case 4: return <span style={{color: '#00ffd5'}}>Silne</span>;
+        default: return '';
+    }
+};
+
 export default function AuthPage() {
     const [viewMode, setViewMode] = useState('login');  
     const [loading, setLoading] = useState(false);
@@ -21,6 +42,8 @@ export default function AuthPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
     const t = translations[lang].auth;
+
+    const strengthScore = getPasswordStrength(formData.password);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -39,6 +62,15 @@ export default function AuthPage() {
                 setLoading(false);
             }
             return;
+        }
+
+        // WALIDACJA: Tylko przy rejestracji blokujemy słabe hasła
+        if (viewMode === 'register') {
+            if (formData.password.length < 6) {
+                setError('Ze względów bezpieczeństwa hasło musi mieć co najmniej 6 znaków.');
+                setLoading(false);
+                return;
+            }
         }
 
         const endpoint = viewMode === 'login' ? 'login' : 'register';
@@ -93,7 +125,6 @@ export default function AuthPage() {
                 }}>{successMessage}</div>}
 
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    {/* Nazwa użytkownika - Tylko przy rejestracji */}
                     {viewMode === 'register' && (
                         <div className="input-group">
                             <i className="fas fa-user"></i>
@@ -107,7 +138,6 @@ export default function AuthPage() {
                         </div>
                     )}
 
-                    {/* Email - Widoczny zawsze (Logowanie, Rejestracja, Reset) */}
                     <div className="input-group">
                         <i className="fas fa-envelope"></i>
                         <input 
@@ -119,7 +149,6 @@ export default function AuthPage() {
                         />
                     </div>
 
-                    {/* Hasło - Ukryte w trybie resetowania hasła */}
                     {viewMode !== 'forgot' && (
                         <div className="input-group">
                             <i className="fas fa-lock"></i>
@@ -133,11 +162,23 @@ export default function AuthPage() {
                         </div>
                     )}
 
-                    {/* Link "Zapomniałeś hasła?" ukryty poza trybem logowania */}
+                    {/* WSKAŹNIK SIŁY HASŁA - Wyświetlany tylko przy rejestracji podczas pisania */}
+                    {viewMode === 'register' && formData.password.length > 0 && (
+                        <div className="password-strength-wrapper">
+                            <div className="password-strength-bar">
+                                <div className={`password-strength-fill strength-${strengthScore}`}></div>
+                            </div>
+                            <div className="password-strength-text">
+                                <span>Bezpieczeństwo autoryzacji:</span>
+                                {getStrengthLabel(strengthScore)}
+                            </div>
+                        </div>
+                    )}
+
                     {viewMode === 'login' && (
                         <div className="forgot-password-link" style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '20px' }}>
                             <span 
-                                onClick={() => { setViewMode('forgot'); setError(''); setSuccessMessage(''); }}
+                                onClick={() => { setViewMode('forgot'); setError(''); setSuccessMessage(''); setFormData({...formData, password: ''}); }}
                                 style={{ color: '#666', fontSize: '0.8rem', cursor: 'pointer', transition: 'color 0.2s' }}
                                 onMouseEnter={(e) => e.target.style.color = '#00ffd5'}
                                 onMouseLeave={(e) => e.target.style.color = '#666'}
@@ -151,7 +192,7 @@ export default function AuthPage() {
                         {loading ? (
                             <span className="spinner"></span>
                         ) : (
-                            viewMode === 'login' ? t.login_btn : viewMode === 'register' ? t.register_btn : 'Resetuj hasło'
+                            viewMode === 'login' ? t.login_btn : viewMode === 'register' ? t.register_btn : 'Wyślij link'
                         )}
                     </button>
                 </form>
@@ -162,7 +203,7 @@ export default function AuthPage() {
                             Wróć do logowania
                         </p>
                     ) : (
-                        <p onClick={() => { setViewMode(viewMode === 'login' ? 'register' : 'login'); setError(''); setSuccessMessage(''); }}>
+                        <p onClick={() => { setViewMode(viewMode === 'login' ? 'register' : 'login'); setError(''); setSuccessMessage(''); setFormData({...formData, password: ''}); }}>
                             {viewMode === 'login' ? t.toggle_register : t.toggle_login}
                         </p>
                     )}

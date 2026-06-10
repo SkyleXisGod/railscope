@@ -4,6 +4,26 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../pages/AuthPage.css'; 
 
+const getPasswordStrength = (pass) => {
+    let score = 0;
+    if (!pass) return 0;
+    if (pass.length >= 6) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+    return score;
+};
+
+const getStrengthLabel = (score) => {
+    switch(score) {
+        case 1: return <span style={{color: '#ff4d4d'}}>Słabe (min. 6 znaków)</span>;
+        case 2: return <span style={{color: '#f39c12'}}>Średnie (dodaj cyfrę/wielką literę)</span>;
+        case 3: return <span style={{color: '#f1c40f'}}>Dobre (dodaj znak specjalny)</span>;
+        case 4: return <span style={{color: '#00ffd5'}}>Silne</span>;
+        default: return '';
+    }
+};
+
 export default function ResetPasswordPage() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
@@ -14,6 +34,8 @@ export default function ResetPasswordPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    const strengthScore = getPasswordStrength(password);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -90,7 +112,20 @@ export default function ResetPasswordPage() {
                                 />
                             </div>
 
-                            <div className="input-group">
+                            {/* WSKAŹNIK SIŁY HASŁA */}
+                            {password.length > 0 && (
+                                <div className="password-strength-wrapper">
+                                    <div className="password-strength-bar">
+                                        <div className={`password-strength-fill strength-${strengthScore}`}></div>
+                                    </div>
+                                    <div className="password-strength-text">
+                                        <span>Siła hasła:</span>
+                                        {getStrengthLabel(strengthScore)}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="input-group" style={{ marginTop: '5px' }}>
                                 <i className="fas fa-check-circle"></i>
                                 <input 
                                     type="password" 
