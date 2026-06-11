@@ -76,6 +76,7 @@ Zgodnie z architekturą repozytorium, kluczowe elementy znajdują się w katalog
 * src/pages/scripts/ - Pliki skryptów, np. obsługa poczty mailowej.
 * src/pages/games/mazemaps – Pliki map do gry MazeGame.jsx na podstronie GamesPage.jsx.
 
+[🧭 Mapa Nawigacji Serwera](backend/server.nav)
 ---
 
 ## 📂 Główne Funkcjonalności na branchu testing
