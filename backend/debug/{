@@ -1,0 +1,1 @@
+const normalizeRouteTimes = route = let lastAbs = -Infinity; return route.map(stop = const arr = parseTimeString(stop.arrivalTime 

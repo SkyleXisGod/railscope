@@ -1,0 +1,253 @@
+﻿import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
+import { useMailbox } from '../context/MailboxContext';
+import { translations } from "../pages/constants/translations";
+import Badge from "./NotificationBadge"; 
+import "./Topbar.css";
+import logo from "../assets/railscope-minature.png"; 
+
+const SCRAMBLE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const getScrambled = (target, reveal) => {
+  return target.split('').map((char, index) => {
+    if (char === ' ' || index < reveal) return char;
+    return SCRAMBLE_LETTERS[Math.floor(Math.random() * SCRAMBLE_LETTERS.length)];
+  }).join('');
+};
+
+export default function Topbar({ onToggleSidebar }) {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMailOpen, setIsMailOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
+
+  const { unreadCount } = useMailbox();
+
+  useEffect(() => {
+    console.log("Aktualna liczba nieprzeczytanych:", unreadCount);
+  }, [unreadCount]);
+
+  const [systemOnline, setSystemOnline] = useState(true);
+  const [displayStatus, setDisplayStatus] = useState('LIVE SYSTEM ONLINE');
+  const [statusPhase, setStatusPhase] = useState('idle');
+  const [isGlitching, setIsGlitching] = useState(false); // Nowy stan do animacji wibracji CSS
+
+  const statusIntervalRef = useRef(null);
+  const statusTimeoutRef = useRef(null);
+  const currentTargetRef = useRef(displayStatus);
+  const { user, logout } = useAuth();
+  const lang = user?.settings?.language || 'PL';
+  const t = translations[lang].app;
+  const navigate = useNavigate();
+
+  const updateStatusLabel = (target) => {
+    if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+
+    setStatusPhase('fade');
+    statusTimeoutRef.current = setTimeout(() => {
+      let revealCount = 0;
+      let cycle = 0;
+      setStatusPhase('scramble');
+      const delay = 35;
+      const cyclesPerLetter = Math.max(8, Math.ceil(7500 / (target.length * delay)));
+      statusIntervalRef.current = setInterval(() => {
+        if (cycle > 0 && cycle % cyclesPerLetter === 0) {
+          revealCount += 1;
+        }
+        setDisplayStatus(getScrambled(target, revealCount));
+
+        cycle += 1;
+        if (revealCount >= target.length) {
+          clearInterval(statusIntervalRef.current);
+          setStatusPhase('idle');
+          setDisplayStatus(target);
+        }
+      }, delay);
+    }, 300);
+  };
+
+  // --- EFEKT AUTOMATYCZNEGO GLITCHOWANIA CO JAKIŚ CZAS ---
+  useEffect(() => {
+    const triggerRandomGlitch = () => {
+      // Nie glitchuj, jeśli aktualnie trwa pełna animacja zmiany statusu (online/offline)
+      if (statusPhase === 'scramble' || statusPhase === 'fade') return;
+
+      const targetText = currentTargetRef.current;
+      setIsGlitching(true);
+      
+      let glitchTicks = 0;
+      // Szybki interwał zmieniający losowe litery przez ok. 300-400ms
+      const glitchInterval = setInterval(() => {
+        // Losowo miksujemy litery (odkrywając np. tylko połowę tekstu, żeby zachować czytelność)
+        const halfLength = Math.floor(targetText.length / 2);
+        setDisplayStatus(getScrambled(targetText, Math.floor(Math.random() * halfLength) + 2));
+        
+        glitchTicks++;
+        if (glitchTicks > 8) { // Okazjonalne 8 mignięć
+          clearInterval(glitchInterval);
+          setDisplayStatus(targetText);
+          setIsGlitching(false);
+        }
+      }, 40);
+    };
+
+    // Odpala glitch co losowy czas między 7 a 15 sekund, żeby nie było to zbyt monotonne
+    const intervalId = setInterval(() => {
+      if (Math.random() > 0.3) { // 70% szans na wywołanie w danym interwale
+        triggerRandomGlitch();
+      }
+    }, 8000);
+
+    return () => clearInterval(intervalId);
+  }, [statusPhase]);
+  // ------------------------------------------------------
+
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/health', { method: 'GET' });
+        setSystemOnline(response.ok);
+      } catch (err) {
+        setSystemOnline(false);
+      }
+    };
+
+    checkSystemStatus();
+    const interval = setInterval(checkSystemStatus, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const target = systemOnline ? 'LIVE SYSTEM ONLINE' : 'LIVE SYSTEM OFFLINE';
+    if (target !== currentTargetRef.current) {
+      currentTargetRef.current = target;
+      updateStatusLabel(target);
+    }
+  }, [systemOnline]);
+
+  useEffect(() => {
+    return () => {
+      if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth");
+  };
+
+  if (!user) return null;
+
+  const userRole = user?.role === 'ZARZADCA'
+    ? 'RailScope ZARZADCA'
+    : user?.role === 'ADMIN'
+    ? 'RailScope ADMIN'
+    : user?.role === 'PLUS'
+    ? 'RailScope PLUS'
+    : 'RailScope USER';
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+
+  return (
+    <header className="topbar">
+      <div className="topbar-left">
+        <button className="menu-toggle-btn" onClick={onToggleSidebar}>
+          <i className="fas fa-bars">☰</i>
+        </button>
+        <div className="topbar-logo" onClick={() => navigate("/")}>
+          <img src={logo} alt="RailScope Logo" className="logo-img" />
+          <span className="logo-text">RailScope</span>
+        </div>
+      </div>
+
+      <div className="topbar-right">
+        {/* Dynamicznie doklejamy klasę 'glitch-active' gdy stan isGlitching jest true */}
+        <div className={`system-status ${systemOnline ? 'online' : 'offline'} ${isGlitching ? 'glitch-active' : ''}`}>
+          <span className={`status-dot ${systemOnline ? 'active' : 'inactive'}`}></span>
+          <span className={`status-label ${statusPhase}`}>{displayStatus}</span>
+        </div>
+
+        <div className="mailbox-section">
+          <div 
+            className={`mailbox-trigger ${isMailOpen ? "active" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMailOpen(!isMailOpen);
+              setIsUserMenuOpen(false);
+            }}
+          >
+            <i className="fas fa-envelope mailbox-icon">📬</i>
+            {unreadCount > 0 && (
+                <span className="notification-dot">{unreadCount}</span>
+            )}
+          </div>
+
+          {isMailOpen && (
+            <div className="mailbox-dropdown">
+              <div className="dropdown-info-poczta">
+                <p className="mailbox-dropdown-title">{t.mailboxTitle}</p>
+              </div>
+              <ul className="dropdown-menu">
+                <li onClick={() => { navigate("/poczta"); setIsMailOpen(false); setHasUnread(false); }}>
+                  <i className="fas fa-inbox"></i> {t.openInbox}
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="user-section">
+          <div 
+            className={`profile-trigger ${isUserMenuOpen ? "active" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsUserMenuOpen(!isUserMenuOpen);
+              setIsMailOpen(false);
+            }}
+          >
+            <img 
+                src={userAvatar} 
+                alt="Avatar" 
+                className="user-avatar" 
+            />
+            <span className="username">{user.username}</span>
+
+            <i className={`fas fa-chevron-down arrow ${isUserMenuOpen ? "up" : ""}`}></i>
+          </div>
+
+          {isUserMenuOpen && (
+            <div className="user-dropdown">
+              <div className="dropdown-info">
+                <div className="dropdown-avatar">
+                  <img src={userAvatar} alt="Profile" />
+                </div>
+                <p className="username-dropdown">{user.username}</p>
+                <p className="role">{userRole}</p>
+              </div>
+              <ul className="dropdown-menu">
+                <li onClick={() => { navigate("/profil"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-user-circle"></i> 👤 {t.my_profile}
+                </li>
+                <li onClick={() => { navigate("/ustawienia"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-cog"></i> ⚙️ {t.settings}
+                </li>
+                <li onClick={() => { navigate("/tickets"); setIsUserMenuOpen(false); }}>
+                  <i className="fas fa-ticket-alt"></i> 📧 {t.my_tickets}
+                </li>
+                {user?.role === 'ADMIN' || user?.role === 'ZARZADCA' ? (
+                  <li onClick={() => { navigate("/admin"); setIsUserMenuOpen(false); }}>
+                    <i className="fas fa-tools"></i> 🛡️ {t.kr_admin_panel}
+                  </li>
+                ) : null}
+                <li className="divider"></li>
+                <li className="logout-btn" onClick={handleLogout}>
+                  <i className="fas fa-sign-out-alt"></i> {t.logout}
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
