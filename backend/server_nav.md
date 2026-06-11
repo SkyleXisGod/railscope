@@ -7,7 +7,7 @@
 [🧭 Powrót do README.md](../README.md)
 
 <details>
-### <summary> 🏗️ CORE SETUPS (0 - 5)</summary>
+<summary> 🏗️ CORE SETUPS (0 - 5)</summary>
 
 * 📍 **0. Optional external log terminal** -> Inicjalizacja gniazda TCP do przesyłania logów.
 * 📍 **1. Cool looking log system** -> System wrapperów wizualnych konsoli (moduł `chalk`).
@@ -18,7 +18,7 @@
 </details>
 
 <details>
-### <summary> 🔌 WEBSOCKET SETUP AND HANDLING (6 - 13)</summary>
+<summary> 🔌 WEBSOCKET SETUP AND HANDLING (6 - 13)</summary>
 
 * 📍 **6. Broadcast online status** -> Synchronizacja globalnej listy aktywnych użytkowników.
 * 📍 **7. Socket setup, startup and handling** -> Główny hook połączeń WebSocket.
@@ -31,7 +31,7 @@
 </details>
 
 <details>
-### <summary> 🛣️ REST API ENDPOINTS (14 - 35)</summary>
+<summary> 🛣️ REST API ENDPOINTS (14 - 35)</summary>
 
 * 📍 **14. API: Get user tickets** -> `GET /api/tickets/:userId` - Zgłoszenia użytkownika.
 * 📍 **15. API: Create ticket** -> `POST /api/tickets` - Generowanie nowego tiketu.
@@ -58,13 +58,13 @@
 </details>
 
 <details>
-### <summary> 🛣️ GTFS ENDPOINTS (36)</summary>
+<summary> 🛣️ GTFS ENDPOINTS (36)</summary>
 
 * 📍 **36. GTFS: GTFS data precache for faster loading, initalization and maintenance of GTFS data** -> `GET /api/stations` - Pobieranie danych.
 </details>
 
 <details>
-<summary>### 🛣️ OTHER API ENDPOINTS (37 - 56)</summary>
+<summary> 🛣️ OTHER API ENDPOINTS (37 - 56)</summary>
 
 * 📍 **37. API: Health check** -> `GET /api/health` - Sprawdzenie stanu serwera.
 * 📍 **38. API: Stations list** -> `GET /api/stations` - Pobieranie listy stacji.
@@ -88,7 +88,7 @@
 </details>
 
 <details>
-<summary>### 🎭 TERMINAL PROCEDURES (57-58)</summary>
+<summary> 🎭 TERMINAL PROCEDURES (57-58)</summary>
 
 * 📍 **56. CMD: Post-exit sequence ( doesn't for now! )** -> Funkcja wykonująca komendy `taskkill` i reboot skryptów bat.
 * 📍 **57. CMD: Exit and restart phrase listener** -> Interaktywny interfejs CLI serwera przez `process.stdin`.
