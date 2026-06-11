@@ -2,6 +2,8 @@
 
 ### 🧭 Architektura i Nawigacja Backend (`server.js`)
 
+[🧭 Powrót do README.md](../README.md)  
+
 <details>
 <summary> 🏗️ CORE SETUPS (0 - 5)</summary>
 
@@ -60,7 +62,7 @@
 </details>
 
 <details>
-<summary> 🛣️ OTHER API ENDPOINTS (37 - 56)</summary>
+<summary> 🛣️ OTHER API ENDPOINTS (37 - 53)</summary>
 
 * 📍 **37. API: Health check** -> `GET /api/health` - Sprawdzenie stanu serwera.
 * 📍 **38. API: Stations list** -> `GET /api/stations` - Pobieranie listy stacji.
@@ -79,19 +81,16 @@
 * 📍 **51. API: Reset password** -> `POST /api/reset-password` - Resetowanie hasła użytkownika.
 * 📍 **52. API: User update profile** -> `POST /api/update-profile` - Aktualizacja profilu użytkownika.
 * 📍 **53. API: Logout** -> `DELETE /api/users/:id` - Wylogowanie użytkownika.
-* 📍 **54. API: Post-exit sequence** -> `POST /api/exit` - Funkcja wykonująca komendy `taskkill` i reboot skryptów bat.
-* 📍 **55. API: Exit and restart phrase listener** -> `POST /api/restart` - Interaktywny interfejs CLI serwera przez `process.stdin`.
 </details>
 
 <details>
-<summary> 🎭 TERMINAL PROCEDURES (57-58)</summary>
+<summary> 🎭 TERMINAL PROCEDURES (54-58)</summary>
 
+* 📍 **54. CMD: THE END** -> Blok ASCII Art (Aperture Science Easter Egg).
+* 📍 **55. CMD: Portal shutdown seqeuence ( easter egg )** -> shutdown portalu po wylogowaniu użytkownika.
 * 📍 **56. CMD: Post-exit sequence ( doesn't for now! )** -> Funkcja wykonująca komendy `taskkill` i reboot skryptów bat.
 * 📍 **57. CMD: Exit and restart phrase listener** -> Interaktywny interfejs CLI serwera przez `process.stdin`.
 * 📍 **58. CMD: SIGINT listener ( ALT + C)** -> Wyzwalanie `SIGINT` w procesie Node.
 </details>
-
-
-[🧭 Powrót do README.md](../README.md)  
 
 ---
