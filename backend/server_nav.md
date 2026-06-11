@@ -15,7 +15,7 @@
 * 📍 **3. Database setup and startup** -> Schemat migracji i rozruch SQLite3.
 * 📍 **4. Server setup and startup** -> Interceptory ruchu, statystyki i czyszczenie śmieci.
 * 📍 **5. Express setup and startup** -> Konfiguracja Express, HTTP Server oraz Socket.io.
-<details>
+</details>
 
 <details>
 <summary>### 🔌 WEBSOCKET SETUP AND HANDLING (6 - 13)</summary>
@@ -28,7 +28,7 @@
 * 📍 **11. Socket chat history** -> Pobieranie historii wiadomości czatu (SQL LEFT JOIN).
 * 📍 **12. Socket send message** -> Przetwarzanie, walidacja i bezpieczny zapis wiadomości.
 * 📍 **13. Live chat message handling** -> Middleware do przekierowania logów żądań HTTP.
-<details>
+</details>
 
 <details>
 <summary>### 🛣️ REST API ENDPOINTS (14 - 35)</summary>
@@ -55,13 +55,13 @@
 * 📍 **33. API: Cancel user premium** -> `POST /api/cancel-premium` - Anulowanie subskrypcji użytkownika.
 * 📍 **34. API: Get PLK IC API usage statistics** -> `GET /api/statistics` - Statystyki użycia API PLK IC.
 * 📍 **35. API: Unlock secret** -> `POST /api/secret-unlock` - Odblokowanie sekretu użytkownika.
-<details>
+</details>
 
 <details>
 <summary>### 🛣️ GTFS ENDPOINTS (36)</summary>
 
 * 📍 **36. GTFS: GTFS data precache for faster loading, initalization and maintenance of GTFS data** -> `GET /api/stations` - Pobieranie danych.
-<details>
+</details>
 
 <details>
 <summary>### 🛣️ OTHER API ENDPOINTS (37 - 56)</summary>
@@ -85,7 +85,7 @@
 * 📍 **53. API: Logout** -> `DELETE /api/users/:id` - Wylogowanie użytkownika.
 * 📍 **54. API: Post-exit sequence** -> `POST /api/exit` - Funkcja wykonująca komendy `taskkill` i reboot skryptów bat.
 * 📍 **55. API: Exit and restart phrase listener** -> `POST /api/restart` - Interaktywny interfejs CLI serwera przez `process.stdin`.
-<details>
+</details>
 
 <details>
 <summary>### 🎭 TERMINAL PROCEDURES (57-58)</summary>
@@ -93,4 +93,4 @@
 * 📍 **56. CMD: Post-exit sequence ( doesn't for now! )** -> Funkcja wykonująca komendy `taskkill` i reboot skryptów bat.
 * 📍 **57. CMD: Exit and restart phrase listener** -> Interaktywny interfejs CLI serwera przez `process.stdin`.
 * 📍 **58. CMD: SIGINT listener ( ALT + C)** -> Wyzwalanie `SIGINT` w procesie Node.
-<details>
+</details>
