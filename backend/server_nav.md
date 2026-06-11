@@ -2,9 +2,6 @@
 
 ### 🧭 Architektura i Nawigacja Backend (`server.js`)
 
-
-[🧭 Powrót do README.md](../README.md)
-
 <details>
 <summary> 🏗️ CORE SETUPS (0 - 5)</summary>
 
@@ -93,5 +90,8 @@
 * 📍 **57. CMD: Exit and restart phrase listener** -> Interaktywny interfejs CLI serwera przez `process.stdin`.
 * 📍 **58. CMD: SIGINT listener ( ALT + C)** -> Wyzwalanie `SIGINT` w procesie Node.
 </details>
+
+
+[🧭 Powrót do README.md](../README.md)  
 
 ---
