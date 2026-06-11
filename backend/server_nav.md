@@ -1,3 +1,5 @@
+---
+
 ### 🧭 Architektura i Nawigacja Backend (`server.js`)
 
 
