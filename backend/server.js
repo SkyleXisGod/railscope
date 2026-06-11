@@ -16,7 +16,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 dotenv.config();
 
-// 0. Log system with optional external log terminal
+// 0. Optional external log terminal
 
 let logSocket = null;
 const connectLogTerminal = () => {
@@ -30,6 +30,8 @@ const connectLogTerminal = () => {
     });
 };
 connectLogTerminal();
+
+// 1. Cool looking log system
 
 const logInfo = (emoji, text, num) => {
     const tag = chalk.bgBlue.white(' INFO LOG ');
@@ -60,7 +62,7 @@ const logError = (emoji, text, err) => {
     else console.error(`${tag} ${emoji} ${text}`);
 };
 
-// 1. Database setup and connection
+// 2. MailBot setup and startup
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -69,6 +71,8 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
+
+// 3. Database setup and startup
 
 const db = new sqlite3.Database('./railscope.db', (err) => {
     if (err) logError('❌', 'Database connection error:', err.message);
@@ -207,7 +211,8 @@ const db = new sqlite3.Database('./railscope.db', (err) => {
     }
 });
 
-// 2. Express server and Socket.IO setup
+// 4. Server setup and startup
+
 const serverStartTime = Date.now();
 const activeUsers = new Map();
 
@@ -230,6 +235,8 @@ setInterval(() => {
     });
 }, 10 * 60 * 1000);
 
+// 5. Express setup and startup 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const todosFilePath = path.join(__dirname, 'todos.json');
@@ -245,6 +252,8 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+// 6. Broadcast online status
+
 const broadcastOnlineStatus = () => {
     const onlineUserIds = Array.from(new Set(Array.from(activeUsers.values())
         .map(u => u.userId)
@@ -257,7 +266,11 @@ const broadcastOnlineStatus = () => {
 
 const activeUserSockets = new Map();
 
+// 7. Socket setup, startup and handling
+
 io.on('connection', (socket) => {
+
+    // 8. Socket identification
 
     socket.on('user_ident', (userData) => {
         if (userData && userData.id) {
@@ -273,27 +286,60 @@ io.on('connection', (socket) => {
                 const oldSocketId = activeUserSockets.get(userId);
                 
                 if (oldSocketId !== socket.id) {
-                    // Powiadamiamy starą sesję
                     io.to(oldSocketId).emit('force_logout', { 
                         reason: 'Zalogowano się z innego urządzenia lub przeglądarki.' 
                     });
                     
-                    logFeed('⚠️', `Wymuszono wylogowanie z poprzedniej sesji: Użytkownik ${userData.username} (ID: ${userId}).`);
+                    logWarn('⚠️', `Wykryto podwójną sesję. Wymuszono wylogowanie starszej sesji: Użytkownik ${userData.username} (ID: ${userId}).`);
                     
                     const oldSocket = io.sockets.sockets.get(oldSocketId);
                     if (oldSocket) {
                         oldSocket.disconnect(true);
                     }
+                    activeUsers.delete(oldSocketId);
                 }
+            } else {
+                logFeed('🟢', `Sesja nawiązana: Użytkownik ${userData.username} (ID: ${userId}) jest ONLINE.`);
             }
 
             activeUserSockets.set(userId, socket.id);
-            
-            logFeed('🟢', `Sesja aktywna: Użytkownik ${userData.username} (ID: ${userId}) jest ONLINE.`);
-                
             broadcastOnlineStatus();
         }
     });
+
+    // 9. Socket logout
+
+    socket.on('user_logout', () => {
+        const userData = activeUsers.get(socket.id);
+        if (userData) {
+            logFeed('🚪', `Użytkownik ${userData.username} (ID: ${userData.userId}) wylogował się manualnie.`);
+            if (activeUserSockets.get(userData.userId) === socket.id) {
+                activeUserSockets.delete(userData.userId);
+            }
+            activeUsers.delete(socket.id);
+            broadcastOnlineStatus();
+        }
+    });
+
+    // 10. Socket disconnection
+
+    socket.on('disconnect', () => {
+        if (isShuttingDown) return; 
+
+        const userData = activeUsers.get(socket.id);
+        if (userData) {
+            const userId = userData.userId; 
+            logFeed('🔴', `Sesja zakończona: Użytkownik ${userData.username} (ID: ${userId}) jest OFFLINE.`);
+
+            if (activeUserSockets.get(userData.userId) === socket.id) {
+                activeUserSockets.delete(userData.userId);
+            }
+            activeUsers.delete(socket.id);
+        }
+        broadcastOnlineStatus();
+    });
+
+    // 11. Socket chat history
 
     socket.on('get_chat_history', () => {
         const query = `
@@ -318,6 +364,8 @@ io.on('connection', (socket) => {
             socket.emit('chat_history', rows);
         });
     });
+
+    // 12. Socket send message
 
     socket.on('send_message', (data) => {
         const { senderId, text } = data;
@@ -373,28 +421,9 @@ io.on('connection', (socket) => {
             );
         });
     });
-
-    socket.on('disconnect', () => {
-        const userSession = activeUsers.get(socket.id);
-        
-        if (userSession) {
-            const userId = userSession.userId;
-            logFeed('🔴', `Sesja zakończona: Użytkownik ${userSession.username} (ID: ${userId}) jest OFFLINE.`);
-
-            activeUsers.delete(socket.id);
-
-            if (activeUserSockets.get(userId) === socket.id) {
-                activeUserSockets.delete(userId);
-            }
-
-            broadcastOnlineStatus();
-        } else {
-            logFeed('🔌', `Rozłączono niezidentyfikowanego klienta (Socket ID: ${socket.id})`);
-        }
-    });
 });
 
-// 4. API Endpoint for Message Handling
+// 13. Live chat message ( incoming / outcoming ) handling 
 
 app.use((req, res, next) => {
     const inboundMsg = `➡️ HTTP ${req.method} ${req.originalUrl}`;
@@ -419,7 +448,7 @@ process.on('unhandledRejection', (reason) => {
     logError('💥', 'Unhandled Rejection', reason);
 });
 
-// 5. API endpoints for showing tickets by user 
+// 14. API: Get user tickets 
 
 app.get("/api/tickets/:userId", (req, res) => {
     const { userId } = req.params;
@@ -429,7 +458,7 @@ app.get("/api/tickets/:userId", (req, res) => {
     });
 });
 
-// 6. API endpoints for creating tickets
+// 15. API: Create ticket
 
 app.post("/api/tickets", (req, res) => {
     const { userId, title, category, description } = req.body;
@@ -444,7 +473,7 @@ app.post("/api/tickets", (req, res) => {
     logFeed('🎫', `Nowe zgłoszenie od użytkownika ID: ${userId} - ${title} [${category}]`);
 });
 
-// 7. API endpoints for admin to view all tickets
+// 16. API: Get all tickets
 
 app.get("/api/admin/tickets", (req, res) => {
     db.all(`SELECT * FROM tickets ORDER BY createdAt DESC`, [], (err, rows) => {
@@ -453,7 +482,7 @@ app.get("/api/admin/tickets", (req, res) => {
     });
 });
 
-// 8. API endpoints for specific user mailbox, sending mailbox notifications, sending mailbox to another user and deleting mailboxes
+// 17. API: Get mailbox
 
 app.get('/api/mailbox/:userId', (req, res) => {
     const userId = req.params.userId;
@@ -469,51 +498,64 @@ app.get('/api/mailbox/:userId', (req, res) => {
     });
 });
 
-app.post("/api/mailbox", (req, res) => {
-    let { to, userId, sender, subject, content, tag, folder } = req.body;
+// 18. API: Create mailbox
 
-    // 1. Zabezpieczenie przed brakującymi polami (odporność na błąd 400)
+app.post("/api/mailbox", (req, res) => {
+    let { to, userId, senderId, sender, subject, content, tag, folder } = req.body;
+
     if (!subject) subject = "Powiadomienie systemowe";
     if (!content) content = "Treść powiadomienia została zaktualizowana przez system.";
     if (!sender) sender = "System";
     if (!tag) tag = "system";
     if (!folder) folder = "inbox";
 
-    // Wspólna funkcja wykonująca zapis do bazy danych
     const insertMessage = (targetUserId) => {
-        const query = `
+        const queryInbox = `
             INSERT INTO mailbox (userId, sender, subject, content, unread, tag, folder) 
             VALUES (?, ?, ?, ?, 1, ?, ?)
         `;
-        db.run(query, [targetUserId, sender, subject, content, tag, folder], function (err) {
+        
+        db.run(queryInbox, [targetUserId, sender, subject, content, tag, folder], function (err) {
             if (err) {
                 console.error("❌ Błąd zapisu wiadomości w DB:", err.message);
                 return res.status(500).json({ error: "Nie udało się zapisać powiadomienia w bazie danych." });
             }
 
-            // Powiadomienie w czasie rzeczywistym przez Socket.io o nowej wiadomości
             if (typeof io !== 'undefined') {
                 io.emit("mailbox_update", { userId: targetUserId });
+            }
+
+            if (senderId) {
+                const querySent = `
+                    INSERT INTO mailbox (userId, sender, subject, content, unread, tag, folder) 
+                    VALUES (?, ?, ?, ?, 0, ?, 'sent')
+                `;
+                
+                const sentDisplayName = to ? `Do: ${to}` : sender; 
+
+                db.run(querySent, [senderId, sentDisplayName, subject, content, tag], function (errSent) {
+                    if (errSent) console.error("❌ Błąd zapisu do folderu wysłanych:", errSent.message);
+                    if (typeof io !== 'undefined') {
+                        io.emit("mailbox_update", { userId: senderId });
+                    }
+                });
             }
 
             return res.json({ success: true, message: "Powiadomienie dostarczone pomyślnie." });
         });
     };
 
-    // Scenariusz A: Wywołanie z MailboxService (posiada bezpośrednio userId)
     if (userId) {
         return insertMessage(parseInt(userId));
     }
-
-    // Scenariusz B: Wywołanie z formularza Mailbox.jsx (posiada nazwę użytkownika w polu 'to')
+    
     if (to) {
-        db.get("SELECT id FROM users WHERE username = ?", [to], (err, row) => {
+        db.get("SELECT id FROM users WHERE username = ? OR email = ?", [to, to], (err, row) => {
             if (err || !row) {
-                // Koło ratunkowe: jeśli 'to' jest ID przekazanym jako string (np. "33")
                 if (!isNaN(to)) {
                     return insertMessage(parseInt(to));
                 }
-                return res.status(404).json({ error: "Nie znaleziono odbiorcy o podanej nazwie." });
+                return res.status(404).json({ error: "Nie znaleziono odbiorcy o podanym e-mailu lub nazwie." });
             }
             return insertMessage(row.id);
         });
@@ -521,6 +563,8 @@ app.post("/api/mailbox", (req, res) => {
         return res.status(400).json({ error: "Brak zdefiniowanego odbiorcy (wymagane pole 'to' lub 'userId')." });
     }
 });
+
+// 19. API: Delete mailbox
 
 app.post('/api/mailbox/:id/delete', (req, res) => {
     const { id } = req.params;
@@ -542,7 +586,7 @@ app.post('/api/mailbox/:id/delete', (req, res) => {
     });
 });
 
-// 9. API endpoint for sending a notification to a user (e.g., after admin replies to ticket)
+// 20. API: Send mailbox
 
 app.post('/api/mailbox', (req, res) => {
     const { userId, sender, subject, content, tag, unread } = req.body;
@@ -560,7 +604,7 @@ app.post('/api/mailbox', (req, res) => {
     logFeed('🎫', `Wysłano powiadomienie w sprawie ticketu: ${userId} - ${subject} [${tag}]`);
 });
 
-// 10. API endpoint for marking a message as read
+// 21. API: Mark mailbox as read
 
 app.put('/api/mailbox/read/:id', (req, res) => {
     const { id } = req.params;
@@ -577,7 +621,7 @@ app.put('/api/mailbox/read/:id', (req, res) => {
     });
 });
 
-// 11. API endpoint for getting count of unread messages
+// 22. API: Get unread mailbox count
 
 app.get('/api/mailbox/:userId/unread-count', (req, res) => {
     const { userId } = req.params;
@@ -587,7 +631,7 @@ app.get('/api/mailbox/:userId/unread-count', (req, res) => {
     });
 });
 
-// 12. API endpoints for admin to update ticket status, reply, and delete tickets
+// 23. API: Update ticket status
 
 app.patch("/api/admin/tickets/:id", (req, res) => {
     const { status } = req.body;
@@ -597,6 +641,8 @@ app.patch("/api/admin/tickets/:id", (req, res) => {
         res.json({ success: true });
     });
 });
+
+// 24. API: Reply to ticket
 
 app.post("/api/admin/tickets/:id/reply", (req, res) => {
     const { id } = req.params;
@@ -616,6 +662,8 @@ app.post("/api/admin/tickets/:id/reply", (req, res) => {
     logFeed('💬', `Admin ${adminName} odpowiedział na zgłoszenie ID: ${id} - ${message}`);
 });
 
+// 25. API: Delete ticket
+
 app.delete("/api/admin/tickets/:id", (req, res) => {
     const { id } = req.params;
     db.run(`DELETE FROM tickets WHERE id = ?`, [id], function(err) {
@@ -626,7 +674,7 @@ app.delete("/api/admin/tickets/:id", (req, res) => {
     logFeed('🗑️', `Zgłoszenie ID: ${id} zostało usunięte przez administratora.`);
 });
 
-// 13. API endpoint for admin to ban/unban users
+// 26. API: Admin update user
 
 app.post("/api/admin/update-user", (req, res) => {
     const { username, bannedUntil} = req.body;
@@ -646,7 +694,7 @@ app.post("/api/admin/update-user", (req, res) => {
     logFeed('⛔', `Użytkownik ${username} został zbanowany do ${bannedUntil ? bannedUntil : 'odwołania'}.`);
 });
 
-// 14. API endpoints for user authentication, login, register and profile management
+// 27. API: Login
 
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
@@ -676,11 +724,11 @@ app.post('/api/login', (req, res) => {
             if (!userSafeData.role) userSafeData.role = 'USER';
             logFeed('🔐', `Użytkownik (${userSafeData.username || '—'}) [ mail: ${userSafeData.email} ] zalogował się do systemu`);
             res.json({ user: { ...userSafeData, settings: userSettings } });
-
-            // Sesja / Session / User / Użytkownik / Logowanie / Sesja na podstawie JSON
         });
     });
 });
+
+// 28. API: Register
 
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
@@ -705,6 +753,8 @@ app.post('/api/register', async (req, res) => {
         res.status(500).json({ error: "Server error during registration." });
     }
 });
+
+// 29. API: User update profile
 
 app.post('/api/update-profile', async (req, res) => {
     const { userId, username, email, currentPassword, newPassword, avatar } = req.body;
@@ -760,7 +810,7 @@ app.post('/api/update-profile', async (req, res) => {
     });
 });
 
-// 15. API endpoint for saving user settings
+// 30. API: User settings
 
 app.post('/api/settings', (req, res) => {
     const { userId, language, theme, accentColor, animations, textColor, textOutline, backgroundMode, mapTheme } = req.body;
@@ -780,7 +830,7 @@ app.post('/api/settings', (req, res) => {
     });
 });
 
-// 16. API endpoint for deleting account, upgrading user account to premium and cancelling premium subscription
+// 31. API: Delete user
 
 app.delete('/api/users/:id', (req, res) => {
     const { id } = req.params;
@@ -790,6 +840,8 @@ app.delete('/api/users/:id', (req, res) => {
     });
 });
 
+// 32. API: Upgrade user to PLUS
+
 app.post('/api/upgrade', (req, res) => {
     const { id, role } = req.body; 
     const premiumDate = role === 'PLUS' ? new Date().toISOString().split('T')[0] : null;
@@ -798,6 +850,8 @@ app.post('/api/upgrade', (req, res) => {
         res.json({ message: "Role updated" });
     });
 });
+
+// 33. API: Cancel user premium
 
 app.post('/api/cancel-premium', (req, res) => {
     const { userId } = req.body;
@@ -816,7 +870,7 @@ app.post('/api/cancel-premium', (req, res) => {
     });
 });
 
-// 17. API endpoint for fetching PLK API usage statistics (number of requests made by this backend)
+// 34. API: Get PLK IC API usage statistics
 
 app.get("/api/statistics", (req, res) => {
     res.json({
@@ -825,7 +879,7 @@ app.get("/api/statistics", (req, res) => {
     });
 });
 
-// 18. Easter egg 
+// 35. API: Unlock secret
 
 app.post('/api/secret-unlock', (req, res) => {
     const { userId, message } = req.body;
@@ -835,7 +889,7 @@ app.post('/api/secret-unlock', (req, res) => {
     res.status(200).json({ success: true });
 });
 
-// 19. GTFS data loading and processing
+// 36. GTFS: GTFS data precache for faster loading, initalization and maintenance of GTFS data
 
 const PORT = 8080;
 const DATA_DIR = path.join(__dirname, "data");
@@ -843,6 +897,8 @@ const STATIONS_CACHE = path.join(DATA_DIR, "cacheStations.json");
 const CATEGORIES_CACHE = path.join(DATA_DIR, "cacheCategories.json");
 const SCHEDULES_CACHE = path.join(DATA_DIR, "cacheSchedules.json");
 const FULL_STATIONS_CACHE = path.join(DATA_DIR, "regiocacheStations.json");
+
+// 36.1. DATA: Variables for GTFS and data maintenance
 
 let stations = [];
 let trainInfoMap = new Map(); 
@@ -853,6 +909,8 @@ let stationNamesDict = {};
 let stationCoordsDict = {};
 let trainToShapeMap = new Map();
 let shapeCoordsMap = new Map();
+
+// 36.2. DATA: Cleaning and parsing functions
 
 const cleanNum = (n) => {
     if (!n) return "";
@@ -904,6 +962,8 @@ const normalizeRouteTimes = (route) => {
         };
     });
 };
+
+// 36.3. DATA: GTFS data loading and parsing
 
 const loadGTFS = () => {
     process.stdout.write('\x1Bc');
@@ -1003,7 +1063,7 @@ const loadGTFS = () => {
     }
 };
 
-// 20. Building in-memory indexes for stations, schedules, and categories
+// 36.4. DATA: Building RailScope indexes
 
 const buildIndexes = () => {
     logInfo('🛠️', ' Building RailScope indexes...');
@@ -1120,7 +1180,7 @@ const buildIndexes = () => {
     }
 };
 
-// 21. Initial data download and server startup constants and function
+// 36.5. DATA: PLK API downloading and parsing
 
 const PLK_API_KEY = process.env.PLK_API_KEY;
 const BASE_URL = process.env.PLK_BASE_URL;
@@ -1161,6 +1221,8 @@ const downloadInitialData = async () => {
     }
 };
 
+// 36.6. DATA: Starting server after data download
+
 downloadInitialData().then(() => {
     httpServer.listen(PORT, () => {
         logSuccess('🚀', `Backend ready at http://localhost:${PORT} (Express + WebSockets)`);
@@ -1169,15 +1231,19 @@ downloadInitialData().then(() => {
     logError('❌', 'Critical server start error:', err);
 });
 
-// 22. API endpoints for health check, stations list, timetable for a station, and train search
+// 37. API: Health check
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", uptime: Math.floor((Date.now() - serverStartTime) / 1000) });
 });
 
+// 38. API: Stations list
+
 app.get("/api/stations", (req, res) => {
         res.json(stations)
     });
+
+// 39. API: Timetable
 
 app.get("/api/timetable/:id", async (req, res) => {
     const { id } = req.params;
@@ -1232,6 +1298,8 @@ app.get("/api/timetable/:id", async (req, res) => {
         res.json(enriched);
     } catch (err) { logError('❌', 'PLK API error:', err.message); res.status(500).json({ error: "PLK API error" }); }
 });
+
+// 40. API: Train search
 
 app.get("/api/trains/search", (req, res) => {
     const { number, name, start, end, category, experimental } = req.query;
@@ -1292,6 +1360,8 @@ app.get("/api/trains/search", (req, res) => {
     logFeed('🔍', `Train search | Number: ${number || '-'} | Name: ${name || '-'} | Category: ${category || '-'} | Start: ${start || '-'} | End: ${end || '-'} | Experimental: ${experimental === "true" ? 'Yes' : 'No'} | Results: ${uniqueResults.length}`);
     res.json(uniqueResults.slice(0, 50));
 });
+
+// 41. API: Train details
 
 app.get("/api/trains/:id", (req, res) => {
     const { id } = req.params;
@@ -1383,6 +1453,8 @@ app.get("/api/trains/:id", (req, res) => {
     }
 });
 
+// 42. API: Station details
+
 app.get("/api/stations/:id", (req, res) => {
     const stationId = req.params.id;
 
@@ -1403,7 +1475,8 @@ app.get("/api/stations/:id", (req, res) => {
     }
 });
 
-// 23. API endpoints for admin user management and statistics
+// 43. API: Admin users list
+
 app.get('/api/admin/users', (req, res) => {
     db.all(`SELECT id, username, email, role, avatar, premiumDate, bannedUntil FROM users`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: "Database error" });
@@ -1411,13 +1484,13 @@ app.get('/api/admin/users', (req, res) => {
     });
 });
 
+// 44. API: Admin users update
+
 app.put("/api/admin/users/:id", (req, res) => {
     const { id } = req.params;
     const { username, email, role, bannedUntil } = req.body;
 
-    // Automatyczna bezpieczna migracja - dodaje kolumnę jeśli nie istnieje w railscope.db
     db.run("ALTER TABLE users ADD COLUMN bannedUntil TEXT", () => {
-        // Ignorujemy błąd, jeśli kolumna już istnieje, i przechodzimy do aktualizacji
         
         const query = `
             UPDATE users 
@@ -1431,7 +1504,6 @@ app.put("/api/admin/users/:id", (req, res) => {
                 return res.status(500).json({ error: "Błąd wewnętrzny bazy danych podczas zapisu." });
             }
 
-            // Poinformuj system przez Socket.io o zmianie danych (opcjonalne, dla real-time)
             if (typeof io !== 'undefined') {
                 io.emit("user_updated", { id: parseInt(id), username, role });
             }
@@ -1443,6 +1515,8 @@ app.put("/api/admin/users/:id", (req, res) => {
         });
     });
 });
+
+// 45. API: Users auto-update
 
 app.put("/api/users/:id", (req, res) => {
     const { id } = req.params;
@@ -1489,6 +1563,8 @@ app.put("/api/users/:id", (req, res) => {
     });
 });
 
+// 46. API: Users delete
+
 app.delete('/api/users/:id', (req, res) => {
     const targetId = req.params.id;
     const { callerRole } = req.body;
@@ -1506,7 +1582,7 @@ app.delete('/api/users/:id', (req, res) => {
     });
 });
 
-// 24. API endpoint for statistics
+// 47. API: Stats
 
 app.get("/api/stats", async (req, res) => {
     try {
@@ -1791,7 +1867,7 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 25. API endpoints for user todo list
+// 48. DATA: Todos reading
 
 const readTodosFromFile = () => {
     if (!fs.existsSync(todosFilePath)) {
@@ -1805,9 +1881,13 @@ const readTodosFromFile = () => {
     return JSON.parse(data);
 };
 
+// 49. DATA: Todos writing
+
 const writeTodosToFile = (todos) => {
     fs.writeFileSync(todosFilePath, JSON.stringify(todos, null, 2));
 };
+
+// 50. API: Todos list 
 
 app.get('/api/todos', (req, res) => {
     try {
@@ -1817,6 +1897,8 @@ app.get('/api/todos', (req, res) => {
         res.status(500).json({ error: "Błąd odczytu pliku zadań" });
     }
 });
+
+// 51. API: Todos add
 
 app.post('/api/todos', (req, res) => {
     try {
@@ -1830,7 +1912,7 @@ app.post('/api/todos', (req, res) => {
     }
 });
 
-// 26. Email reset password
+// 52. API: Forgot password ( Automated email responce )
 
 app.post('/api/forgot-password', (req, res) => {
     const { email } = req.body;
@@ -1843,7 +1925,7 @@ app.post('/api/forgot-password', (req, res) => {
         }
 
         const token = crypto.randomBytes(32).toString('hex');
-        const expires = Date.now() + 15 * 60 * 1000; // 15 minut
+        const expires = Date.now() + 15 * 60 * 1000;
 
         db.run("ALTER TABLE users ADD COLUMN resetToken TEXT", () => {});
         db.run("ALTER TABLE users ADD COLUMN resetExpires INTEGER", () => {});
@@ -1915,6 +1997,8 @@ app.post('/api/forgot-password', (req, res) => {
     });
 });
 
+// 53. API: Reset password
+
 app.post('/api/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
 
@@ -1940,7 +2024,40 @@ app.post('/api/reset-password', async (req, res) => {
                     [hashedPassword, user.id],
                     (updateErr) => {
                         if (updateErr) return res.status(500).json({ error: "Błąd podczas aktualizacji hasła" });
-                        res.json({ success: true, message: "Hasło zostało pomyślnie zmienione. Możesz się zalogować." });
+
+                        const userId = Number(user.id);
+                        let kickedCount = 0;
+
+                        for (const [socketId, sessionData] of activeUsers.entries()) {
+                            if (sessionData.userId === userId) {
+                                io.to(socketId).emit('force_logout', { 
+                                    reason: 'Twoje hasło zostało zmienione. Ze względów bezpieczeństwa wylogowano Cię ze wszystkich sesji.' 
+                                });
+                                
+                                const targetSocket = io.sockets.sockets.get(socketId);
+                                if (targetSocket) {
+                                    targetSocket.disconnect(true);
+                                }
+                                
+                                activeUsers.delete(socketId);
+                                kickedCount++;
+                            }
+                        }
+
+                        if (activeUserSockets.has(userId)) {
+                            activeUserSockets.delete(userId);
+                        }
+
+                        if (kickedCount > 0) {
+                            logWarn('🔒', `Reset hasła (ID: ${userId}). Wymuszono wylogowanie z ${kickedCount} aktywnych sesji.`);
+                            broadcastOnlineStatus();
+                        }
+
+                        res.json({ 
+                            success: true, 
+                            message: "Hasło zostało pomyślnie zmienione. Możesz się zalogować.",
+                            userId: user.id 
+                        });
                     }
                 );
             } catch (hashErr) {
@@ -1950,11 +2067,11 @@ app.post('/api/reset-password', async (req, res) => {
     );
 });
 
-// 27. THE END
+// 54. THE END.
 
 /* Insert portal logo lol
 
-.,-:;//;:=,
+             .,-:;//;:=,
          . :H@@@MM@M#H/.,+%;,
       ,/X+ +M@@M@MM%=,-%HMMM@X/,
      -+@MM; $M@@MH+-,;XMMMM@MMMM@+-
@@ -1976,3 +2093,106 @@ app.post('/api/reset-password', async (req, res) => {
                =++%%%%+/:-.                   
 
 */
+
+
+// 55. Portal shutdown seqeuence ( easter egg ) :D
+
+import { exec } from "child_process"; 
+
+let isShuttingDown = false;
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function typeLine(text, speed = 25, pauseAfter = 300) {
+    for (const char of text) {
+        process.stdout.write(chalk.cyan(char));
+        await sleep(speed);
+    }
+    process.stdout.write('\n');
+    await sleep(pauseAfter);
+}
+
+async function runShutdownSequence(mode = 'exit') {
+    isShuttingDown = true; 
+    
+    console.clear();
+    console.log(chalk.yellow(`
+   🧪 APERTURE SCIENCE COMPUTER-AIDED ENRICHMENT CENTER
+   ⚠️ SYSTEM ${mode.toUpperCase()} INITIATED BY USER
+    `));
+    await sleep(800);
+
+    await typeLine("This was a triumph.");
+    await typeLine("I'm making a note here: HUGE SUCCESS.");
+    await typeLine("It's hard to overstate my satisfaction.");
+    await sleep(400);
+
+    console.log('\n');
+
+    await typeLine("Aperture Science:");
+    await typeLine("We do what we must because we can.");
+    await typeLine("For the good of all of us.");
+    await typeLine("Except the ones who are dead.");
+    await sleep(400);
+
+    console.log('\n' + chalk.white("--- CREDIT ROLL ---") + '\n');
+
+    await typeLine("But there's no sense crying over every mistake.");
+    await typeLine("You just keep on trying till you run out of cake.");
+    await typeLine("And the science gets done,");
+    await typeLine("And you make a neat gun.");
+    await typeLine("For the people who are still alive.");
+    await sleep(400);
+
+    console.log('\n' + chalk.red(`🚨 [CORE SEQUENCER: ${mode.toUpperCase()}]`) + '\n');
+    await sleep(500);
+    
+    if (typeof io !== 'undefined') io.close();
+    if (typeof server !== 'undefined') {
+        server.close(async () => {
+            await handlePostSequence(mode);
+        });
+    } else {
+        await handlePostSequence(mode);
+    }
+}
+
+// 56. CMD: Post-exit sequence ( doesn't for now! )
+
+async function handlePostSequence(mode) {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const rootFolder = path.resolve(__dirname, '..'); 
+
+    const winRootFolder = rootFolder.replace(/\//g, '\\');
+
+    if (mode === 'exit') {
+        const goodbyeCommand = `start cmd.exe /c "echo 🚨 APERTURE SCIENCE: Railscope terminated. Closing mainframe... && timeout /t 3 && taskkill /F /IM node.exe & taskkill /F /IM wt.exe"`;
+        
+        exec(goodbyeCommand);
+        process.exit(0);
+    } 
+    
+    if (mode === 'restart') {
+        const restartCommand = `start cmd.exe /c "echo ⚡ REBOOTING SYSTEM MAIN_FRAME... && timeout /t 2 && taskkill /F /IM node.exe & taskkill /F /IM wt.exe & timeout /t 1 && cd /d "${winRootFolder}" && railscope_startup.bat"`;
+        
+        exec(restartCommand);
+        process.exit(0);
+    }
+}
+
+// 57. CMD: Exit and restart phrase listener
+
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', async (data) => {
+    const command = data.trim().toLowerCase();
+    if (command === 'exit' || command === 'restart') {
+        await runShutdownSequence(command);
+    }
+});
+
+// 58. CMD: SIGINT listener ( ALT + C)
+
+process.on('SIGINT', () => {
+    isShuttingDown = true;
+    process.exit(0);
+});

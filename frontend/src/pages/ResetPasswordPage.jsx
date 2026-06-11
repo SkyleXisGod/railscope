@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { sendMailboxNotification, NOTIFICATION_TYPES } from './scripts/MailboxService';
 import '../pages/AuthPage.css'; 
 
 const getPasswordStrength = (pass) => {
@@ -50,14 +51,34 @@ export default function ResetPasswordPage() {
         setError('');
 
         try {
+            // 1. Wysyłamy żądanie zmiany hasła
             const res = await axios.post('http://localhost:8080/api/reset-password', {
                 token,
                 newPassword: password
             });
+            
+            // MODYFIKACJA: Odbieramy userId ORAZ language z odpowiedzi serwera
+            const { userId, language } = res.data;
+
+            // 2. Jeśli serwer namierzył użytkownika, generujemy powiadomienie
+            if (userId) {
+                try {
+                    // MODYFIKACJA: Przekazujemy obiekt z forcedLang jako trzeci parametr.
+                    // Zapobiegnie to wysyłaniu zapytania GET pod /api/admin/users/2
+                    await sendMailboxNotification(NOTIFICATION_TYPES.PASSWORD_RESET, userId, {
+                        forcedLang: language || 'PL'
+                    });
+                } catch (notifErr) {
+                    console.error("Nie udało się zapisać powiadomienia w skrzynce systemowej:", notifErr);
+                }
+            }
+
+            // 3. Pokazujemy sukces i planujemy powrót
             setSuccess(true);
             setTimeout(() => {
                 navigate('/auth');
             }, 3000);
+
         } catch (err) {
             setError(err.response?.data?.error || "Link resetujący wygasł lub jest nieprawidłowy.");
         } finally {

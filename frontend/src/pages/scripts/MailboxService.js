@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = {
     USER_BAN: 'USER_BAN',
     ROLE_CHANGED: 'ROLE_CHANGED',
     BAN_MODIFIED: 'BAN_MODIFIED',
+    PASSWORD_RESET: 'PASSWORD_RESET',
     PROFILE_UPDATED_BY_ADMIN: 'PROFILE_UPDATED_BY_ADMIN'
 };
 
@@ -111,6 +112,12 @@ export const sendMailboxNotification = async (type, recipientId, data = {}) => {
             subject = mt.profile_updated_subject;
             content = mt.profile_updated_content;
             tag = "Admin";
+            break;
+
+        case NOTIFICATION_TYPES.PASSWORD_RESET:
+            subject = mt.password_reset_subject;
+            content = mt.password_reset_content;
+            tag = "System";
             break;
 
         default:

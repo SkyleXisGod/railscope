@@ -3906,7 +3906,10 @@ export const mailbox_translations = {
         role_changed_content: "Twoja ranga systemowa została zmieniona na: {newRole}.",
         
         profile_updated_subject: "Modyfikacja danych profilu",
-        profile_updated_content: "Twoje podstawowe dane profilowe (nazwa użytkownika lub e-mail) zostały zaktualizowane przez administratora."
+        profile_updated_content: "Twoje podstawowe dane profilowe (nazwa użytkownika lub e-mail) zostały zaktualizowane przez administratora.",
+
+        password_reset_subject: "Nowe hasło",
+        password_reset_content: "Twoje hasło zostało zmienione. Jeżeli to Twój adres e-mail, sprawdź swoją skrzynkę odbiorczą."
     },
     EN: {
         admin_reply_subject: "Captain's response to your ticket",
@@ -3937,6 +3940,9 @@ export const mailbox_translations = {
         role_changed_content: "Your system rank has been changed to: {newRole}.",
 
         profile_updated_subject: "Profile data modification",
-        profile_updated_content: "Your basic profile data (username or messenger address) has been updated by the administrator."
+        profile_updated_content: "Your basic profile data (username or messenger address) has been updated by the administrator.",
+
+        password_reset_subject: "New password",
+        password_reset_content: "Your password has been changed. If this is your e-mail address, check your inbox."
     }
 };
