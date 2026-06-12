@@ -265,3 +265,48 @@
         transform: translateY(0);
     }
 }
+
+/* BLOKADA PREMIUM DLA CZATU */
+.premium-chat-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 25px auto;
+}
+
+.chat-container.premium-blur-active {
+    filter: blur(8px) grayscale(40%);
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.5;
+}
+
+.premium-overlay-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: rgba(11, 13, 17, 0.4); 
+    backdrop-filter: blur(2px); 
+    z-index: 10;
+}
+
+.premium-lock-box {
+    background: #151922; 
+    border: 2px solid #ffd700; 
+    border-radius: 20px;
+    padding: 40px 30px;
+    max-width: 480px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.1);
+    animation: premiumBoxFadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.premium-lock-icon { font-size: 3.5rem; margin-bottom: 15px; animation: lockPulse 2s infinite ease-in-out; }
+.premium-lock-title { font-size: 2rem; font-weight: 800; color: #ffd700; margin: 0 0 15px 0; letter-spacing: 1px; }
+.premium-lock-message { font-size: 1.05rem; line-height: 1.6; color: #a0aab8; margin: 0 0 30px 0; }
+.premium-redirect-btn { background: linear-gradient(135deg, #ffd700 0%, #cca100 100%); color: #000000; font-size: 1.15rem; font-weight: 700; padding: 14px 32px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3); transition: all 0.2s ease; }
+.premium-redirect-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, #ffe033 0%, #e6b400 100%); }
+
+@keyframes premiumBoxFadeIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes lockPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); } }

@@ -29,7 +29,7 @@ export default function Topbar({ onToggleSidebar }) {
   const [systemOnline, setSystemOnline] = useState(true);
   const [displayStatus, setDisplayStatus] = useState('LIVE SYSTEM ONLINE');
   const [statusPhase, setStatusPhase] = useState('idle');
-  const [isGlitching, setIsGlitching] = useState(false); // Nowy stan do animacji wibracji CSS
+  const [isGlitching, setIsGlitching] = useState(false); 
 
   const statusIntervalRef = useRef(null);
   const statusTimeoutRef = useRef(null);
@@ -66,24 +66,30 @@ export default function Topbar({ onToggleSidebar }) {
     }, 300);
   };
 
-  // --- EFEKT AUTOMATYCZNEGO GLITCHOWANIA CO JAKIŚ CZAS ---
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeString = currentTime.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateString = currentTime.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
   useEffect(() => {
     const triggerRandomGlitch = () => {
-      // Nie glitchuj, jeśli aktualnie trwa pełna animacja zmiany statusu (online/offline)
       if (statusPhase === 'scramble' || statusPhase === 'fade') return;
 
       const targetText = currentTargetRef.current;
       setIsGlitching(true);
       
       let glitchTicks = 0;
-      // Szybki interwał zmieniający losowe litery przez ok. 300-400ms
       const glitchInterval = setInterval(() => {
-        // Losowo miksujemy litery (odkrywając np. tylko połowę tekstu, żeby zachować czytelność)
         const halfLength = Math.floor(targetText.length / 2);
         setDisplayStatus(getScrambled(targetText, Math.floor(Math.random() * halfLength) + 2));
         
         glitchTicks++;
-        if (glitchTicks > 8) { // Okazjonalne 8 mignięć
+        if (glitchTicks > 8) { 
           clearInterval(glitchInterval);
           setDisplayStatus(targetText);
           setIsGlitching(false);
@@ -91,16 +97,14 @@ export default function Topbar({ onToggleSidebar }) {
       }, 40);
     };
 
-    // Odpala glitch co losowy czas między 7 a 15 sekund, żeby nie było to zbyt monotonne
     const intervalId = setInterval(() => {
-      if (Math.random() > 0.3) { // 70% szans na wywołanie w danym interwale
+      if (Math.random() > 0.3) { 
         triggerRandomGlitch();
       }
     }, 8000);
 
     return () => clearInterval(intervalId);
   }, [statusPhase]);
-  // ------------------------------------------------------
 
   useEffect(() => {
     const checkSystemStatus = async () => {
@@ -161,7 +165,11 @@ export default function Topbar({ onToggleSidebar }) {
       </div>
 
       <div className="topbar-right">
-        {/* Dynamicznie doklejamy klasę 'glitch-active' gdy stan isGlitching jest true */}
+        <div className="topbar-clock">
+            <span className="clock-time">{timeString}</span>
+            <span className="clock-date">{dateString}</span>
+        </div>
+        
         <div className={`system-status ${systemOnline ? 'online' : 'offline'} ${isGlitching ? 'glitch-active' : ''}`}>
           <span className={`status-dot ${systemOnline ? 'active' : 'inactive'}`}></span>
           <span className={`status-label ${statusPhase}`}>{displayStatus}</span>

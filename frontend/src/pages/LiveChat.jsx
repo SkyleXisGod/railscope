@@ -21,9 +21,13 @@ export default function LiveChat() {
     const messagesEndRef = useRef(null);
     const socketRef = useRef(null);
 
-    useEffect(() => {
-        socketRef.current = io(SOCKET_URL);
+    // Sprawdzanie uprawnień Premium / Admin
+    const hasPlusAccess = ['PLUS', 'ADMIN', 'ZARZADCA'].includes(user?.role);
 
+    useEffect(() => {
+        if (!hasPlusAccess) return; // Nie ładujemy socketów dla non-premium
+
+        socketRef.current = io(SOCKET_URL);
         socketRef.current.emit('get_chat_history');
 
         socketRef.current.on('chat_history', (history) => {
@@ -39,7 +43,7 @@ export default function LiveChat() {
                 socketRef.current.disconnect();
             }
         };
-    }, []);
+    }, [hasPlusAccess]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,25 +58,21 @@ export default function LiveChat() {
         }
     }, [cooldown]);
 
-
-const triggerAutoBan = async () => {
-    try {
-        const banDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-        
-        await axios.post('http://localhost:8080/api/admin/update-user', {
-            username: user.username,
-            bannedUntil: banDate,
-            role: user.role
-        });
-
-        updateUser({ bannedUntil: banDate });
-
-        alert("Naruszenie zasad: Konto zablokowane na 24h.");
-        window.location.reload(); 
-    } catch (err) {
-        console.error("Błąd auto-bana:", err);
-    }
-};
+    const triggerAutoBan = async () => {
+        try {
+            const banDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            await axios.post('http://localhost:8080/api/admin/update-user', {
+                username: user.username,
+                bannedUntil: banDate,
+                role: user.role
+            });
+            updateUser({ bannedUntil: banDate });
+            alert("Naruszenie zasad: Konto zablokowane na 24h.");
+            window.location.reload(); 
+        } catch (err) {
+            console.error("Błąd auto-bana:", err);
+        }
+    };
 
     const handleSendMessage = (e) => {
         e.preventDefault();
@@ -111,47 +111,67 @@ const triggerAutoBan = async () => {
     };
 
     return (
-        <div className="chat-container">
-            <div className="chat-header">
-                <div>
-                    <h2>{t.liveTitle}</h2>
-                    <span className="chat-subtitle">{t.liveSubtitle}</span>
-                </div>
-            </div>
-
-            <div className="chat-messages-box">
-                {messages.map((msg) => (
-                    <div key={msg.id} className="chat-message">
-                        <div className="chat-msg-header">
-                            <span className={`chat-badge badge-${msg.role ? msg.role.toLowerCase() : 'user'}`}>{msg.role}</span>&nbsp;
-                            <span className="chat-username">{msg.username}</span>&nbsp;
-                            <span className="chat-time">{msg.timestamp}</span>
-                        </div>
-                        <p className="chat-text">{msg.text}</p>
+        <div className="premium-chat-wrapper">
+            <div className={`chat-container ${!hasPlusAccess ? 'premium-blur-active' : ''}`} style={!hasPlusAccess ? { margin: 0 } : {}}>
+                <div className="chat-header">
+                    <div>
+                        <h2>{t.liveTitle}</h2>
+                        <span className="chat-subtitle">{t.liveSubtitle}</span>
                     </div>
-                ))}
-                <div ref={messagesEndRef} />
+                </div>
+
+                <div className="chat-messages-box">
+                    {messages.map((msg) => (
+                        <div key={msg.id} className="chat-message">
+                            <div className="chat-msg-header">
+                                <span className={`chat-badge badge-${msg.role ? msg.role.toLowerCase() : 'user'}`}>{msg.role}</span>&nbsp;
+                                <span className="chat-username">{msg.username}</span>&nbsp;
+                                <span className="chat-time">{msg.timestamp}</span>
+                            </div>
+                            <p className="chat-text">{msg.text}</p>
+                        </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                <form onSubmit={handleSendMessage} className="chat-input-area">
+                    {isChatBanned ? (
+                        <div className="chat-banned-alert">{t.chatBannedAlert}</div>
+                    ) : (
+                        <>
+                            <input
+                                type="text"
+                                placeholder={slowModeActive ? `${t.slowModePlaceholder} (${cooldown}s)` : t.chatPlaceholder}
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                disabled={slowModeActive || !hasPlusAccess}
+                                maxLength={250}
+                            />
+                            <button type="submit" disabled={slowModeActive || !newMessage.trim() || !hasPlusAccess}>
+                                {slowModeActive ? `${cooldown}s` : t.sendButton}
+                            </button>
+                        </>
+                    )}
+                </form>
             </div>
 
-            <form onSubmit={handleSendMessage} className="chat-input-area">
-                {isChatBanned ? (
-                    <div className="chat-banned-alert">{t.chatBannedAlert}</div>
-                ) : (
-                    <>
-                        <input
-                            type="text"
-                            placeholder={slowModeActive ? `${t.slowModePlaceholder} (${cooldown}s)` : t.chatPlaceholder}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            disabled={slowModeActive}
-                            maxLength={250}
-                        />
-                        <button type="submit" disabled={slowModeActive || !newMessage.trim()}>
-                            {slowModeActive ? `${cooldown}s` : t.sendButton}
+            {!hasPlusAccess && (
+                <div className="premium-overlay-container" style={{ position: 'absolute', inset: 0, borderRadius: '24px' }}>
+                    <div className="premium-lock-box">
+                        <div className="premium-lock-icon">🔒</div>
+                        <h2 className="premium-lock-title">Czat Premium</h2>
+                        <p className="premium-lock-message">
+                            Dostęp do globalnego czatu na żywo jest ograniczony. Wymagana ranga PLUS lub wyższa, aby dołączyć do dyskusji dyspozytorów.
+                        </p>
+                        <button 
+                            className="premium-redirect-btn"
+                            onClick={() => window.location.href = '/pay' }
+                        >
+                            Odblokuj Dostęp Premium 🌟
                         </button>
-                    </>
-                )}
-            </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -60,6 +60,9 @@
     border-radius: 20px;
     border: 1px solid rgba(0, 255, 213, 0.2);
     transition: all 0.3s ease;
+    padding-right: 20px; 
+    margin-right: 15px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .system-status.offline {
@@ -385,4 +388,59 @@
 .system-status.glitch-active .status-dot {
   animation: textGlitchShake 0.15s linear infinite;
   opacity: 0.8;
+}
+
+.topbar {
+    position: relative;
+    background: rgba(10, 12, 18, 0.95); 
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0, 255, 213, 0.15); 
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); 
+    z-index: 1000;
+}
+
+.topbar::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ffd5, #ff0055, #00ffd5, transparent);
+    background-size: 200% 100%;
+    animation: dataFlow 5s linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes dataFlow {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.topbar-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    margin-right: 15px;
+    padding-right: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clock-time {
+    color: #00ffd5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 255, 213, 0.4);
+    line-height: 1.1;
+}
+
+.clock-date {
+    color: #888;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
 }

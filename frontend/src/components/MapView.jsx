@@ -319,7 +319,49 @@ export default function MapView({ sidebarOpen }) {
   const [computedTrainPos, setComputedTrainPos] = useState(null);
   const [tick, setTick] = useState(0);
   const [isTracking, setIsTracking] = useState(false);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
+  const [searchTab, setSearchTab] = useState('trains'); 
+  const [trainSearchQuery, setTrainSearchQuery] = useState("");
+  const [searchedTrains, setSearchedTrains] = useState([]);
+  const [loadingTrainsSearch, setLoadingTrainsSearch] = useState(false);
+  const [stationSearchQuery, setStationSearchQuery] = useState("");
 
+
+  useEffect(() => {
+      if (trainSearchQuery.length < 2) {
+          setSearchedTrains([]);
+          return;
+      }
+      const delay = setTimeout(() => {
+          setLoadingTrainsSearch(true);
+          axios.get("http://localhost:8080/api/trains/search", {
+              params: { number: trainSearchQuery, experimental: true } 
+          })
+          .then(res => setSearchedTrains(res.data))
+          .catch(err => console.error(err))
+          .finally(() => setLoadingTrainsSearch(false));
+      }, 400);
+      return () => clearTimeout(delay);
+  }, [trainSearchQuery]);
+
+  const displayedIntegratedStations = stations
+      .filter(s => s.name.toLowerCase().includes(stationSearchQuery.toLowerCase()))
+      .slice(0, 15); 
+
+  const handleIntegratedClick = (type, id) => {
+      setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          if (type === 'train') {
+              newParams.set("trainId", id);
+              newParams.delete("stationId"); 
+          } else {
+              newParams.set("stationId", id);
+              newParams.delete("trainId"); 
+          }
+          return newParams;
+      });
+      setIsSearchPanelOpen(false); 
+  };
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(timer);
@@ -561,7 +603,69 @@ useEffect(() => {
     : 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png';
 
   return (
-    <div style={{ height: "100%", width: "100%", position: "relative" }}>
+    <div style={{ height: "100%", width: "100%", position: "relative", overflow: "hidden" }}>
+      
+      <button 
+          className={`map-search-toggle-btn ${isSearchPanelOpen ? 'active' : ''}`}
+          onClick={() => setIsSearchPanelOpen(!isSearchPanelOpen)}
+          title="Otwórz zintegrowaną wyszukiwarkę"
+      >
+          {isSearchPanelOpen ? '✕' : '🔍'}
+      </button>
+
+      <div className={`map-integrated-search-panel ${isSearchPanelOpen ? 'open' : ''}`}>
+          <div className="integrated-search-tabs">
+              <button className={searchTab === 'trains' ? 'active' : ''} onClick={() => setSearchTab('trains')}>Pociągi</button>
+              <button className={searchTab === 'stations' ? 'active' : ''} onClick={() => setSearchTab('stations')}>Stacje</button>
+          </div>
+
+          <div className="integrated-search-content custom-scrollbar">
+              {searchTab === 'trains' && (
+                  <>
+                      <input 
+                          type="text" 
+                          className="integrated-search-input" 
+                          placeholder="Wpisz nr lub nazwę pociągu..." 
+                          value={trainSearchQuery}
+                          onChange={(e) => setTrainSearchQuery(e.target.value)}
+                      />
+                      {loadingTrainsSearch && <p className="integrated-info">Wyszukiwanie...</p>}
+                      {!loadingTrainsSearch && searchedTrains.length === 0 && trainSearchQuery.length >= 2 && <p className="integrated-info">Brak pociągów.</p>}
+                      
+                      <div className="integrated-results-list">
+                          {searchedTrains.map(t => (
+                              <div key={t.trainOrderId} className="integrated-result-card" onClick={() => handleIntegratedClick('train', t.trainOrderId)}>
+                                  <span className={`cat-badge cat-${t.categorySymbol}-badge`}>{t.categorySymbol}</span>
+                                  <strong> {t.number}</strong> {t.name && `"${t.name}"`}
+                                  <div className="integrated-relation">{t.relation}</div>
+                              </div>
+                          ))}
+                      </div>
+                  </>
+              )}
+
+              {searchTab === 'stations' && (
+                  <>
+                      <input 
+                          type="text" 
+                          className="integrated-search-input" 
+                          placeholder="Wpisz nazwę stacji..." 
+                          value={stationSearchQuery}
+                          onChange={(e) => setStationSearchQuery(e.target.value)}
+                      />
+                      <div className="integrated-results-list">
+                          {displayedIntegratedStations.map(s => (
+                              <div key={s.id} className="integrated-result-card" onClick={() => handleIntegratedClick('station', s.id)}>
+                                  <strong>{s.name}</strong>
+                                  <div className="integrated-relation">{s.isRegional ? 'Stacja Regionalna' : 'Stacja Dalekobieżna'}</div>
+                              </div>
+                          ))}
+                      </div>
+                  </>
+              )}
+          </div>
+      </div>
+
       {trainId && isLive && (
         <button 
           className={`map-tracking-button ${isTracking ? 'active' : ''}`}
@@ -571,6 +675,7 @@ useEffect(() => {
           {isTracking ? "ŚLEDZENIE WŁĄCZONE" : "ŚLEDŹ POCIĄG"}
         </button>
       )}
+
 
       <MapContainer
         center={[52.23, 21.01]} 
