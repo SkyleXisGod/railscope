@@ -360,19 +360,15 @@
     text-shadow: none;
   }
   20% {
-    transform: translate(-2px, 1px);
     text-shadow: 1px -1px #00ffd5, -1px 1px #ff0055;
   }
   40% {
-    transform: translate(-1px, -1px);
     text-shadow: -1px 1px #00ffd5, 1px -1px #ff0055;
   }
   60% {
-    transform: translate(2px, 1px);
     text-shadow: 2px 1px rgba(0, 255, 213, 0.5), -1px -1px #ff0055;
   }
   80% {
-    transform: translate(1px, -2px);
     text-shadow: -1px -1px #00ffd5, 2px 2px #ff0055;
   }
   100% {
